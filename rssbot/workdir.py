@@ -10,6 +10,7 @@ import os
 import pathlib
 
 
+from .config import Config
 from .object import Object
 from .utils  import fqn
 
@@ -43,8 +44,8 @@ def long(name):
     return res
 
 
-def setwd(Cfg, path=None):
-    Workdir.wdr  = path or os.path.expanduser(f"~/.{Cfg.name}")
+def setwd(path=None):
+    Workdir.wdr = path or os.path.expanduser(f"~/.{Config.name}")
 
 
 def skel():
