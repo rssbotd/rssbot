@@ -1,12 +1,12 @@
 # This file is placed in the Public Domain.
-# pylint: disable=W0125
+# pylint: disable=C,I,R
 
 
 "client"
 
 
-from .cache   import Cache
-from .cmds    import Commands
+from .command import Commands
+from .object  import Object
 from .parse   import parse
 from .reactor import Reactor
 
@@ -15,7 +15,7 @@ class Client(Reactor):
 
     "Client"
 
-    cache = Cache()
+    cache = Object()
     out = None
 
     def __init__(self, outer=None):

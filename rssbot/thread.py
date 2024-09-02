@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0902,W0718
+# pylint: disable=C,I,R,W0718
 
 
 "threads"
@@ -58,7 +58,6 @@ class Thread(threading.Thread):
             for arg in args:
                 if isinstance(arg, Event):
                     arg.ready()
-            time.sleep(0.001)
 
 
 def launch(func, *args, **kwargs):

@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0902,R0903,R0912,R0915,W0718
+# pylint: disable=C,I,R,W0718
 
 
 "internet relay chat"
@@ -16,15 +16,15 @@ import time
 import _thread
 
 
-from ..client  import Client, command
-from ..default import Default
-from ..errors  import later
-from ..fleet   import Fleet
-from ..event   import Event
-from ..log     import Logging, debug
-from ..object  import Object, edit, fmt, keys
-from ..persist import last, sync
-from ..thread  import launch
+from rssbot.client  import Client, command
+from rssbot.default import Default
+from rssbot.errors  import later
+from rssbot.event   import Event
+from rssbot.fleet   import Fleet
+from rssbot.log     import Logging, debug
+from rssbot.object  import Object, edit, fmt, keys
+from rssbot.persist import last, sync
+from rssbot.thread  import launch
 
 
 Logging.filter = ["PING", "PONG", "PRIVMSG"]
@@ -46,7 +46,7 @@ class Config(Default):
     "Config"
 
     channel = f'#{NAME}'
-    commands = True
+    commands = False
     control = '!'
     edited = time.time()
     nick = NAME

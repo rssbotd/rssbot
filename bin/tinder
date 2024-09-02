@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # This file is placed in the Public Domain.
-# pylint: disable=C0103,C0413,W0201,W0401,W0614,W0622,E0401
-# ruff: noqa: F403,F405
-
+# pylint: disable=C,I,R,W0201,W0622,W0401,W0401,W0614,E0401
 
 "tinder"
 
@@ -19,16 +17,27 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.interface import *
+from rssbot.face   import *
+from rssbot.config import boot
 
 
-from rssbot import modules
+Cfg         = Config()
+Cfg.mod     = "cmd,err,mod,skl,srv,thr"
+Cfg.debug   = True
+Cfg.mod     = ""
+Cfg.name    = "tinder"
+Cfg.silent  = False
+Cfg.skip    = ["debug",]
+Cfg.wdr     = ".test"
 
 
-if os.path.exists("files"):
-    import files as mods
+from rssbot.modules import all as modules
+
+
+if os.path.exists("mods"):
+    import mods as MODS
 else:
-    mods = None
+    MODS = None
 
 
 modules.rss.DEBUG = True
@@ -40,18 +49,6 @@ NRCOMMAND = 1
 PERCALL   = 1
 STARTTIME = time.time()
 Client.out   = print
-
-
-Cfg         = Default()
-Cfg.debug   = True
-Cfg.mod     = ""
-Cfg.name    = "tinder"
-Cfg.silent  = False
-Cfg.skip    = ["debug",]
-Cfg.wdr     = ".test"
-
-
-Persist.workdir = Cfg.wdr
 
 
 events = []
@@ -119,9 +116,6 @@ def payload(clt):
         return nmr
 
 
-payload.threaded = True
-
-
 def wrap(function):
     "reset terminal."
     old2 = None
@@ -140,15 +134,10 @@ def wrap(function):
 
 def main():
     "main"
+    boot(Cfg, ".test")
     enable(print)
-    Cfg.dis = Cfg.sets.dis
-    Cfg.mod = ",".join(modnames(modules, mods))
-    if "v" in Cfg.opts:
-        dte = " ".join(time.ctime(time.time()).replace("  ", " ").split()[1:])
-        print(f'{dte} {Cfg.name.upper()} {Cfg.opts.upper()} {Cfg.mod.upper()}'.replace("  ", " "))
-    scan(Cfg.mod, modules, mods)
-    nrs = Cfg.index or 1
-    nrcommand = len(Commands.cmds) or 1
+    Cfg.mod = ",".join(modnames(modules, MODS))
+    scan(Cfg.mod, modules, MODS)
     clt = CLI()
     clt.start()
     clt.threaded = "t" in Cfg.opts
@@ -157,14 +146,7 @@ def main():
         thrs.append(launch(payload, clt))
     for thr in thrs:
         thr.join()
-    #shutdown()
     consume(events)
-    endtime = time.time()
-    lap = laps(endtime-STARTTIME)
-    percall = (endtime-STARTTIME)/(nrs*nrcommand)
-    errors()
-    if "v" in Cfg.opts:
-        print(f"{lap} {nrs} {nrcommand} {percall}")
 
 
 if __name__ == "__main__":
@@ -173,8 +155,16 @@ if __name__ == "__main__":
         if os.path.exists(Persist.workdir):
             shutil.rmtree(Persist.workdir)
     skel()
+    nrs = Cfg.index or 1
+    nrcommand = len(Commands.cmds) or 1
     if "p" in Cfg.opts:
         profile.runctx(main.__code__, globals(), locals())
     else:
         wrap(main)
+    errors()
+    if "v" in Cfg.opts:
+        endtime = time.time()
+        lap = laps(endtime-STARTTIME)
+        percall = (endtime-STARTTIME)/(nrs*nrcommand)
+        print(f"{lap} {nrs} {nrcommand} {percall}")
     sys.exit()

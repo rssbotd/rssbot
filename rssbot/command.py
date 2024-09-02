@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0903
+# pylint: disable=C,I,R
 
 
 "commands"
@@ -26,7 +26,7 @@ class Commands:
             setattr(Commands.modnames, func.__name__, func.__module__)
 
     @staticmethod
-    def scan(mod) -> None:
+    def scan(mod):
         "scan module for commands."
         for key, cmd in inspect.getmembers(mod, inspect.isfunction):
             if key.startswith("cb"):

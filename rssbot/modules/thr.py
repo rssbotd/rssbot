@@ -1,22 +1,23 @@
 # This file is placed in the Public Domain.
+# pylint: disable=C,I,R
 
 
-"show running threads."
+"show running threads"
 
 
 import threading
 import time
 
 
-from ..object import Object, update
-from ..utils  import laps
+from rssbot.object import Object, update
+from rssbot.utils  import laps
 
 
 STARTTIME = time.time()
 
 
 def thr(event):
-    "show running threads."
+    "list threads."
     result = []
     for thread in sorted(threading.enumerate(), key=lambda x: x.name):
         if str(thread).startswith('<_'):

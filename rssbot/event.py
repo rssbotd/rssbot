@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0902
+# pylint: disable=C,I,R
 
 
 "event"
@@ -23,6 +23,9 @@ class Event(Default):
         self.result  = []
         self.txt     = ""
         self.type    = "command"
+
+    def nop(self):
+        "do nothing"
 
     def ready(self):
         "event is ready."

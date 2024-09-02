@@ -1,13 +1,13 @@
 # This file is placed in the Public Domain.
-# pylint: disable=W0718
+# pylint: disable=C,I,R,W0718
 
 
 "main"
 
 
 from .client  import Client, command
-from .cmds    import Commands
-from .errors  import Errors
+from .command import Commands
+from .errors  import Errors, later
 from .persist import Persist
 from .event   import Event
 from .log     import Logging
@@ -64,10 +64,21 @@ def scan(modstr, *pkgs, disable=""):
     return mds
 
 
+def wrap(func):
+    "catch exceptions"
+    try:
+        func()
+    except (KeyboardInterrupt, EOFError):
+        pass
+    except Exception as exc:
+        later(exc)
+
+
 def __dir__():
     return (
         'cmnd',
         'enable',
         'init',
-        'scan'
+        'scan',
+        'wrap'
     )

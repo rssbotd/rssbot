@@ -1,22 +1,5 @@
-# This file is placed in the Public Domain.
-# ruff: noqa: F401
+# This file is placed in the Public Domain
+# pylint: disable=C,I,R
 
 
 "modules"
-
-
-from . import cmd, err, irc, log, mod, rss, tdo, thr, upt
-
-
-def __dir__():
-    return (
-        'cmd',
-        'err',
-        'irc',
-        'log',
-        'mod',
-        'rss',
-        'tdo',
-        'thr',
-        'upt'
-    )

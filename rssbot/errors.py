@@ -1,8 +1,8 @@
 # This file is placed in the Public Domain.
-# pylint: disable=W0125,E1102
+# pylint: disable=C,I,R,E1102
 
 
-"deferred exception handling."
+"deferred exception handling"
 
 
 import io

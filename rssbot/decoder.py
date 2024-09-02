@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0902
+# pylint: disable=C,I,R
 
 
 "object decoder"

@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0903,W0105
+# pylint: disable=C,I,R
 
 
 "rich site syndicate"
@@ -20,22 +20,21 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..default  import Default
-from ..fleet    import Fleet
-from ..object   import Object, construct, fmt, update
-from ..persist  import find, last, sync
-from ..group    import Group
-from ..repeater import Repeater
-from ..thread   import launch
-from ..log      import debug
-from ..utils    import fntime, laps, spl
+from rssbot.default  import Default
+from rssbot.fleet    import Fleet
+from rssbot.log      import debug
+from rssbot.object   import Object, construct, fmt, update
+from rssbot.persist  import find, last, sync
+from rssbot.repeater import Repeater
+from rssbot.thread   import launch
+from rssbot.utils    import fntime, laps, spl
 
 
 def init():
     "start fetcher."
     fetcher = Fetcher()
     fetcher.start()
-    debug(f'started rss {fmt(fetcher,skip="seen")}')
+    debug(f'started rss {fmt(fetcher,skip="seen,seenfn")}')
     return fetcher
 
 
@@ -69,7 +68,7 @@ class Rss(Default):
         self.rss          = ''
 
 
-class Urls(Group):
+class Urls(Default):
 
     "Seen"
 

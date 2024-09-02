@@ -4,16 +4,16 @@
 # ruff: noqa: E402
 
 
-"cli"
+"service"
 
 
-import sys
+import getpass
+import os
 
 
 from rssbot.config  import Config
-from rssbot.main    import cmnd, scan, wrap
-from rssbot.parse   import parse
-from rssbot.utils   import modnames
+from rssbot.main    import init, scan, wrap
+from rssbot.utils   import forever, pidfile, privileges
 from rssbot.modules import all as modules
 
 
@@ -22,11 +22,15 @@ Cfg = Config()
 
 def main():
     "main"
-    parse(Cfg, " ".join(sys.argv[1:]))
-    Cfg.mod = ",".join(modnames(modules))
+    Cfg.mod = "cmd,err,irc,rss,thr"
+    Cfg.user = getpass.getuser()
+    privileges(Cfg.user)
+    pidfile(Cfg.pidfile)
     scan(Cfg.mod, modules)
-    cmnd(Cfg.otxt, print)
+    init(Cfg.mod, modules)
+    forever()
 
 
 if __name__ == "__main__":
     wrap(main)
+    os._exit(0)

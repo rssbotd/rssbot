@@ -1,13 +1,14 @@
 # This file is placed in the Public Domain.
+# pylint: disable=C,I,R
 
 
-"show uptime."
+"uptime"
 
 
 import time
 
 
-from ..utils import laps
+from ..utils   import laps
 
 
 STARTTIME = time.time()

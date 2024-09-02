@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0911
+# pylint: disable=C,I,R
 
 
 "object encoder"
@@ -8,7 +8,7 @@
 import json
 
 
-from .lock  import lock
+from .lock   import lock
 from .object import Object
 from .utils  import cdir
 

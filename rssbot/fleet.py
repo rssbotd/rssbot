@@ -1,16 +1,14 @@
 # This file is placed in the Public Domain.
+# pylint: disable=C,I,R
 
 
-"list of bots."
-
-
-from .object import Object
+"list of bots"
 
 
 rpr = object.__repr__
 
 
-class Fleet(Object):
+class Fleet:
 
     "Fleet"
 

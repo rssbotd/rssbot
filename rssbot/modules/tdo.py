@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R0903
+# pylint: disable=C,I,R
 
 
 "todo list"
@@ -8,9 +8,9 @@
 import time
 
 
-from ..object  import Object
-from ..persist import find, sync
-from ..utils   import fntime, laps
+from rssbot.object  import Object
+from rssbot.persist import find, sync
+from rssbot.utils   import fntime, laps
 
 
 class NoDate(Exception):
