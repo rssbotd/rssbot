@@ -26,12 +26,11 @@ After=network-online.target
 Type=simple
 User={username}
 Group={username}
-ExecStartPre={path}/{Cfg.name} skl
 ExecStart={path}/{Cfg.name}s
 Restart=no
 
 [Install]
-WantedBy=multi-user.target"""
+WantedBy=basic.target"""
     event.reply(txt)
 
 
