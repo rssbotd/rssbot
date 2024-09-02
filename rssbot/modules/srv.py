@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # This file is placed in the Public Domain.
 # pylint: disable=C,I,R,W0212
 # ruff: noqa: E402
@@ -10,14 +9,10 @@
 import os
 
 
-from nixt.command import Commands
-from nixt.config  import config
-from nixt.event   import Event
-from nixt.main    import cmnd, wrap
-from nixt.parse   import parse
+from rssbot.config  import Config
 
 
-cfg = config()
+Cfg = Config()
 
 
 def srv(event):
@@ -29,7 +24,7 @@ def srv(event):
         username  = getpass.getuser()
     path = os.path.normpath(f"/home/{username}/.local/bin/")
     txt = f"""[Unit]
-Description={cfg.name.upper()}
+Description={Cfg.name.upper()}
 Requires=network-online.target
 After=network-online.target
 
@@ -37,8 +32,8 @@ After=network-online.target
 Type=simple
 User={username}
 Group={username}
-ExecStartPre={path}/{cfg.name}skl
-ExecStart={path}/{cfg.name}s
+ExecStartPre={path}/{Cfg.name} skl
+ExecStart={path}/{Cfg.name}s
 Restart=no
 
 [Install]
@@ -46,14 +41,4 @@ WantedBy=multi-user.target"""
     event.reply(txt)
 
 
-def main():
-    "main"
-    Commands.add(srv)
-    event = Event()
-    parse(event, "srv")
-    cmnd(event.otxt, print)
-
-
-if __name__ == "__main__":
-    wrap(main)
-    #os._exit(0)
+srv.target = "cli"
