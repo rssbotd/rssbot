@@ -2,7 +2,7 @@
 # pylint: disable=C,I,R
 
 
-"""24/7 Feed Fetcher"
+"""24/7 Feed Fetcher
 
 
 SYNOPSIS
