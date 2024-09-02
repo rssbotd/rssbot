@@ -6,6 +6,7 @@
 "service"
 
 
+import getpass
 import os
 
 
@@ -17,11 +18,7 @@ Cfg = Config()
 
 def srv(event):
     "create service file (pipx)."
-    import getpass
-    if event.args:
-        username = event.args[0]
-    else:
-        username  = getpass.getuser()
+    username  = getpass.getuser()
     path = os.path.normpath(f"/home/{username}/.local/bin/")
     txt = f"""[Unit]
 Description={Cfg.name.upper()}

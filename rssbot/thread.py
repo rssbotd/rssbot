@@ -15,9 +15,6 @@ from .event  import Event
 from .utils  import named
 
 
-rpr = object.__repr__
-
-
 class Thread(threading.Thread):
 
     "Thread"

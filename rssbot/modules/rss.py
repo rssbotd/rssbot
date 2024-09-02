@@ -380,9 +380,6 @@ def syn(event):
     event.reply(f"{nrs} feeds synced")
 
 
-syn.threaded = True
-
-
 "OPML"
 
 
