@@ -14,7 +14,6 @@ SYNOPSIS
 ::
 
     rssbot <cmd> [key=val] [key==val]
-    rssbotd
 
 
 DESCRIPTION

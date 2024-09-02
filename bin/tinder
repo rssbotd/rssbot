@@ -148,7 +148,7 @@ def main():
 
 
 if __name__ == "__main__":
-    setwd(Cfg, ".test")
+    setwd(".test")
     parse(Cfg, " ".join(sys.argv[1:]))
     if "f" in Cfg.opts:
         if os.path.exists(Workdir.wdr):
