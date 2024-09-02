@@ -8,16 +8,17 @@
 
 
 import getpass
-import os
 
 
 from rssbot.config  import Config
 from rssbot.main    import init, scan, wrap
 from rssbot.utils   import forever, pidfile, privileges
-from rssbot.modules import all as modules
 
 
 Cfg = Config()
+
+
+from rssbot.modules import all as modules
 
 
 def main():
@@ -33,4 +34,3 @@ def main():
 
 if __name__ == "__main__":
     wrap(main)
-    os._exit(0)

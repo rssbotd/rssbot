@@ -14,10 +14,12 @@ from rssbot.config  import Config
 from rssbot.main    import cmnd, scan, wrap
 from rssbot.parse   import parse
 from rssbot.utils   import modnames
-from rssbot.modules import all as modules
 
 
 Cfg = Config()
+
+
+from rssbot.modules import all as modules
 
 
 def main():
