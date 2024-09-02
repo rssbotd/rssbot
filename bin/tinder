@@ -116,7 +116,7 @@ def payload(clt):
         return nmr
 
 
-def wrap(function):
+def wrapped(function):
     "reset terminal."
     old2 = None
     try:
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     if "p" in Cfg.opts:
         profile.runctx(main.__code__, globals(), locals())
     else:
-        wrap(main)
+        wrapped(main)
     errors()
     if "v" in Cfg.opts:
         endtime = time.time()

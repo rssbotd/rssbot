@@ -10,7 +10,6 @@ SYNOPSIS
 ::
 
     rssbot <cmd> [key=val] [key==val]
-    rssbotd
 
 
 DESCRIPTION
@@ -23,8 +22,6 @@ DESCRIPTION
     background, hooking the daemon in systemd brings a 24/7 available
     rssbot in your channel.
 
-    RSSBOT is Public Domain.
-
 
 INSTALL
 
@@ -32,12 +29,15 @@ INSTALL
 
     $ pipx install rssbot
     $ pipx ensurepath
+
+    <new terminal>
+
     $ rssbot srv > rssbot.service
     $ sudo mv rssbot.service /etc/systemd/system/
     $ sudo systemctl enable rssbot --now
     $ rssbot rss <url>
 
-    default channel/server is #rssbot on localhost
+    joins #rssbot on localhost
     
 
 COMMANDS
@@ -92,7 +92,7 @@ FILES
 
     ~/.rssbot
     ~/.local/bin/rssbot
-    ~/.local/bin/rssbotd
+    ~/.local/bin/rssbots
     ~/.local/pipx/venvs/rssbot/
 
 
@@ -100,7 +100,7 @@ AUTHOR
 
 ::
 
-    Bart Thate <bthate@dds.nl>
+    Bart Thate <rssbotd@gmail.com>
 
 
 COPYRIGHT
