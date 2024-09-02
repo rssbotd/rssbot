@@ -7,14 +7,16 @@
 import getpass
 
 
-from rssbot.config  import Config
-from rssbot.persist import skel
-from rssbot.utils   import privileges
+from ..config  import Config
+from ..persist import skel
+from ..utils   import privileges
 
 
 Cfg = Config()
 
 
 def skl(event):
+    "create directories."
     privileges(getpass.getuser())
     skel()
+    event.nop()

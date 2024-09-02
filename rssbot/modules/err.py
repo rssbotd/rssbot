@@ -5,7 +5,7 @@
 "show errors"
 
 
-from rssbot.errors import Errors
+from ..errors import Errors
 
 
 def err(event):

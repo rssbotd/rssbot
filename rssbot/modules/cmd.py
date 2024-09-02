@@ -5,8 +5,8 @@
 "list of commands"
 
 
-from rssbot.command import Commands
-from rssbot.object  import keys
+from ..command import Commands
+from ..object  import keys
 
 
 def cmd(event):

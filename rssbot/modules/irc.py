@@ -16,15 +16,15 @@ import time
 import _thread
 
 
-from rssbot.client  import Client, command
-from rssbot.default import Default
-from rssbot.errors  import later
-from rssbot.event   import Event
-from rssbot.fleet   import Fleet
-from rssbot.log     import Logging, debug
-from rssbot.object  import Object, edit, fmt, keys
-from rssbot.persist import last, sync
-from rssbot.thread  import launch
+from ..client  import Client, command
+from ..default import Default
+from ..errors  import later
+from ..event   import Event
+from ..fleet   import Fleet
+from ..log     import Logging, debug
+from ..object  import Object, edit, fmt, keys
+from ..persist import last, sync
+from ..thread  import launch
 
 
 Logging.filter = ["PING", "PONG", "PRIVMSG"]

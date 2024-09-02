@@ -10,7 +10,7 @@ import sys
 import unittest
 
 
-from rssbot.interface import *
+from rssbot.face import *
 
 
 import rssbot
@@ -26,15 +26,14 @@ PACKAGE = [
     '__package__',
     '__path__',
     '__spec__',
-    'cache',
     'client',
-    'cmds',
+    'command',
     'decoder',
     'default',
     'encoder',
     'errors',
     'event',
-    'interface',
+    'face',
     'lock',
     'log',
     'main',

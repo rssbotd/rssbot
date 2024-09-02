@@ -3,13 +3,13 @@
 # ruff: noqa: E402
 
 
-"cli"
+"service"
 
 
 import os
 
 
-from rssbot.config  import Config
+from ..config  import Config
 
 
 Cfg = Config()

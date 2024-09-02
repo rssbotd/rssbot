@@ -9,7 +9,8 @@
 import unittest
 
 
-from rssbot.object import Object, fmt, fqn, items, keys, update, values
+from rssbot.object import Object, fmt, items, keys, update, values
+from rssbot.utils  import fqn
 
 
 VALIDJSON = '{"test": "bla"}'

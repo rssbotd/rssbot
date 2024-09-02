@@ -20,14 +20,14 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from rssbot.default  import Default
-from rssbot.fleet    import Fleet
-from rssbot.log      import debug
-from rssbot.object   import Object, construct, fmt, update
-from rssbot.persist  import find, last, sync
-from rssbot.repeater import Repeater
-from rssbot.thread   import launch
-from rssbot.utils    import fntime, laps, spl
+from ..default  import Default
+from ..fleet    import Fleet
+from ..log      import debug
+from ..object   import Object, construct, fmt, update
+from ..persist  import find, last, sync
+from ..repeater import Repeater
+from ..thread   import launch
+from ..utils    import fntime, laps, spl
 
 
 def init():
