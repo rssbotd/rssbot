@@ -18,7 +18,7 @@ def srv(event):
     username  = getpass.getuser()
     path = os.path.normpath(f"/home/{username}/.local/bin/")
     txt = f"""[Unit]
-Description={Cfg.name.upper()}
+Description=24/7 Feed Fetcher
 Requires=network-online.target
 After=network-online.target
 

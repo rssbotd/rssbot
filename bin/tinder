@@ -135,7 +135,7 @@ def main():
     if "v" in Cfg.opts:
         enable(print)
     Cfg.mod = ",".join(modnames(modules, MODS))
-    scan(Cfg.mod, modules, MODS)
+    #scan(Cfg.mod, modules, MODS)
     clt = CLI()
     clt.start()
     clt.threaded = "t" in Cfg.opts

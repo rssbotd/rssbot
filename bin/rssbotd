@@ -13,7 +13,7 @@ import sys
 
 
 from rssbot.config  import Config
-from rssbot.main    import init, scan, wrap
+from rssbot.main    import init, wrap
 from rssbot.modules import all as modules
 from rssbot.utils   import forever, pidfile, privileges
 from rssbot.workdir import setwd
@@ -51,11 +51,11 @@ def main():
     Cfg.user = getpass.getuser()
     privileges(Cfg.user)
     pidfile(Cfg.pidfile)
-    scan(Cfg.mod, modules)
     init(Cfg.mod, modules)
     forever()
 
 
 if __name__ == "__main__":
     wrap(main)
+    errors()
     os._exit(0)

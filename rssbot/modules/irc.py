@@ -17,6 +17,7 @@ import _thread
 
 
 from ..client  import Client, command
+from ..command import Commands
 from ..default import Default
 from ..disk    import sync
 from ..errors  import later
@@ -622,6 +623,9 @@ def cfg(event):
         event.reply('ok')
 
 
+Commands.add(cfg)
+
+
 def mre(event):
     "show from output cache."
     if not event.channel:
@@ -642,6 +646,9 @@ def mre(event):
     event.reply(f'{size} more in cache')
 
 
+Commands.add(mre)
+
+
 def pwd(event):
     "create a base64 password."
     if len(event.args) != 2:
@@ -654,3 +661,6 @@ def pwd(event):
     base = base64.b64encode(enc)
     dcd = base.decode('ascii')
     event.reply(dcd)
+
+
+Commands.add(pwd)

@@ -5,7 +5,8 @@
 "show errors"
 
 
-from rssbot.errors import Errors
+from rssbot.command import Commands
+from rssbot.errors  import Errors
 
 
 def err(event):
@@ -20,3 +21,6 @@ def err(event):
         event.reply("no errors")
         return
     event.reply(f"found {nmr} errors.")
+
+
+Commands.add(err)

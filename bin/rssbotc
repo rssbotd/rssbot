@@ -8,6 +8,7 @@
 
 
 import os
+import profile
 import readline
 import sys
 import termios
@@ -19,14 +20,14 @@ sys.path.insert(0, os.getcwd())
 from rssbot.config  import Config
 from rssbot.console import Console
 from rssbot.errors  import errors
-from rssbot.main    import cmnd, enable, init, scan
+from rssbot.main    import cmnd, enable, init
+from rssbot.modules import all as modules
 from rssbot.parse   import parse
 from rssbot.utils   import forever, modnames
-from rssbot.modules import all as modules
+from rssbot.workdir import setwd
 
 
-Cfg     = Config()
-Cfg.mod = "cmd"
+Cfg = Config()
 
 
 def wrap(func):
@@ -47,11 +48,9 @@ def wrap(func):
 
 def main():
     "main"
+    setwd()
     parse(Cfg, " ".join(sys.argv[1:]))
     enable(print)
-    if "a" in Cfg.opts:
-        Cfg.mod = ",".join(modnames(modules))
-    scan(Cfg.mod, modules, disable=Cfg.sets.dis)
     if Cfg.txt:
         return cmnd(Cfg.otxt, print)
     csl = Console(print, input)
@@ -64,4 +63,3 @@ def main():
 if __name__ == "__main__":
     wrap(main)
     errors()
-    os._exit(0)

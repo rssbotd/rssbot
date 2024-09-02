@@ -9,9 +9,9 @@ import threading
 import time
 
 
-
-from rssbot.object import Object, update
-from rssbot.utils  import laps
+from rssbot.command import Commands
+from rssbot.object  import Object, update
+from rssbot.utils   import laps
 
 
 STARTTIME = time.time()
@@ -42,3 +42,6 @@ def thr(event):
         event.reply(' '.join(res))
     else:
         event.reply('no threads')
+
+
+Commands.add(thr)
