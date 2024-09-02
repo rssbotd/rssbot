@@ -30,21 +30,23 @@ PACKAGE = [
     'command',
     'decoder',
     'default',
+    'disk',
     'encoder',
     'errors',
     'event',
     'face',
+    'find',
     'lock',
     'log',
     'main',
     'object',
     'parse',
-    'persist',
     'reactor',
     'repeater',
     'thread',
     'timer',
-    'utils'
+    'utils',
+    'workdir'
 ]
 
 
