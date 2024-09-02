@@ -1,3 +1,7 @@
+R S S B O T
+===========
+
+
 NAME
 
 ::
@@ -10,6 +14,7 @@ SYNOPSIS
 ::
 
     rssbot <cmd> [key=val] [key==val]
+    rssbotd
 
 
 DESCRIPTION
@@ -92,6 +97,7 @@ FILES
 
     ~/.rssbot
     ~/.local/bin/rssbot
+    ~/.local/bin/rssbotd
     ~/.local/bin/rssbots
     ~/.local/pipx/venvs/rssbot/
 
