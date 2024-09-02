@@ -11,8 +11,10 @@ import getpass
 
 
 from rssbot.config  import Config
+from rssbot.errors  import errors
 from rssbot.main    import init, scan, wrap
 from rssbot.utils   import forever, pidfile, privileges
+from rssbot.workdir import setwd
 
 
 Cfg = Config()
@@ -23,6 +25,7 @@ from rssbot.modules import all as modules
 
 def main():
     "main"
+    setwd()
     Cfg.mod = "cmd,err,irc,rss,thr"
     Cfg.user = getpass.getuser()
     privileges(Cfg.user)
@@ -34,3 +37,4 @@ def main():
 
 if __name__ == "__main__":
     wrap(main)
+    errors()

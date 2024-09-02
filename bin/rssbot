@@ -13,7 +13,6 @@ import sys
 from rssbot.config  import Config
 from rssbot.errors  import errors
 from rssbot.main    import cmnd, scan, wrap
-from rssbot.object  import fmt
 from rssbot.parse   import parse
 from rssbot.utils   import modnames
 from rssbot.workdir import setwd

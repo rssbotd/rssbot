@@ -14,8 +14,9 @@ import sys
 
 from rssbot.config  import Config
 from rssbot.main    import init, scan, wrap
-from rssbot.utils   import forever, pidfile, privileges
 from rssbot.modules import all as modules
+from rssbot.utils   import forever, pidfile, privileges
+from rssbot.workdir import setwd
 
 
 Cfg = Config()
@@ -45,6 +46,7 @@ def daemon(verbose=False):
 def main():
     "main"
     daemon()
+    setwd()
     Cfg.mod  = "cmd,err,irc,rss,thr"
     Cfg.user = getpass.getuser()
     privileges(Cfg.user)

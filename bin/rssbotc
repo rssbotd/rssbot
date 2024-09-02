@@ -29,12 +29,6 @@ Cfg     = Config()
 Cfg.mod = "cmd"
 
 
-if os.path.exists("mods"):
-    import mods as MODS
-else:
-    MODS = None
-
-
 def wrap(func):
     "reset console."
     old3 = None
@@ -56,13 +50,13 @@ def main():
     parse(Cfg, " ".join(sys.argv[1:]))
     enable(print)
     if "a" in Cfg.opts:
-        Cfg.mod = ",".join(modnames(modules, MODS))
-    scan(Cfg.mod, modules, MODS, disable=Cfg.sets.dis)
+        Cfg.mod = ",".join(modnames(modules))
+    scan(Cfg.mod, modules, disable=Cfg.sets.dis)
     if Cfg.txt:
         return cmnd(Cfg.otxt, print)
     csl = Console(print, input)
     if "i" in Cfg.opts:
-        init(Cfg.mod, modules, MODS)
+        init(Cfg.mod, modules)
     csl.start()
     forever()
 
