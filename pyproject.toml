@@ -32,9 +32,7 @@ classifiers = [
 [tools.setuptools]
 script-files = [
     "bin/rssbot",
-    "bin/rssbots",
-    "bin/rssbotskl",
-    "bin/rssbotsrv"
+    "bin/rssbots"
 ]
 packages=[
     "rssbot",
