@@ -11,7 +11,7 @@ import setuptools
 if __name__ == "__main__":
     setuptools.setup(scripts=[
                          "bin/rssbot",
-                         "bin/rssbots",
-                         "bin/rssbotskl",
-                         "bin/rssbotsrv"
+                         "bin/rssbotc".
+                         "bin/rssbotd",
+                         "bin/rssbots"
                     ])
