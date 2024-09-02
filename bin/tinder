@@ -18,7 +18,6 @@ sys.path.insert(0, os.getcwd())
 
 
 from rssbot.face   import *
-from rssbot.config import boot
 
 
 Cfg         = Config()
@@ -28,7 +27,6 @@ Cfg.mod     = ""
 Cfg.name    = "tinder"
 Cfg.silent  = False
 Cfg.skip    = ["debug",]
-Cfg.wdr     = ".test"
 
 
 from rssbot.modules import all as modules
@@ -134,8 +132,8 @@ def wrapped(function):
 
 def main():
     "main"
-    boot(Cfg, ".test")
-    enable(print)
+    if "v" in Cfg.opts:
+        enable(print)
     Cfg.mod = ",".join(modnames(modules, MODS))
     scan(Cfg.mod, modules, MODS)
     clt = CLI()
@@ -150,10 +148,11 @@ def main():
 
 
 if __name__ == "__main__":
+    setwd(Cfg, ".test")
     parse(Cfg, " ".join(sys.argv[1:]))
     if "f" in Cfg.opts:
-        if os.path.exists(Persist.workdir):
-            shutil.rmtree(Persist.workdir)
+        if os.path.exists(Workdir.wdr):
+            shutil.rmtree(Workdir.wdr)
     skel()
     nrs = Cfg.index or 1
     nrcommand = len(Commands.cmds) or 1

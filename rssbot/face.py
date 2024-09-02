@@ -7,7 +7,7 @@
 
 
 from . import client, command, config, console, decoder, encoder, errors
-from . import event, reactor, log, object, parse, persist, repeater, thread
+from . import event, reactor, log, object, parse, repeater, thread, workdir
 from . import fleet, timer, utils
 
 
@@ -16,20 +16,22 @@ from .config   import *
 from .command  import *
 from .console  import *
 from .decoder  import *
+from .disk     import *
 from .encoder  import *
 from .errors   import *
 from .event    import *
+from .find     import *
 from .fleet    import *
 from .log      import *
 from .main     import *
 from .object   import *
 from .parse    import *
-from .persist  import *
 from .reactor  import *
 from .repeater import *
 from .thread   import *
 from .timer    import *
 from .utils    import *
+from .workdir  import *
 
 
 def __dir__():
@@ -46,12 +48,11 @@ def __dir__():
         'Handler',
         'Logging',
         'Object',
-        'Persist',
         'Reactor',
         'Repeater',
-        'SEP',
         'Thread',
         'Timer',
+        'Workdir',
         'broker',
         'banner',
         'command',

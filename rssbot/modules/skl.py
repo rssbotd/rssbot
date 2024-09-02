@@ -1,4 +1,5 @@
 # This file is placed in the Public Domain.
+# pylint: disable=C,I,R
 
 
 "skel"
@@ -7,12 +8,8 @@
 import getpass
 
 
-from ..config  import Config
-from ..persist import skel
+from ..workdir import skel
 from ..utils   import privileges
-
-
-Cfg = Config()
 
 
 def skl(event):

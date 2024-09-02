@@ -10,10 +10,7 @@ import getpass
 import os
 
 
-from ..config  import Config
-
-
-Cfg = Config()
+from rssbot.config import Config as Cfg
 
 
 def srv(event):

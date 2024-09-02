@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R
+# pylint: disable=C,I,R,W0105
 
 
 "rich site syndicate"
@@ -21,10 +21,11 @@ from urllib.parse import quote_plus, urlencode
 
 
 from ..default  import Default
+from ..disk     import sync
+from ..find     import find, last
 from ..fleet    import Fleet
 from ..log      import debug
 from ..object   import Object, construct, fmt, update
-from ..persist  import find, last, sync
 from ..repeater import Repeater
 from ..thread   import launch
 from ..utils    import fntime, laps, spl

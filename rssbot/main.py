@@ -8,11 +8,11 @@
 from .client  import Client, command
 from .command import Commands
 from .errors  import Errors, later
-from .persist import Persist
 from .event   import Event
 from .log     import Logging
 from .thread  import launch
 from .utils   import skip, spl
+from .workdir import Workdir
 
 
 def cmnd(txt, outer):
@@ -60,7 +60,7 @@ def scan(modstr, *pkgs, disable=""):
             if not module:
                 continue
             Commands.scan(module)
-            Persist.scan(module)
+            Workdir.scan(module)
     return mds
 
 
@@ -76,6 +76,7 @@ def wrap(func):
 
 def __dir__():
     return (
+        'boot',
         'cmnd',
         'enable',
         'init',

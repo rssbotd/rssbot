@@ -18,12 +18,13 @@ import _thread
 
 from ..client  import Client, command
 from ..default import Default
+from ..disk    import sync
 from ..errors  import later
 from ..event   import Event
+from ..find    import last
 from ..fleet   import Fleet
 from ..log     import Logging, debug
 from ..object  import Object, edit, fmt, keys
-from ..persist import last, sync
 from ..thread  import launch
 
 

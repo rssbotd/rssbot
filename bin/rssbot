@@ -11,9 +11,11 @@ import sys
 
 
 from rssbot.config  import Config
+from rssbot.errors  import errors
 from rssbot.main    import cmnd, scan, wrap
 from rssbot.parse   import parse
 from rssbot.utils   import modnames
+from rssbot.workdir import setwd
 
 
 Cfg = Config()
@@ -24,11 +26,14 @@ from rssbot.modules import all as modules
 
 def main():
     "main"
+    setwd(Cfg.wdr)
     parse(Cfg, " ".join(sys.argv[1:]))
     Cfg.mod = ",".join(modnames(modules))
     scan(Cfg.mod, modules)
+    print(Cfg.mod)
     cmnd(Cfg.otxt, print)
 
 
 if __name__ == "__main__":
     wrap(main)
+    errors()

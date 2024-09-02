@@ -9,7 +9,7 @@ import os
 
 
 from .default import Default
-from .persist import Persist
+from .workdir import Workdir
 
 
 class Config(Default):
@@ -17,17 +17,9 @@ class Config(Default):
     "Config"
 
 
-    def __init__(self):
-        Default.__init__(self)
-        boot(self)
-
-
-def boot(cfg, path=None):
-    cfg.name    = Config.__module__.rsplit(".", maxsplit=2)[-2]
-    cfg.wdr     = path or os.path.expanduser(f"~/.{cfg.name}")
-    cfg.pidfile = os.path.join(cfg.wdr, f"{cfg.name}.pid")
-    Persist.workdir = cfg.wdr
-    return cfg
+    name    = Workdir.__module__.rsplit(".", maxsplit=2)[-2]
+    wdr     = os.path.expanduser(f"~/.{name}")
+    pidfile = os.path.join(wdr, f"{name}.pid")
 
 
 def __dir__():
