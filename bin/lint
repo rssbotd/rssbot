@@ -1,1 +1,22 @@
-pylint rssbot bin tests
+#!/usr/bin/env python3
+# This file is placed in the Public Domain
+
+
+"linted"
+
+
+import os
+import sys
+
+
+NAME = "rssbot"
+
+
+def popen(txt):
+    "run text in popen."
+    for line in os.popen(txt).readlines():
+        print(line.rstrip())
+        sys.stdout.flush()
+
+
+popen("pylint rssbot/* rssbot/modules/* bin/* tests/*")

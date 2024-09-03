@@ -13,6 +13,7 @@ import sys
 
 
 from rssbot.config  import Config
+from rssbot.errors  import errors
 from rssbot.main    import init, wrap
 from rssbot.modules import all as modules
 from rssbot.utils   import forever, pidfile, privileges

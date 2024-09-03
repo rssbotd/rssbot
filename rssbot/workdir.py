@@ -10,7 +10,6 @@ import pathlib
 
 
 from .config import Config
-from .object import Object
 from .utils  import fqn
 
 

@@ -6,13 +6,11 @@
 
 
 from .client  import Client, command
-from .command import Commands
 from .errors  import Errors, later
 from .event   import Event
 from .log     import Logging
 from .thread  import launch
-from .utils   import skip, spl
-from .workdir import Workdir
+from .utils   import spl
 
 
 def cmnd(txt, outer):
@@ -49,21 +47,6 @@ def init(modstr, *pkgs, disable=None):
     return thrs
 
 
-def scan(modstr, *pkgs, disable=""):
-    "scan modules for commands and classes"
-    mds = []
-    for modname in spl(modstr):
-        if skip(modname, disable):
-            continue
-        for pkg in pkgs:
-            module = getattr(pkg, modname, None)
-            if not module:
-                continue
-            Commands.scan(module)
-            Workdir.scan(module)
-    return mds
-
-
 def wrap(func):
     "catch exceptions"
     try:
@@ -80,6 +63,5 @@ def __dir__():
         'cmnd',
         'enable',
         'init',
-        'scan',
         'wrap'
     )
