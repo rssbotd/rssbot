@@ -58,6 +58,7 @@ COMMANDS
     rem - removes a rss feed
     res - restore deleted objects
     rss - add a feed
+    srv - create service file
     syn - sync rss feeds
 
 
@@ -96,6 +97,7 @@ FILES
 
     ~/.rssbot
     ~/.local/bin/rssbot
+    ~/.local/bin/rssbotc
     ~/.local/bin/rssbotd
     ~/.local/bin/rssbots
     ~/.local/pipx/venvs/rssbot/
