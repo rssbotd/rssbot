@@ -51,15 +51,17 @@ COMMANDS
     cfg - irc configuration
     cmd - commands
     dpl - sets display items
+    err - show errors
     exp - export opml (stdout)
     imp - import opml
-    mre - displays cached output
+    mre - display cached output
     pwd - sasl nickserv name/pass
     rem - removes a rss feed
-    res - restore deleted objects
+    res - restore deleted feeds
     rss - add a feed
     srv - create service file
     syn - sync rss feeds
+    thr - show running threads
 
 
 CONFIGURATION

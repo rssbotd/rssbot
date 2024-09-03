@@ -9,7 +9,6 @@ SYNOPSIS
 
     rssbot <cmd> [key=val] [key==val]
 
-
 DESCRIPTION
 
     RSSBOT is a python3 bot able to display rss feeds in your channel.
@@ -17,7 +16,6 @@ DESCRIPTION
     RSSBOT comes with a cli to configure and a daemon to run in the
     background, hooking the daemon in systemd brings a 24/7 available
     rssbot in your channel.
-
 
 INSTALL
 
@@ -33,21 +31,22 @@ INSTALL
 
     joins #rssbot on localhost
     
-
 COMMANDS
 
     cfg - irc configuration
     cmd - commands
     dpl - sets display items
+    err - show errors
     exp - export opml (stdout)
     imp - import opml
-    mre - displays cached output
+    mre - display cached output
     pwd - sasl nickserv name/pass
     rem - removes a rss feed
-    res - restore deleted objects
+    res - restore deleted feeds
     rss - add a feed
+    srv - create service file
     syn - sync rss feeds
-
+    thr - show running threads
 
 CONFIGURATION
 
@@ -75,12 +74,12 @@ CONFIGURATION
     $ rssbot exp
     $ rssbot imp <filename>
 
-
 COPYRIGHT
 
     RSSBOT is Public Domain.
 
+
 """
 
 
-__author__ = "Bart Thate <rssbotd@gmail.com>"
+__author__ = "\nBart Thate <rssbotd@gmail.com>"
