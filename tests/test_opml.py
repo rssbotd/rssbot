@@ -1,7 +1,4 @@
 # This file is placed in the Public Domain.
-#
-#
-# pylint: disable=C,R,W1503
 
 
 "no tests"
@@ -69,10 +66,14 @@ TXT2 = """
 
 class TestOPML(unittest.TestCase):
 
+    "TestOPML"
+
     def test_opml(self):
+        "testing opml."
         res = OPMLParser.parse(TXT, "outline", "title,type,text,xmlUrl")
         self.assertTrue(len(res) == 20)
 
     def test_import(self):
+        "testing importing opml."
         res = OPMLParser.parse(TXT2, "outline", "name,display_list,xmlUrl")
         self.assertTrue(len(res) == 1)

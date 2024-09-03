@@ -1,4 +1,5 @@
 # This file is placed in the Public Domain.
+# pylint: disable=R0903
 
 
 "mixin"
@@ -10,20 +11,21 @@ import unittest
 from rssbot.object import Object
 
 
-class Mix: # pylint: disable=R0903
-    "class to mixin."
+class Mix:
+
+    "Mix"
 
     a = "b"
 
 
-class Mixin(Mix, Object): # pylint: disable=R0903
+class Mixin(Mix, Object):
 
-    "mixin class"
+    "Mixin"
 
 
 class TestMixin(unittest.TestCase):
 
-    "test mixin classes."
+    "TestMixin"
 
     def test_mixin(self):
         "mixin test."

@@ -1,7 +1,4 @@
 # This file is placed in the Public Domain.
-#
-#
-# pylint: disable=C,R,W1503
 
 
 "no tests"
@@ -13,9 +10,12 @@ import unittest
 from rssbot.modules.rss import Parser
 
 
-class TestAtom(unittest.TestCase):
+class TestGithub(unittest.TestCase):
+
+    "TestGithub"
 
     def test_github(self):
+        "testing gtihub feed."
         res = Parser.parse(TXT, "entry", "title,author,link")
         self.assertEqual(len(res), 20)
 

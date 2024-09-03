@@ -1,6 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R,W0212
-# ruff: noqa: E402
 
 
 "service"
@@ -10,7 +8,7 @@ import getpass
 import os
 
 
-from rssbot.config import Config as Cfg
+from ..config import Config as Cfg
 
 
 def srv(event):

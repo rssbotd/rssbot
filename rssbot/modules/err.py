@@ -1,12 +1,11 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R
 
 
 "show errors"
 
 
-from rssbot.command import Commands
-from rssbot.errors  import Errors
+from ..command import Commands
+from ..errors  import Errors
 
 
 def err(event):

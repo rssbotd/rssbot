@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R
+# pylint: disable=R0902,R0903
 
 
 "default values"

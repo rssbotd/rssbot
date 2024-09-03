@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R,W0201
+# pylint: disable=R0902,R0903
 
 
 "configuration"
@@ -24,7 +24,7 @@ class Config(Default):
         Default.__init__(self)
         self.name = self.name or Config.name
         self.wdr  = self.wdr or Config.wdr
-        self.pidfile = self.pidfile or Config.pidfile       
+        self.pidfile = self.pidfile or Config.pidfile
 
 
 def __dir__():

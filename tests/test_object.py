@@ -1,6 +1,5 @@
 # This file is placed in the Public Domain.
-#
-# pylint: disable=C,R,W0105
+# pylint: disable=R0904
 
 
 "objects"
@@ -14,6 +13,9 @@ from rssbot.utils  import fqn
 
 
 VALIDJSON = '{"test": "bla"}'
+
+
+rpr = object.__repr__
 
 
 attrs1 = (
@@ -68,7 +70,6 @@ attrs2 = (
 
 class TestObject(unittest.TestCase):
 
-
     "Object related tests."
 
     def test_constructor(self):
@@ -103,13 +104,13 @@ class TestObject(unittest.TestCase):
     def test_format(self):
         "test __format__"
         obj = Object()
-        self.assertEqual(obj.__format__(""), "{}")
+        self.assertEqual(format(obj, ""), "{}")
 
     def test_getattribute(self):
         "test attributing."
         obj = Object()
         obj.key = "value"
-        self.assertEqual(obj.__getattribute__("key"), "value")
+        self.assertEqual(getattr(obj, "key"), "value")
 
     def test_hash(self):
         "test for hash being an integer."
@@ -127,7 +128,7 @@ class TestObject(unittest.TestCase):
         obj = Object()
         obj.key = "value"
         self.assertTrue(
-            list(obj.__iter__()),
+            list(iter(obj)),
             [
                 "key",
             ],
@@ -148,12 +149,12 @@ class TestObject(unittest.TestCase):
 
     def test_repr(self):
         "test representation."
-        self.assertTrue(update(Object(), {"key": "value"}).__repr__(), {"key": "value"})
+        self.assertTrue(rpr(update(Object(), {"key": "value"})), {"key": "value"})
 
     def test_setattr(self):
         "test setting of attribute."
         obj = Object()
-        obj.__setattr__("key", "value")
+        setattr(obj, "key", "value")
         self.assertTrue(obj.key, "value")
 
     def test_str(self):

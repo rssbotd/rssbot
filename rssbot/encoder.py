@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R
 
 
 "object encoder"
@@ -22,21 +21,24 @@ class ObjectEncoder(json.JSONEncoder):
 
     def default(self, o):
         "return stringable value."
+        res = None
         if isinstance(o, dict):
-            return o.items()
-        if isinstance(o, Object):
-            return vars(o)
-        if isinstance(o, list):
-            return iter(o)
-        if isinstance(o, (type(str), type(True), type(False), type(int), type(float))):
-            return o
-        try:
-            return json.JSONEncoder.default(self, o)
-        except TypeError:
+            res = o.items()
+        elif isinstance(o, Object):
+            res = vars(o)
+        elif isinstance(o, list):
+            res = iter(o)
+        elif isinstance(o, (type(str), type(True), type(False), type(int), type(float))):
+            res = o
+        if not res:
             try:
-                return o.__dict__
-            except AttributeError:
-                return repr(o)
+                res = json.JSONEncoder.default(self, o)
+            except TypeError:
+                try:
+                    res = o.__dict__
+                except AttributeError:
+                    res = repr(o)
+        return res
 
     def encode(self, o) -> str:
         "encode object to string."
