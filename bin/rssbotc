@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R,W0611,W0212,E0401
-# ruff: noqa: E402
+# pylint: disable=C0413,W0611
 
 
 "prompt"
 
 
 import os
-import profile
 import readline
 import sys
 import termios
@@ -23,7 +21,7 @@ from rssbot.errors  import errors
 from rssbot.main    import cmnd, enable, init
 from rssbot.modules import all as modules
 from rssbot.parse   import parse
-from rssbot.utils   import forever, modnames
+from rssbot.utils   import forever
 from rssbot.workdir import setwd
 
 
@@ -52,12 +50,13 @@ def main():
     parse(Cfg, " ".join(sys.argv[1:]))
     enable(print)
     if Cfg.txt:
-        return cmnd(Cfg.otxt, print)
-    csl = Console(print, input)
-    if "i" in Cfg.opts:
-        init(Cfg.mod, modules)
-    csl.start()
-    forever()
+        cmnd(Cfg.otxt, print)
+    else:
+        csl = Console(print, input)
+        if "i" in Cfg.opts:
+            init(Cfg.mod, modules)
+        csl.start()
+        forever()
 
 
 if __name__ == "__main__":

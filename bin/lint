@@ -19,4 +19,6 @@ def popen(txt):
         sys.stdout.flush()
 
 
-popen("pylint rssbot/* rssbot/modules/* bin/* tests/*")
+if os.path.exists("bin/clean"):
+    popen("bin/clean")
+popen("pylint rssbot/*.py rssbot/modules/*.py bin/* tests/*.py")

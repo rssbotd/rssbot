@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R,W0212
-# ruff: noqa: E402
+# pylint: disable=W0212
 
 
 "daemon"
