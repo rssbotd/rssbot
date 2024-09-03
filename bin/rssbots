@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # This file is placed in the Public Domain.
+# pylint: disable=C0413
 
 
 "service"
@@ -9,16 +10,17 @@ import getpass
 
 
 from rssbot.config  import Config
-from rssbot.errors  import errors
-from rssbot.main    import init, wrap
-from rssbot.utils   import forever, pidfile, privileges
-from rssbot.workdir import setwd
-
-
-from rssbot.modules import all as modules
 
 
 Cfg = Config()
+Cfg.mod = "cmd,err,irc,rss,thr"
+Cfg.user = getpass.getuser()
+
+
+from rssbot.errors  import errors
+from rssbot.main    import boot, init, wrap
+from rssbot.modules import face
+from rssbot.utils   import forever, pidfile, privileges
 
 
 initer = init
@@ -26,12 +28,10 @@ initer = init
 
 def main():
     "main"
-    setwd()
-    Cfg.mod = "cmd,err,irc,rss,thr"
-    Cfg.user = getpass.getuser()
+    boot()
     privileges(Cfg.user)
     pidfile(Cfg.pidfile)
-    initer(Cfg.mod, modules)
+    initer(Cfg.mod, face)
     forever()
 
 

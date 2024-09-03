@@ -29,7 +29,7 @@ Cfg.silent  = False
 Cfg.skip    = ["debug",]
 
 
-from rssbot.modules import all as modules
+from rssbot.modules import face
 
 
 if os.path.exists("mods"):
@@ -38,7 +38,7 @@ else:
     MODS = None
 
 
-modules.rss.DEBUG = True
+face.rss.DEBUG = True
 
 
 LAP = 1
@@ -134,8 +134,7 @@ def main():
     "main"
     if "v" in Cfg.opts:
         enable(print)
-    Cfg.mod = ",".join(modnames(modules, MODS))
-    #scan(Cfg.mod, modules, MODS)
+    Cfg.mod = ",".join(modnames(face, MODS))
     clt = CLI()
     clt.start()
     clt.threaded = "t" in Cfg.opts

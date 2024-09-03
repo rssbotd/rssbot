@@ -15,7 +15,7 @@ def mod(event):
     path = os.path.dirname(__file__)
     mods = []
     for mdd in os.listdir(path):
-        if mdd == "all.py":
+        if mdd == "face.py":
             continue
         if mdd.startswith("__"):
             continue

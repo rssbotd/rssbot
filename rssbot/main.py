@@ -11,6 +11,14 @@ from .event   import Event
 from .log     import Logging
 from .thread  import launch
 from .utils   import spl
+from .workdir import skel, setwd
+
+
+def boot(outer=None, path=None):
+    "set basic config and skel directories."
+    skel()
+    setwd(path)
+    enable(outer)
 
 
 def cmnd(txt, outer):

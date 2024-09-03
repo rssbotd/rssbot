@@ -16,16 +16,18 @@ sys.path.insert(0, os.getcwd())
 
 
 from rssbot.config  import Config
-from rssbot.console import Console
-from rssbot.errors  import errors
-from rssbot.main    import cmnd, enable, init
-from rssbot.modules import all as modules
-from rssbot.parse   import parse
-from rssbot.utils   import forever
-from rssbot.workdir import setwd
 
 
 Cfg = Config()
+Cfg.mod = "cmd,err,mod,thr"
+
+
+from rssbot.console import Console
+from rssbot.errors  import errors
+from rssbot.main    import boot, cmnd, enable, init
+from rssbot.modules import face
+from rssbot.parse   import parse
+from rssbot.utils   import forever
 
 
 def wrap(func):
@@ -46,17 +48,13 @@ def wrap(func):
 
 def main():
     "main"
-    setwd()
+    boot()
     parse(Cfg, " ".join(sys.argv[1:]))
-    enable(print)
-    if Cfg.txt:
-        cmnd(Cfg.otxt, print)
-    else:
-        csl = Console(print, input)
-        if "i" in Cfg.opts:
-            init(Cfg.mod, modules)
-        csl.start()
-        forever()
+    csl = Console(print, input)
+    if "i" in Cfg.opts:
+        init(Cfg.mod, face)
+    csl.start()
+    forever()
 
 
 if __name__ == "__main__":
