@@ -5,6 +5,7 @@
 "cli"
 
 
+import getpass
 import sys
 
 
@@ -24,6 +25,25 @@ from rssbot.modules import srv
 Cfg = Config()
 
 
+def srv(event):
+    "create service file (pipx)."
+    username  = getpass.getuser()
+    path = os.path.normpath(f"/home/{username}/.local/bin/")
+    txt = f"""[Unit]
+Description=24/7 Feed Fetcher
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User={username}
+Group={username}
+ExecStart={path}/{Cfg.name}s
+
+[Install]
+WantedBy=network.target"""
+    event.reply(txt)
+
+
 def main():
     "main"
     parse(Cfg, " ".join(sys.argv[1:]))
@@ -35,7 +55,7 @@ def main():
 
 if __name__ == "__main__":
     skel()
-    Commands.add(srv.srv)
+    Commands.add(srv)
     enable(print)
     wrap(main)
     errors()
