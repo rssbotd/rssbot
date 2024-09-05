@@ -6,9 +6,11 @@
 "cli"
 
 
+import getpass
 import sys
 
 
+from rssbot.command import Commands
 from rssbot.config  import Config
 from rssbot.errors  import Errors, errors
 from rssbot.main    import cmnd, enable, init, wrap
@@ -17,6 +19,29 @@ from rssbot.parse   import parse
 
 
 Cfg = Config()
+TXT = """[Unit]
+Description=24/7 Feed Fetcher
+After=network-online.target
+
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/rssbots
+
+[Install]
+WantedBy=multi-user.target"""
+
+def srv(event):
+    "create service file (pipx)."
+    if event.args:
+        name = event.args[0]
+    else:
+        name  = getpass.getuser()
+    event.reply(TXT % (name, name, name))
+
+
+Commands.add(srv)
 
 
 def main():

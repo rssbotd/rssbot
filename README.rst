@@ -14,6 +14,9 @@ R S S B O T
 ::
 
     rssbot <cmd> [key=val] [key==val]
+    rssbotc
+    rssbotd
+    rssbots
 
 
 **DESCRIPTION**
@@ -86,35 +89,14 @@ R S S B O T
 
 **SYSTEMD**
 
-
-paste this into ``/etc/systemd/system/rssbot.service``
-and replace ``{name}`` with the user running ``pipx``
-
 ::
 
-    [Unit]
-    Description=24/7 Feed Fetcher
-    After=network-online.target
-
-    [Service]
-    Type=simple
-    User={name}
-    Group={name}
-    ExecStart=/home/{name}/.local/bin/rssbots
-
-    [Install]
-    WantedBy=multi-user.target
-
-
-then run the following
-
-::
-
+    $ rssbot srv > rssbot.service
+    $ sudo mv rssbot.service /etc/systemd/system/
     $ sudo systemctl enable rssbot --now
 
 
-joins ``#rssbot`` on localhost
-
+    joins #rssbot on localhost
 
 
 **FILES**
