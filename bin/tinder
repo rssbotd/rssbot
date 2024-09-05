@@ -31,11 +31,10 @@ Cfg.skip    = ["debug",]
 
 
 from rssbot.modules import face
-from rssbot.user    import iface
 
 
 try:
-    iface.rss.DEBUG = True
+    face.rss.DEBUG = True
 except AttributeError:
     pass
 
@@ -126,7 +125,7 @@ def main():
     "main"
     if "v" in Cfg.opts:
         enable(print)
-    Cfg.mod = ",".join(modnames(face, iface))
+    Cfg.mod = ",".join(modnames(face))
     clt = CLI()
     clt.start()
     thrs = []
