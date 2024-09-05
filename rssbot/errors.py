@@ -13,6 +13,7 @@ class Errors:
 
     "Errors"
 
+    cache  = []
     errors = []
     out    = None
 
@@ -35,7 +36,10 @@ class Errors:
     def output(exc):
         "check if output function is set."
         if Errors.out:
-            Errors.out(Errors.format(exc))
+            text = Errors.format(exc)
+            if text not in Errors.cache:
+                Errors.cache.append(text)
+                Errors.out(text)
 
 
 def errors():

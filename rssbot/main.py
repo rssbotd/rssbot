@@ -11,14 +11,6 @@ from .event   import Event
 from .log     import Logging
 from .thread  import launch
 from .utils   import spl
-from .workdir import skel, setwd
-
-
-def boot(outer=None, path=None):
-    "set basic config and skel directories."
-    skel()
-    setwd(path)
-    enable(outer)
 
 
 def cmnd(txt, outer):
@@ -38,7 +30,7 @@ def enable(outer):
     Client.out = Errors.out = Logging.out = outer
 
 
-def init(modstr, *pkgs, disable=None):
+def init(modstr, *pkgs, disable=None, wait=False):
     "scan modules for commands and classes"
     thrs = []
     for mod in spl(modstr):
@@ -50,8 +42,13 @@ def init(modstr, *pkgs, disable=None):
                 continue
             if "init" not in dir(modi):
                 continue
-            thrs.append(launch(modi.init))
+            thr = launch(modi.init)
+            thr.name = mod
+            thrs.append(thr)
             break
+    if wait:
+        for thr in thrs:
+            thr.join()
     return thrs
 
 

@@ -2,6 +2,7 @@
 # This file is placed in the Public Domain.
 # pylint: disable=C,I,R,W0201,W0622,W0401,W0401,W0614,E0401,E1121
 
+
 "tinder"
 
 
@@ -21,7 +22,7 @@ from rssbot.face   import *
 
 
 Cfg         = Config()
-Cfg.mod     = "cmd,err,mod,skl,srv,thr"
+Cfg.mod     = "cmd,err,mod,srv,thr"
 Cfg.debug   = True
 Cfg.mod     = ""
 Cfg.name    = "tinder"
@@ -30,15 +31,13 @@ Cfg.skip    = ["debug",]
 
 
 from rssbot.modules import face
+from rssbot.user    import iface
 
 
-if os.path.exists("mods"):
-    import mods as MODS
-else:
-    MODS = None
-
-
-face.rss.DEBUG = True
+try:
+    iface.rss.DEBUG = True
+except AttributeError:
+    pass
 
 
 LAP = 1
@@ -82,17 +81,10 @@ class CLI(Client):
 
 def consume(evts):
     "wait for events."
-    fixed = []
     res = []
     for evt in evts:
-        #print(f"waiting {evt}")
-        res.append(evt.wait())
-        fixed.append(evt)
-    for fff in fixed:
-        try:
-            evts.remove(fff)
-        except ValueError:
-            continue
+        evt.wait()
+        res.append(evt)
     return res
 
 
@@ -134,22 +126,21 @@ def main():
     "main"
     if "v" in Cfg.opts:
         enable(print)
-    Cfg.mod = ",".join(modnames(face, MODS))
+    Cfg.mod = ",".join(modnames(face, iface))
     clt = CLI()
     clt.start()
-    clt.threaded = "t" in Cfg.opts
     thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt))
-    for thr in thrs:
-        thr.join()
+    #for thr in thrs:
+    #    thr.join()
     consume(events)
 
 
 if __name__ == "__main__":
-    setwd(".test")
+    Workdir.wdr = ".test"
     parse(Cfg, " ".join(sys.argv[1:]))
-    if "f" in Cfg.opts:
+    if "f" not in Cfg.opts:
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)
     skel()

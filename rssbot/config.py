@@ -9,12 +9,12 @@ import os
 
 
 from .default import Default
+from .workdir import Workdir
 
 
 class Config(Default):
 
     "Config"
-
 
     name    = Default.__module__.rsplit(".", maxsplit=2)[-2]
     wdr     = os.path.expanduser(f"~/.{name}")
@@ -22,9 +22,12 @@ class Config(Default):
 
     def __init__(self):
         Default.__init__(self)
-        self.name = self.name or Config.name
-        self.wdr  = self.wdr or Config.wdr
-        self.pidfile = self.pidfile or Config.pidfile
+        self.name = Config.name
+        self.wdr  = Config.wdr
+        self.pidfile = Config.pidfile
+
+
+Workdir.wdr = Config.wdr
 
 
 def __dir__():

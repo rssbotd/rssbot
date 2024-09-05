@@ -6,9 +6,9 @@
 "interface"
 
 
-from . import client, command, config, console, decoder, encoder, errors
+from . import client, command, config, console, decoder, disk, encoder, errors
 from . import event, reactor, log, object, parse, repeater, thread, workdir
-from . import fleet, timer, utils
+from . import fleet, timer, utils, find
 
 
 from .client   import *
@@ -53,6 +53,7 @@ def __dir__():
         'Thread',
         'Timer',
         'Workdir',
+        'boot',
         'broker',
         'banner',
         'command',

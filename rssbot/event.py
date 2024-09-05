@@ -37,9 +37,9 @@ class Event(Default):
 
     def wait(self, timeout=None):
         "wait for event to be ready."
-        self._ready.wait(timeout)
         if self.thr:
             self.thr.join()
+        self._ready.wait(timeout)
         return self.result
 
 

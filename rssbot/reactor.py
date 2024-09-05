@@ -29,9 +29,6 @@ class Reactor:
         if not func:
             evt.ready()
             return
-        if "target" in dir(func) and func.target not in str(self).lower():
-            evt.ready()
-            return
         evt.thr = launch(func, self, evt)
 
     def loop(self):

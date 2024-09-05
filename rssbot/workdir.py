@@ -9,7 +9,6 @@ import os
 import pathlib
 
 
-from .config import Config
 from .utils  import fqn
 
 
@@ -30,10 +29,6 @@ def long(name):
             res = names
             break
     return res
-
-
-def setwd(path=None):
-    Workdir.wdr = path or os.path.expanduser(f"~/.{Config.name}")
 
 
 def skel():
@@ -65,7 +60,6 @@ def whitelist(clz):
 def __dir__():
     return (
         'Workdir',
-        'setwd',
         'long',
         'skel',
         'store',

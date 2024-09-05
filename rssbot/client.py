@@ -43,8 +43,11 @@ def command(bot, evt):
     parse(evt)
     func = getattr(Commands.cmds, evt.cmd, None)
     if func:
-        func(evt)
-        bot.show(evt)
+        if "target" in dir(func) and func.target not in str(bot):
+            pass
+        else:
+            func(evt)
+            bot.show(evt)
     evt.ready()
 
 

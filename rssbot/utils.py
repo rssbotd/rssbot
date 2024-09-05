@@ -13,6 +13,13 @@ import types as rtypes
 import _thread
 
 
+def banner(cfg, outer):
+    "show banner."
+    txt = time.ctime(time.time()).replace("  ", " ")
+    outer(f"{cfg.name.upper()} since {txt} {cfg.opts.upper() or 'NOP'}")
+    outer(f"modules: {cfg.mod}")
+
+
 def cdir(pth):
     "create directory."
     path = pathlib.Path(pth)
@@ -99,8 +106,8 @@ def modnames(*args):
     "return module names."
     res = []
     for arg in args:
-        res.extend([x for x in dir(arg) if not x.startswith("__")])
-    return sorted(res)
+        res.extend({x for x in dir(arg) if not x.startswith("__")})
+    return sorted(set(res))
 
 
 def named(obj):
@@ -163,6 +170,7 @@ def strip(pth, nmr=3):
 
 def __dir__():
     return (
+        'banner',
         'cdir',
         'fntime',
         'forever',

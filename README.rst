@@ -2,21 +2,21 @@ R S S B O T
 ===========
 
 
-NAME
+**NAME**
 
 ::
 
     RSSBOT - 24/7 Feed Fetcher
 
 
-SYNOPSIS
+**SYNOPSIS**
 
 ::
 
     rssbot <cmd> [key=val] [key==val]
 
 
-DESCRIPTION
+**DESCRIPTION**
 
 ::
 
@@ -27,24 +27,15 @@ DESCRIPTION
     rssbot in your channel.
 
 
-INSTALL
+**INSTALL**
 
 ::
 
     $ pipx install rssbot
     $ pipx ensurepath
 
-    <new terminal>
 
-    $ rssbot srv > rssbot.service
-    $ sudo mv rssbot.service /etc/systemd/system/
-    $ sudo systemctl enable rssbot --now
-    $ rssbot rss <url>
-
-    joins #rssbot on localhost
-    
-
-COMMANDS
+**COMMANDS**
 
 ::
 
@@ -64,7 +55,7 @@ COMMANDS
     thr - show running threads
 
 
-CONFIGURATION
+**CONFIGURATION**
 
 ::
 
@@ -93,7 +84,40 @@ CONFIGURATION
     $ rssbot imp <filename>
 
 
-FILES
+**SYSTEMD**
+
+
+paste this into ``/etc/systemd/system/rssbot.service``
+and replace ``{name}`` with the user running ``pipx``
+
+::
+
+    [Unit]
+    Description=24/7 Feed Fetcher
+    After=network-online.target
+
+    [Service]
+    Type=simple
+    User={name}
+    Group={name}
+    ExecStart=/home/{name}/.local/bin/rssbots
+
+    [Install]
+    WantedBy=multi-user.target
+
+
+then run the following
+
+::
+
+    $ sudo systemctl enable rssbot --now
+
+
+joins ``#rssbot`` on localhost
+
+
+
+**FILES**
 
 ::
 
@@ -105,14 +129,14 @@ FILES
     ~/.local/pipx/venvs/rssbot/
 
 
-AUTHOR
+**AUTHOR**
 
 ::
 
     Bart Thate <rssbotd@gmail.com>
 
 
-COPYRIGHT
+**COPYRIGHT**
 
 ::
 

@@ -1,85 +1,25 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R
 
 
-"""24/7 Feed Fetcher
+"""write your own commands
 
 
-SYNOPSIS
+    NIXT is python3 code to program objects in a functional way. It
+    provides a base Object class that has only dunder methods, all
+    methods are factored out into functions with the objects as the first
+    argument. It is called Object Programming (OP), OOP without the
+    oriented.
 
-    rssbot <cmd> [key=val] [key==val]
+    NIXT allows for easy json save//load to/from disk of objects. It
+    provides an "clean namespace" Object class that only has dunder
+    methods, so the namespace is not cluttered with method names. This
+    makes storing and reading to/from json possible.
 
-DESCRIPTION
-
-    RSSBOT is a python3 bot able to display rss feeds in your channel.
-
-    RSSBOT comes with a cli to configure and a daemon to run in the
-    background, hooking the daemon in systemd brings a 24/7 available
-    rssbot in your channel.
-
-INSTALL
-
-    $ pipx install rssbot
-    $ pipx ensurepath
-
-    <new terminal>
-
-    $ rssbot srv > rssbot.service
-    $ sudo mv rssbot.service /etc/systemd/system/
-    $ sudo systemctl enable rssbot --now
-    $ rssbot rss <url>
-
-    joins #rssbot on localhost
-    
-COMMANDS
-
-    cfg - irc configuration
-    cmd - commands
-    dpl - sets display items
-    err - show errors
-    exp - export opml (stdout)
-    imp - import opml
-    mre - display cached output
-    pwd - sasl nickserv name/pass
-    rem - removes a rss feed
-    res - restore deleted feeds
-    rss - add a feed
-    srv - create service file
-    syn - sync rss feeds
-    thr - show running threads
-
-CONFIGURATION
-
-    irc
-
-    $ rssbot cfg server=<server>
-    $ rssbot cfg channel=<channel>
-    $ rssbot cfg nick=<nick>
-
-    sasl
- 
-    $ rssbot pwd <nsvnick> <nspass>
-    $ rssbot cfg password=<frompwd>
-
-    rss
-
-    $ rssbot rss <url>
-    $ rssbot dpl <url> <item1,item2>
-    $ rssbot rem <url>
-    $ rssbot res <url>
-    $ rssbot nme <url> <name>
-
-    opml
-
-    $ rssbot exp
-    $ rssbot imp <filename>
-
-COPYRIGHT
-
-    RSSBOT is Public Domain.
-
-
+    NIXT has all you need to program a unix cli program, such as disk
+    perisistence for configuration files, event handler to handle the
+    client/server connection, code to introspect modules for
+    commands, deferred exception handling to not crash on an error, a
+    parser to parse commandline options and values, etc.
 """
 
-
-__author__ = "\nBart Thate <rssbotd@gmail.com>"
+__author__ = "Bart Thate <rssbotd@gmail.com>"

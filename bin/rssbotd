@@ -12,16 +12,15 @@ import sys
 
 
 from rssbot.config  import Config
+from rssbot.main    import init, wrap
+from rssbot.modules import face
+from rssbot.utils   import forever, modnames, pidfile, privileges
+from rssbot.user    import iface
 
 
 Cfg = Config()
-Cfg.mod = "cmd,err,mod,irc,rss,thr"
+Cfg.mod = ",".join(modnames(face, iface))
 Cfg.user = getpass.getuser()
-
-
-from rssbot.main    import boot, init, wrap
-from rssbot.modules import face
-from rssbot.utils   import forever, pidfile, privileges
 
 
 def daemon(verbose=False):
@@ -48,10 +47,9 @@ def daemon(verbose=False):
 def main():
     "main"
     daemon()
-    boot()
     privileges(Cfg.user)
     pidfile(Cfg.pidfile)
-    init(Cfg.mod, face)
+    init(Cfg.mod, face, iface)
     forever()
 
 

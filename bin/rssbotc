@@ -10,24 +10,24 @@ import os
 import readline
 import sys
 import termios
+import time
 
 
 sys.path.insert(0, os.getcwd())
 
 
 from rssbot.config  import Config
+from rssbot.console import Console
+from rssbot.errors  import errors
+from rssbot.main    import cmnd, enable, init
+from rssbot.modules import face
+from rssbot.parse   import parse
+from rssbot.user    import iface
+from rssbot.utils   import forever, modnames
 
 
 Cfg = Config()
-Cfg.mod = "cmd,err,mod,thr"
-
-
-from rssbot.console import Console
-from rssbot.errors  import errors
-from rssbot.main    import boot, cmnd, enable, init
-from rssbot.modules import face
-from rssbot.parse   import parse
-from rssbot.utils   import forever
+Cfg.mod = ",".join(modnames(face, iface))
 
 
 def wrap(func):
@@ -48,11 +48,14 @@ def wrap(func):
 
 def main():
     "main"
-    boot()
     parse(Cfg, " ".join(sys.argv[1:]))
-    csl = Console(print, input)
+    if "v" in Cfg.opts:
+        print(f"{Cfg.name.upper()} since {time.ctime(time.time())} {Cfg.opts.upper()}")
+        enable(print)
     if "i" in Cfg.opts:
-        init(Cfg.mod, face)
+        for thr in init(Cfg.mod, face, iface, wait="v" in Cfg.opts):
+            thr.join()
+    csl = Console(print, input)
     csl.start()
     forever()
 
