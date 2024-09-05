@@ -22,12 +22,11 @@ from rssbot.errors  import errors
 from rssbot.main    import cmnd, enable, init
 from rssbot.modules import face
 from rssbot.parse   import parse
-from rssbot.user    import iface
 from rssbot.utils   import forever, modnames
 
 
 Cfg = Config()
-Cfg.mod = ",".join(modnames(face, iface))
+Cfg.mod = ",".join(modnames(face))
 
 
 def wrap(func):
@@ -53,7 +52,7 @@ def main():
         print(f"{Cfg.name.upper()} since {time.ctime(time.time())} {Cfg.opts.upper()}")
         enable(print)
     if "i" in Cfg.opts:
-        for thr in init(Cfg.mod, face, iface, wait="v" in Cfg.opts):
+        for thr in init(Cfg.mod, face, wait="v" in Cfg.opts):
             thr.join()
     csl = Console(print, input)
     csl.start()

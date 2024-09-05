@@ -14,12 +14,11 @@ from rssbot.config  import Config
 from rssbot.errors  import Errors, errors
 from rssbot.main    import init, wrap
 from rssbot.modules import face
-from rssbot.user    import iface
 from rssbot.utils   import banner, forever, modnames, pidfile, privileges
 
 
 Cfg = Config()
-Cfg.mod = ",".join(modnames(face, iface))
+Cfg.mod = ",".join(modnames(face))
 Cfg.user = getpass.getuser()
 
 
@@ -35,7 +34,7 @@ def main():
     privileges(Cfg.user)
     pidfile(Cfg.pidfile)
     started = []
-    for thr in init(Cfg.mod, face, iface):
+    for thr in init(Cfg.mod, face):
         started.append(thr.name)
     cprint(f"started: {','.join(sorted(started))}")
     forever()
