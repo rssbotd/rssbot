@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # This file is placed in the Public Domain.
-# pylint: disable=C,I,R,W0201,W0622,W0401,W0401,W0614,E0401,E1121
+# pylint: disable=C0413,W0212,W0401,W0614,W0622,W0718
 
 
 "tinder"
@@ -18,25 +18,23 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.face   import *
-
-
-Cfg         = Config()
-Cfg.mod     = "cmd,err,mod,srv,thr"
-Cfg.debug   = True
-Cfg.mod     = ""
-Cfg.name    = "tinder"
-Cfg.silent  = False
-Cfg.skip    = ["debug",]
-
-
+from rssbot.errors  import errors, later
+from rssbot.main    import Client, Commands, Config, Event
+from rssbot.main    import enable, laps, parse
 from rssbot.modules import face
+from rssbot.object  import Object
+from rssbot.persist import Workdir, skel
+from rssbot.runtime import launch
 
 
-try:
-    face.rss.DEBUG = True
-except AttributeError:
-    pass
+Cfg = Config()
+Cfg.debug  = True
+Cfg.name = "tinder"
+Cfg.silent = False
+Cfg.skip = ["debug",]
+
+
+face.rss.DEBUG = True
 
 
 LAP = 1
@@ -44,7 +42,6 @@ NRS = 1
 NRCOMMAND = 1
 PERCALL   = 1
 STARTTIME = time.time()
-Client.out   = print
 
 
 events = []
@@ -80,11 +77,9 @@ class CLI(Client):
 
 def consume(evts):
     "wait for events."
-    res = []
     for evt in evts:
-        evt.wait()
-        res.append(evt)
-    return res
+        if "_thr" in evt and evt._thr:
+            evt._thr.join()
 
 
 def payload(clt):
@@ -95,7 +90,6 @@ def payload(clt):
         for cmdd in cmdz:
             for ex in getattr(param, cmdd, [""]):
                 evt = Event()
-                evt.channel = "#nixt"
                 evt.orig = repr(clt)
                 evt.txt = cmdd + " " + ex
                 evt.type = "command"
@@ -116,43 +110,42 @@ def wrapped(function):
         function()
     except (KeyboardInterrupt, EOFError):
         print("")
+    except Exception as ex:
+        later(ex)
     finally:
         if old2:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old2)
 
 
-def main():
+def mainer():
     "main"
-    if "v" in Cfg.opts:
-        enable(print)
-    Cfg.mod = ",".join(modnames(face))
     clt = CLI()
     clt.start()
-    thrs = []
     for _nr in range(nrs):
-        thrs.append(launch(payload, clt))
-    #for thr in thrs:
-    #    thr.join()
+        launch(payload, clt)
+    clt.wait()
     consume(events)
+    errors(print)
+    if "v" in Cfg.opts:
+        endtime = time.time()
+        lap = laps(endtime-STARTTIME)
+        percall = (endtime-STARTTIME)/(nrs*NRCOMMAND)
+        print(f"{lap} {nrs} {NRCOMMAND} {percall}")
 
 
 if __name__ == "__main__":
     Workdir.wdr = ".test"
     parse(Cfg, " ".join(sys.argv[1:]))
-    if "f" not in Cfg.opts:
+    if "v" in Cfg.opts:
+        enable(print)
+    if "f" in Cfg.opts:
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)
     skel()
     nrs = Cfg.index or 1
-    nrcommand = len(Commands.cmds) or 1
+    NRCOMMAND = len(Commands.cmds) or 1
     if "p" in Cfg.opts:
-        profile.runctx(main.__code__, globals(), locals())
+        profile.runctx(mainer.__code__, globals(), locals())
     else:
-        wrapped(main)
-    errors()
-    if "v" in Cfg.opts:
-        endtime = time.time()
-        lap = laps(endtime-STARTTIME)
-        percall = (endtime-STARTTIME)/(nrs*nrcommand)
-        print(f"{lap} {nrs} {nrcommand} {percall}")
-    sys.exit()
+        wrapped(mainer)
+    os._exit(0)

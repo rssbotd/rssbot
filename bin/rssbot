@@ -7,30 +7,29 @@
 
 
 import getpass
+import os
+import readline
 import sys
+import termios
 
 
-from rssbot.command import Commands
-from rssbot.config  import Config
-from rssbot.errors  import Errors, errors
-from rssbot.main    import cmnd, enable, init, wrap
+from rssbot.errors  import errors
+from rssbot.object  import Default, construct, fmt
+from rssbot.main    import Broker, Client, Commands, Config, Event
+from rssbot.main    import command, forever, modnames, parse, wrap
 from rssbot.modules import face
-from rssbot.parse   import parse
 
 
 Cfg = Config()
-TXT = """[Unit]
-Description=24/7 Feed Fetcher
-After=network-online.target
 
-[Service]
-Type=simple
-User=%s
-Group=%s
-ExecStart=/home/%s/.local/bin/rssbots
 
-[Install]
-WantedBy=multi-user.target"""
+class CLI(Client):
+
+    "CLI"
+
+    def raw(self, txt):
+        print(txt)
+
 
 def srv(event):
     "create service file (pipx)."
@@ -38,24 +37,39 @@ def srv(event):
         name = event.args[0]
     else:
         name  = getpass.getuser()
-    event.reply(TXT % (name, name, name))
+    progname = Config.name
+    txt = """[Unit]
+Description=%s
+After=network-online.target
+
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/%ss
+
+[Install]
+WantedBy=multi-user.target"""
+    event.reply(txt % (progname.upper(), name, name, name, progname))
 
 
-Commands.add(srv)
+def wrapped():
+    "wrap main."
+    wrap(main)
+    errors(print)
 
 
 def main():
     "main"
+    Commands.add(srv)
     parse(Cfg, " ".join(sys.argv[1:]))
-    if "v" in Cfg.opts:
-        enable(print)
-    if "h" in Cfg.opts:
-        cmnd("hlp", print)
-    elif Cfg.txt:
-        cmnd(Cfg.otxt, print)
+    if Cfg.txt:
+        clt = CLI()
+        evt = Event()
+        evt.orig = repr(clt)
+        parse(evt, Cfg.otxt)
+        command(clt, evt)
 
 
 if __name__ == "__main__":
-    Errors.out = print
-    wrap(main)
-    errors()
+    wrapped()

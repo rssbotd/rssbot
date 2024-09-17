@@ -11,10 +11,9 @@ import os
 import sys
 
 
-from rssbot.config  import Config
-from rssbot.main    import init, wrap
+from rssbot.main    import Config, forever, initer, pidfile
+from rssbot.main    import modnames, privileges, wrap
 from rssbot.modules import face
-from rssbot.utils   import forever, modnames, pidfile, privileges
 
 
 Cfg = Config()
@@ -43,14 +42,23 @@ def daemon(verbose=False):
     os.nice(10)
 
 
+ever = forever
+
+
 def main():
     "main"
     daemon()
     privileges(Cfg.user)
     pidfile(Cfg.pidfile)
-    init(Cfg.mod, face)
-    forever()
+    initer(Cfg.mod, face)
+    ever()
+
+
+def wrapping():
+    "Wrap main."
+    wrap(main)
 
 
 if __name__ == "__main__":
-    wrap(main)
+    wrapping()
+    
