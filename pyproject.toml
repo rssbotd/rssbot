@@ -9,14 +9,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rssbot"
 description = "24/7 Feed Fetcher"
-version = "581"
+version = "590"
 authors = [
     {name = "Bart Thate",email = "rssbotd@gmail.com"},
 ]
 readme = "README.rst"
 license = {text="Public Domain"}
 classifiers = [ 
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'License :: Public Domain',
     'Operating System :: Unix',
     'Programming Language :: Python',
@@ -41,7 +41,6 @@ packages=[
     "rssbot",
     "rssbot.modules",
 ]
-zip-safe=true
 
 
 [tool.setuptools.data-files]

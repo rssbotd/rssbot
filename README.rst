@@ -14,7 +14,7 @@ R S S B O T
 ::
 
     rssbot <cmd> [key=val] [key==val]
-    rssbotc
+    rssbotc [-v] [-i]
     rssbotd
     rssbots
 
@@ -36,26 +36,6 @@ R S S B O T
 
     $ pipx install rssbot
     $ pipx ensurepath
-
-
-**COMMANDS**
-
-::
-
-    cfg - irc configuration
-    cmd - commands
-    dpl - sets display items
-    err - show errors
-    exp - export opml (stdout)
-    imp - import opml
-    mre - display cached output
-    pwd - sasl nickserv name/pass
-    rem - removes a rss feed
-    res - restore deleted feeds
-    rss - add a feed
-    srv - create service file
-    syn - sync rss feeds
-    thr - show running threads
 
 
 **CONFIGURATION**
@@ -95,8 +75,27 @@ R S S B O T
     $ sudo mv rssbot.service /etc/systemd/system/
     $ sudo systemctl enable rssbot --now
 
-
     joins #rssbot on localhost
+
+
+**COMMANDS**
+
+::
+
+    cfg - irc configuration
+    cmd - commands
+    dpl - sets display items
+    err - show errors
+    exp - export opml (stdout)
+    imp - import opml
+    mre - display cached output
+    pwd - sasl nickserv name/pass
+    rem - removes a rss feed
+    res - restore deleted feeds
+    rss - add a feed
+    srv - create service file
+    syn - sync rss feeds
+    thr - show running threads
 
 
 **FILES**
