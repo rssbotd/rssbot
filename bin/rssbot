@@ -353,7 +353,7 @@ def rss(event):
 
 def srv(event):
     name  = getpass.getuser()
-    event.reply(TXT % (NAME.upper(), name, name, name, NAME))
+    event.reply(TXT % ("RSSBOT", name, name, name, "rssbot"))
 
 
 def syn(event):
@@ -405,7 +405,7 @@ After=network-online.target
 Type=simple
 User=%s
 Group=%s
-ExecStart=/home/%s/.local/bin/%sd
+ExecStart=/home/%s/.local/bin/%ss
 
 [Install]
 WantedBy=multi-user.target"""
