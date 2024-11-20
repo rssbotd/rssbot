@@ -12,9 +12,6 @@ import traceback
 import _thread
 
 
-"errors"
-
-
 class Errors:
 
     errors = []
@@ -38,9 +35,6 @@ def later(exc):
     fmt = Errors.format(excp)
     if fmt not in Errors.errors:
         Errors.errors.append(fmt)
-
-
-"output"
 
 
 class Output:
@@ -70,9 +64,6 @@ class Output:
     def wait(self):
         self.oqueue.join()
  
-
-"reactor"
-
 
 class Reactor:
 
@@ -112,9 +103,6 @@ class Reactor:
         self.stopped.set()
 
 
-"client"
-
-
 class Client(Reactor):
 
 
@@ -147,9 +135,6 @@ class BufferedClient(Client, Output):
         Output.start(self)
 
 
-"event"
-
-
 class Event:
 
     def __init__(self):
@@ -175,9 +160,6 @@ class Event:
         self._ready.wait()
         if self._thr:
             self._thr.join()
-
-
-"threads"
 
 
 class Thread(threading.Thread):
@@ -238,9 +220,6 @@ def name(obj):
     return None
 
 
-"timers"
-
-
 class Timer:
 
     def __init__(self, sleep, func, *args, thrname=None, **kwargs):
@@ -279,7 +258,21 @@ class Repeater(Timer):
         super().run()
 
 
-"interface"
+def forever():
+    while True:
+        try:
+            time.sleep(0.1)
+        except (KeyboardInterrupt, EOFError):
+            _thread.interrupt_main()
+
+
+def wrap(func):
+    try:
+        func()
+    except (KeyboardInterrupt, EOFError):
+        pass
+    except Exception as ex:
+        later(ex)
 
 
 def __dir__():
@@ -293,7 +286,9 @@ def __dir__():
         'Thread',
         'Timer',
         'errors',
+        'forever',
         'later',
         'launch',
-        'name'
+        'name',
+        'wrap'
     )
