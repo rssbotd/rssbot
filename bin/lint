@@ -21,4 +21,6 @@ def popen(txt):
 
 if os.path.exists("bin/clean"):
     popen("bin/clean")
-popen("pylint rssbot/*.py rssbot/modules/*.py bin/* tests/*.py")
+
+
+popen(f"pylint {NAME}")

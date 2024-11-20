@@ -1,8 +1,8 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R
+# pylint: disable=C,R,W0105,W0719,E1101,E0402
 
 
-"persistence"
+"persist to disk"
 
 
 import datetime
@@ -13,29 +13,22 @@ import time
 import _thread
 
 
-from .object import Default, dump, fqn, load, match, search, update
+from .object import Object, dump, load, search, update
 
 
-lock     = _thread.allocate_lock()
-disklock = _thread.allocate_lock()
-p        = os.path.join
-
-
-class ReadError(Exception):
-    "error reading json file."
+cachelock = _thread.allocate_lock()
+disklock  = _thread.allocate_lock()
+lock      = _thread.allocate_lock()
+p         = os.path.join
 
 
 class Workdir:
 
-    "Workdir"
-
     fqns = []
-    name = Default.__module__.split(".", maxsplit=2)[-2]
-    wdr = os.path.expanduser(f"~/.{name}")
+    wdr = ''
 
 
 def long(name):
-    "match from single name to long name."
     split = name.split(".")[-1].lower()
     res = name
     for names in types():
@@ -45,64 +38,78 @@ def long(name):
     return res
 
 
-def skel():
-    "create directory,"
-    stor = p(Workdir.wdr, "store", "")
-    path = pathlib.Path(stor)
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+def modname():
+    return p(Workdir.wdr, "mods")
+
+
+def pidname(name):
+    return p(Workdir.wdr, f"{name}.pid")
 
 
 def store(pth=""):
-    "return objects directory."
     stor = p(Workdir.wdr, "store", "")
     if not os.path.exists(stor):
         skel()
     return p(Workdir.wdr, "store", pth)
 
 
-def types():
-    "return types stored."
-    return os.listdir(store())
-
-
 def whitelist(clz):
-    "whitelist classes."
     Workdir.fqns.append(fqn(clz))
 
 
+class Cache:
+
+    objs = {}
+
+    @staticmethod
+    def add(path, obj):
+        with cachelock:
+            Cache.objs[path] = obj
+
+    @staticmethod
+    def get(path):
+        with cachelock:
+            return Cache.objs.get(path)
+
+    @staticmethod
+    def typed(match):
+        with cachelock:
+            for key in Cache.objs:
+                if match not in key:
+                    continue
+                yield Cache.objs.get(key)
+
+
+"utilities"
+
+
 def cdir(pth):
-    "create directory."
     path = pathlib.Path(pth)
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def ident(obj):
-    "return an id for an object."
-    return p(fqn(obj), *str(datetime.datetime.now()).split())
-
-
 def find(mtc, selector=None, index=None, deleted=False, matching=False):
-    "find object matching the selector dict."
     clz = long(mtc)
     nrs = -1
     for fnm in sorted(fns(clz), key=fntime):
-        obj = Default()
-        fetch(obj, fnm)
-        if not deleted and '__deleted__' in obj and obj.__deleted__:
+        obj = Cache.get(fnm)
+        if obj:
+            yield (fnm, obj)
             continue
-        if matching and not match(obj, selector):
+        obj = Object()
+        read(obj, fnm)
+        if not deleted and '__deleted__' in dir(obj) and obj.__deleted__:
             continue
-        if selector and not search(obj, selector):
+        if selector and not search(obj, selector, matching):
             continue
         nrs += 1
         if index is not None and nrs != int(index):
             continue
+        Cache.add(fnm, obj)
         yield (fnm, obj)
 
 
 def fns(mtc=""):
-    "show list of files."
     dname = ''
     pth = store(mtc)
     for rootdir, dirs, _files in os.walk(pth, topdown=False):
@@ -115,7 +122,6 @@ def fns(mtc=""):
 
 
 def fntime(daystr):
-    "convert file name to it's saved time."
     daystr = daystr.replace('_', ':')
     datestr = ' '.join(daystr.split(os.sep)[-2:])
     if '.' in datestr:
@@ -129,7 +135,6 @@ def fntime(daystr):
 
 
 def laps(seconds, short=True):
-    "show elapsed time."
     txt = ""
     nsec = float(seconds)
     if nsec < 1:
@@ -168,21 +173,52 @@ def laps(seconds, short=True):
     return txt
 
 
+def pidfile(filename):
+    if os.path.exists(filename):
+        os.unlink(filename)
+    path2 = pathlib.Path(filename)
+    path2.parent.mkdir(parents=True, exist_ok=True)
+    with open(filename, "w", encoding="utf-8") as fds:
+        fds.write(str(os.getpid()))
+
+
+def skel():
+    stor = p(Workdir.wdr, "store", "")
+    path = pathlib.Path(stor)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def strip(pth, nmr=3):
-    "reduce to path with directory."
     return os.sep.join(pth.split(os.sep)[-nmr:])
 
 
-def fetch(obj, pth):
-    "read object from disk."
+def types():
+    return os.listdir(store())
+
+
+"methods"
+
+
+def read(obj, pth):
     with disklock:
         pth2 = store(pth)
-        read(obj, pth2)
+        fetch(obj, pth2)
         return os.sep.join(pth.split(os.sep)[-3:])
 
 
+def fqn(obj):
+    kin = str(type(obj)).split()[-1][1:-2]
+    if kin == "type":
+        kin = f"{obj.__module__}.{obj.__name__}"
+    return kin
+
+
+def ident(obj):
+    return p(fqn(obj), *str(datetime.datetime.now()).split())
+
+
 def last(obj, selector=None):
-    "return last object saved."
     if selector is None:
         selector = {}
     result = sorted(
@@ -197,49 +233,41 @@ def last(obj, selector=None):
     return res
 
 
-def read(obj, pth):
-    "read an object from file path."
+def fetch(obj, pth):
     with lock:
         with open(pth, 'r', encoding='utf-8') as ofile:
             try:
                 update(obj, load(ofile))
             except json.decoder.JSONDecodeError as ex:
-                raise ReadError(pth) from ex
+                raise Exception(pth) from ex
 
 
-def sync(obj, pth=None):
-    "sync object to disk."
+def write(obj, pth=None):
     if pth is None:
         pth = ident(obj)
     with disklock:
         pth2 = store(pth)
-        write(obj, pth2)
+        sync(obj, pth2)
         return pth
 
 
-def write(obj, pth):
-    "write an object to disk."
+def sync(obj, pth):
     with lock:
         cdir(pth)
         with open(pth, 'w', encoding='utf-8') as ofile:
             dump(obj, ofile, indent=4)
 
 
+"interface"
+
+
 def __dir__():
     return (
-        'ReadError',
         'Workdir',
         'find',
-        'fns',
         'fetch',
         'last',
-        'laps',
-        'long',
         'read',
-        'skel',
-        'store',
         'sync',
-        'types',
-        'whitelist',
         'write'
     )
