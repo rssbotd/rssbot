@@ -11,6 +11,7 @@ import inspect
 import os
 import sys
 import time
+import uuid
 import _thread
 
 
@@ -172,6 +173,10 @@ def parse(obj, txt=None):
     else:
         obj.txt = obj.cmd or ""
     return obj
+
+
+def shortid():
+    return str(uuid.uuid4())[:8]
 
 
 def spl(txt):

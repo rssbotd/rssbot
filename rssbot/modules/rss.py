@@ -8,7 +8,6 @@
 import html
 import html.parser
 import re
-import time
 import urllib
 import urllib.request
 import uuid
@@ -19,8 +18,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..object  import Object, format, update
-from ..persist import Cache, find, fntime, last, ident, write
+from ..object  import Object, update
+from ..persist import Cache, find, last, ident, write
 from ..runtime import Repeater, launch
 
 

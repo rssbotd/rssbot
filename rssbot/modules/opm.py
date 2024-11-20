@@ -5,18 +5,10 @@
 "OPML"
 
 
-import html
-import os
-import re
-import uuid
 import _thread
 
 
-from ..object  import Object, update
-from ..persist import find, ident, write
-
-
-from .rss import Rss
+from ..object  import Object
 
 
 "defines"
@@ -101,90 +93,9 @@ class OPMLParser:
         return result
 
 
-"utilities"
-
-
-def attrs(obj, txt):
-    update(obj, OPMLParser.parse(txt))
-
-
-def shortid():
-    return str(uuid.uuid4())[:8]
-
-
 def spl(txt):
     try:
         result = txt.split(',')
     except (TypeError, ValueError):
         result = txt
     return [x for x in result if x]
-
-
-def striphtml(text):
-    clean = re.compile('<.*?>')
-    return re.sub(clean, '', text)
-
-
-def unescape(text):
-    txt = re.sub(r'\s+', ' ', text)
-    return html.unescape(txt)
-
-
-def useragent(txt):
-    return 'Mozilla/5.0 (X11; Linux x86_64) ' + txt
-
-
-"commands"
-
-
-def exp(event):
-    event.reply(TEMPLATE)
-    nrs = 0
-    for _fn, ooo in find("rss"):
-        nrs += 1
-        obj = Rss()
-        update(obj, ooo)
-        name = f"url{nrs}"
-        txt = f'<outline name="{name}" display_list="{obj.display_list}" xmlUrl="{obj.rss}"/>'
-        event.reply(" "*12 + txt)
-    event.reply(" "*8 + "</outline>")
-    event.reply("    <body>")
-    event.reply("</opml>")
-
-
-def imp(event):
-    if not event.args:
-        event.reply("imp <filename>")
-        return
-    fnm = event.args[0]
-    if not os.path.exists(fnm):
-        event.reply(f"no {fnm} file found.")
-        return
-    with open(fnm, "r", encoding="utf-8") as file:
-        txt = file.read()
-    prs = OPMLParser()
-    nrs = 0
-    nrskip = 0
-    insertid = shortid()
-    with importlock:
-        for obj in prs.parse(txt, 'outline', "name,display_list,xmlUrl"):
-            url = obj.xmlUrl
-            if url in skipped:
-                continue
-            if not url.startswith("http"):
-                continue
-            has = list(find("rss", {'rss': url}, matching=True))
-            if has:
-                skipped.append(url)
-                nrskip += 1
-                continue
-            feed = Rss()
-            update(feed, obj)
-            feed.rss = obj.xmlUrl
-            feed.insertid = insertid
-            write(feed, ident(feed))
-            nrs += 1
-    if nrskip:
-        event.reply(f"skipped {nrskip} urls.")
-    if nrs:
-        event.reply(f"added {nrs} urls.")
