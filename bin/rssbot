@@ -16,12 +16,13 @@ import _thread
 
 
 from rssbot.modules import face
-from rssbot.object  import Obj, edit, format, keys
+from rssbot.object  import Obj, edit, format, keys, update
 from rssbot.persist import Workdir, find, fntime, last, write
 from rssbot.runtime import Client, Event, errors, later, launch
 
 
 from rssbot.modules.irc import Config
+from rssbot.modules.opm import TEMPLATE
 from rssbot.modules.rss import Fetcher, Rss
 
 
