@@ -16,16 +16,15 @@ import time
 import _thread
 
 
-from ..command import NAME
 from ..object  import Object, edit, format, keys
 from ..persist import Cache, ident, last, write
 from ..runtime import Event, Reactor, later, launch
 
 
-"defines"
-
-
 IGNORE = ["PING", "PONG", "PRIVMSG"]
+NAME   = __file__.rsplit(os.sep, maxsplit=3)[-3]
+
+
 output = None
 saylock = _thread.allocate_lock()
 
@@ -44,9 +43,6 @@ def init():
     irc.events.ready.wait()
     debug(f'{format(Config, skip="edited,password")}')
     return irc
-
-
-"config"
 
 
 class Config(Object):
@@ -77,9 +73,6 @@ class Config(Object):
         self.username = Config.username
 
 
-"wrapper"
-
-
 class TextWrap(textwrap.TextWrapper):
 
     def __init__(self):
@@ -93,9 +86,6 @@ class TextWrap(textwrap.TextWrapper):
 
 
 wrapper = TextWrap()
-
-
-"output"
 
 
 class Output:
@@ -158,9 +148,6 @@ class Output:
         if chan in Output.cache:
             return len(getattr(Output.cache, chan, []))
         return 0
-
-
-"irc"
 
 
 class IRC(Reactor, Output):
@@ -510,9 +497,6 @@ class IRC(Reactor, Output):
         self.events.ready.wait()
 
 
-"callbacks"
-
-
 def cb_auth(bot, evt):
     bot.docommand(f'AUTHENTICATE {bot.cfg.password}')
 
@@ -568,9 +552,6 @@ def cb_quit(bot, evt):
         bot.stop()
 
 
-"commands"
-
-
 def cfg(event):
     config = Config()
     last(config)
@@ -586,25 +567,6 @@ def cfg(event):
         edit(config, event.sets)
         write(config)
         event.reply('ok')
-
-
-def mre(event):
-    if not event.channel:
-        event.reply('channel is not set.')
-        return
-    bot = Cache.get(event.orig)
-    if 'cache' not in dir(bot):
-        event.reply('bot is missing cache')
-        return
-    if event.channel not in dir(Output.cache):
-        event.reply(f'no output in {event.channel} cache.')
-        return
-    for _x in range(3):
-        txt = Output.gettxt(event.channel)
-        if txt:
-            event.reply(txt)
-    size = IRC.size(event.channel)
-    event.reply(f'{size} more in cache')
 
 
 def pwd(event):

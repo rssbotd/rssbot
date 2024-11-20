@@ -6,17 +6,12 @@
 "interface"
 
 
-from . import cmd, err, irc, mod, opm, rss, thr, upt
+from . import irc, opm, rss
 
 
 def __dir__():
     return (
-        'cmd',
-        'err',
         'irc',
-        'mod',
         'opm',
-        'rss',
-        'thr',
-        'upt'
+        'rss'
     )

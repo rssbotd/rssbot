@@ -5,13 +5,15 @@
 "daemon"
 
 
-import os
-import sys
+import os, sys
 
 
-from .command import NAME, forever, privileges, scanner, wrap
 from .modules import face
-from .persist import pidfile, pidname
+from .persist import Workdir, pidfile, pidname
+
+
+NAME        = __file__.rsplit(os.sep, maxsplit=2)[-2]
+Workdir.wdr = os.path.expanduser(f"~/.{NAME}")
 
 
 def daemon(verbose=False):
@@ -34,8 +36,45 @@ def daemon(verbose=False):
     os.nice(10)
 
 
+def forever():
+    while True:
+        try:
+            time.sleep(0.1)
+        except (KeyboardInterrupt, EOFError):
+            _thread.interrupt_main()
+
+
+def modloop(*pkgs, disable=""):
+    for pkg in pkgs:
+        for modname in dir(pkg):
+            if modname in spl(disable):
+                continue
+            if modname.startswith("__"):
+                continue
+            yield getattr(pkg, modname)
+
+
+def privileges():
+    import getpass
+    import pwd
+    pwnam2 = pwd.getpwnam(getpass.getuser())
+    os.setgid(pwnam2.pw_gid)
+    os.setuid(pwnam2.pw_uid)
+
+
+def scanner(*pkgs, init=False, disable=""):
+    result = []
+    for mod in modloop(*pkgs, disable=disable):
+        thr = None
+        if init and "init" in dir(mod):
+            thr = launch(mod.init)
+        result.append((mod, thr))
+    return result
+
+
 def main():
-    daemon()
+    if "-d" in sys.argv:
+        daemon()
     privileges()
     pidfile(pidname(NAME))
     scanner(face, init=True)

@@ -19,13 +19,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..command import laps, spl
 from ..object  import Object, format, update
 from ..persist import Cache, find, fntime, last, ident, write
 from ..runtime import Repeater, launch
-
-
-"defines"
 
 
 DEBUG = False
@@ -40,7 +36,12 @@ def init():
     return fetcher
 
 
-"classes"
+def spl(txt):
+    try:
+        result = txt.split(',')
+    except (TypeError, ValueError):
+        result = txt
+    return [x for x in result if x]
 
 
 class Feed(Object):
@@ -194,8 +195,6 @@ class Parser:
         return result
 
 
-"utilities"
-
 
 def cdata(line):
     if 'CDATA' in line:
@@ -266,95 +265,4 @@ def unescape(text):
 
 
 def useragent(txt):
-    "return useragent."
     return 'Mozilla/5.0 (X11; Linux x86_64) ' + txt
-
-
-"commands"
-
-
-def dpl(event):
-    if len(event.args) < 2:
-        event.reply('dpl <stringinurl> <item1,item2>')
-        return
-    setter = {'display_list': event.args[1]}
-    for fnm, feed in find("rss", {'rss': event.args[0]}):
-        if feed:
-            update(feed, setter)
-            write(feed, fnm)
-    event.reply('ok')
-
-
-def nme(event):
-    if len(event.args) != 2:
-        event.reply('nme <stringinurl> <name>')
-        return
-    selector = {'rss': event.args[0]}
-    for fnm, feed in find("rss", selector):
-        if feed:
-            feed.name = event.args[1]
-            write(feed, fnm)
-    event.reply('ok')
-
-
-def rem(event):
-    if len(event.args) != 1:
-        event.reply('rem <stringinurl>')
-        return
-    for fnm, feed in find("rss"):
-        if event.args[0] not in feed.rss:
-            continue
-        if feed:
-            feed.__deleted__ = True
-            write(feed, fnm)
-    event.reply('ok')
-
-
-def res(event):
-    if len(event.args) != 1:
-        event.reply('res <stringinurl>')
-        return
-    for fnm, feed in find("rss", deleted=True):
-        if event.args[0] not in feed.rss:
-            continue
-        if feed:
-            feed.__deleted__ = False
-            write(feed, fnm)
-    event.reply('ok')
-
-
-def rss(event):
-    if not event.rest:
-        nrs = 0
-        for fnm, feed in find('rss'):
-            nrs += 1
-            elp = laps(time.time()-fntime(fnm))
-            txt = format(feed)
-            event.reply(f'{nrs} {txt} {elp}')
-        if not nrs:
-            event.reply('no rss feed found.')
-        return
-    url = event.args[0]
-    if 'http' not in url:
-        event.reply('i need an url')
-        return
-    for fnm, result in find("rss", {'rss': url}):
-        if result:
-            return
-    feed = Rss()
-    feed.rss = event.args[0]
-    write(feed, ident(feed))
-    event.reply('ok')
-
-
-def syn(event):
-    if DEBUG:
-        return
-    fetcher = Fetcher()
-    fetcher.start(False)
-    thrs = fetcher.run(True)
-    nrs = 0
-    for thr in thrs:
-        thr.join()
-        nrs += 1
-    event.reply(f"{nrs} feeds synced")
