@@ -2,3 +2,6 @@
 
 
 "modules"
+
+
+from . import irc, opm, rss
