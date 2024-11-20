@@ -297,8 +297,7 @@ def srv(event):
 
 
 def syn(event):
-    if DEBUG:
-        return
+    from .modules.rss import Fetcher
     fetcher = Fetcher()
     fetcher.start(False)
     thrs = fetcher.run(True)
