@@ -13,8 +13,8 @@ import _thread
 
 
 from .modules import face
-from .object  import Obj, format, keys
-from .persist import Workdir, find, fntime, last
+from .object  import Obj, edit, format, keys
+from .persist import Workdir, find, fntime, last, write
 from .runtime import Client, Event, errors, later, launch
 
 
@@ -27,7 +27,7 @@ class Config(Obj):
     pass
 
 
-cfg  = Config()
+Cfg  = Config()
 
 
 class Commands:
@@ -328,12 +328,12 @@ def wrapped():
 
 
 def main():
-    parse(cfg, " ".join(sys.argv[1:]))
+    parse(Cfg, " ".join(sys.argv[1:]))
     mod = sys.modules.get("__main__")
     Commands.scan(mod)
     evt = Event()
     evt.type = "command"
-    evt.txt = cfg.txt
+    evt.txt = Cfg.otxt
     csl = CLI()
     command(csl, evt)
     evt.wait()

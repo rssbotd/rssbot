@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rssbot"
 description = "24/7 Feed Fetcher."
-version = "602"
+version = "610"
 authors = [
     {name = "Bart Thate",email = "rssbotd@gmail.com"},
 ]
@@ -23,10 +23,11 @@ classifiers = [
     'Topic :: Utilities'
 ]
 
+
 [project.scripts]
 "rssbot"  = "rssbot.control:main"
 "rssbotd" = "rssbot.daemon:main"
-"rssbots" = "rssbot.service:main"
+"rssbots" = "rssbot.daemon:main"
 
 
 [project.urls]
@@ -39,10 +40,4 @@ classifiers = [
 packages=[
     "rssbot",
     "rssbot.modules",
-]
-
-
-[tool.setuptools.data-files]
-"share/doc/rssbot" = [
-    "README.rst"
 ]
