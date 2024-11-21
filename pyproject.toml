@@ -24,6 +24,12 @@ classifiers = [
 ]
 
 
+[project.scripts]
+"rssbot"  = "rssbot.__main__:wrapped"
+"rssbotd" = "rssbot.daemon:main"
+"rssbots" = "rssbot.daemon:service" 
+
+
 [project.urls]
 "home" = "https://pypi.org/project/rssbot"
 "bugs" = "https://github.com/rssbotd/rssbot/issues"

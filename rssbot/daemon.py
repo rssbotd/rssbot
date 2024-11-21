@@ -42,13 +42,17 @@ def privileges():
     os.setuid(pwnam2.pw_uid)
 
 
-def main():
-    daemon()
+def service():
     privileges()
     pidfile(pidname("rssbot"))
     irc.init()
     rss.init()
     forever()
+
+
+def main():
+    daemon()
+    service()
 
 
 if __name__ == "__main__":
