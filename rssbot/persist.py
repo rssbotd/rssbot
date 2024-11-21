@@ -10,6 +10,7 @@ import json
 import os
 import pathlib
 import time
+import uuid
 import _thread
 
 
@@ -25,7 +26,7 @@ p         = os.path.join
 class Workdir:
 
     fqns = []
-    wdr = ''
+    wdr = os.path.expanduser("~/.rssbot")
 
 
 def long(name):
@@ -187,6 +188,18 @@ def skel():
     path = pathlib.Path(stor)
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def shortid():
+    return str(uuid.uuid4())[:8]
+
+
+def spl(txt):
+    try:
+        result = txt.split(',')
+    except (TypeError, ValueError):
+        result = txt
+    return [x for x in result if x]
 
 
 def strip(pth, nmr=3):

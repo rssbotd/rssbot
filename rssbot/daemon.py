@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # This file is placed in the Public Domain.
 # pylint: disable=C,W0212
 
@@ -8,16 +7,11 @@
 
 import os
 import sys
-import time
-import _thread
 
 
-from rssbot.modules import irc, rss
-from rssbot.persist import Workdir, pidfile, pidname
-from rssbot.runtime import forever, later, launch, wrap
-
-
-Workdir.wdr = os.path.expanduser("~/.rssbot")
+from .modules import irc, rss
+from .persist import pidfile, pidname
+from .runtime import forever, wrap
 
 
 def daemon(verbose=False):
@@ -40,29 +34,12 @@ def daemon(verbose=False):
     os.nice(10)
 
 
-def forever():
-    while True:
-        try:
-            time.sleep(0.1)
-        except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
-
-
 def privileges():
     import getpass
     import pwd
     pwnam2 = pwd.getpwnam(getpass.getuser())
     os.setgid(pwnam2.pw_gid)
     os.setuid(pwnam2.pw_uid)
-
-
-def wrap(func):
-    try:
-        func()
-    except (KeyboardInterrupt, EOFError):
-        pass
-    except Exception as ex:
-        later(ex)
 
 
 def main():

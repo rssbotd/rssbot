@@ -5,11 +5,29 @@
 "errors,reactor,threads,timers"
 
 
+import inspect
 import queue
 import threading
 import time
 import traceback
 import _thread
+
+
+class Commands:
+
+    cmds = {}
+
+    @staticmethod
+    def add(func):
+        Commands.cmds[func.__name__] = func
+
+    @staticmethod
+    def scan(mod):
+        for key, cmdz in inspect.getmembers(mod, inspect.isfunction):
+            if key.startswith("cb"):
+                continue
+            if 'event' in cmdz.__code__.co_varnames:
+                Commands.add(cmdz)
 
 
 class Errors:
@@ -279,6 +297,7 @@ def __dir__():
     return (
         'BufferedClient',
         'Client',
+        'Commands',
         'Errors',
         'Event',
         'Reactor',

@@ -12,4 +12,4 @@ if __name__ == "__main__":
         'bin/rssbot',
         'bin/rssbotd',
         'bin/rssbots'
-    ]
+    ])
