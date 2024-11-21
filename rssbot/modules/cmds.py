@@ -11,7 +11,7 @@ import os
 import time
 
 
-from ..object  import edit, keys, update
+from ..object  import edit, format, keys, update
 from ..persist import find, fntime, ident, laps, last, shortid, write
 from ..runtime import Commands
 
