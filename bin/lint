@@ -9,11 +9,11 @@ import os
 import sys
 
 
-NAME = "rssbot"
+IGNORE = "C0115,C0116,C0413,R0902,R0903,W0212,W0718"
+NAME   = "rssbot"
 
 
 def popen(txt):
-    "run text in popen."
     for line in os.popen(txt).readlines():
         print(line.rstrip())
         sys.stdout.flush()
@@ -23,4 +23,4 @@ if os.path.exists("bin/clean"):
     popen("bin/clean")
 
 
-popen(f"pylint {NAME}")
+popen(f"pylint --disable={IGNORE} {NAME}/*.py {NAME}/modules/*.py bin/tinder tests")

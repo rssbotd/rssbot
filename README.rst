@@ -5,16 +5,13 @@ R S S B O T
 **NAME**
 
 
-|
 | ``rssbot`` - 24/7 Feed Fetcher.
 |
 
 **SYNOPSIS**
 
-|
 | ``rssbot <cmd> [key=val] [key==val]``
-| ``rssbotd`` 
-| ``rssbots``
+| ``rssbot -[cdvisw]``
 |
 
 
@@ -29,7 +26,11 @@ background, hooking the daemon in systemd brings a 24/7 available
 rssbot in your channel.
 
 
-*note* if reinstall fails, try pip uninstall to start pristine.
+*notes*
+
+1) if reinstall fails, try pip uninstall to start pristine.
+2) if that fails, install a fresh ``rssbot srv`` and reinstall.
+3) rssbots has been replaced with rssbot -s 
 
 
 **INSTALL**
@@ -37,7 +38,6 @@ rssbot in your channel.
 
 installation is done with pipx
 
-|
 | ``$ pipx install rssbot``
 | ``$ pipx ensurepath``
 |
@@ -45,6 +45,7 @@ installation is done with pipx
 |
 | ``$ rssbot srv > rssbot.service``
 | ``$ sudo mv rssbot.service /etc/systemd/system/``
+| ``$ sudo systemctl daemon-reload``
 | ``$ sudo systemctl enable rssbot --now``
 |
 | joins ``#rssbot`` on localhost
@@ -54,14 +55,12 @@ installation is done with pipx
 
 use ``rssbot`` to control the program, default it does nothing
 
-|
 | ``$ rssbot``
 | ``$``
 |
 
 see list of commands
 
-|
 | ``$ rssbot cmd``
 | ``cfg,cmd,dne,dpl,err,exp,imp,mod,mre,nme,``
 | ``pwd,rem,res,rss,srv,syn,thr,upt``
@@ -69,22 +68,55 @@ see list of commands
 
 start daemon
 
-|
-| ``$ rssbotd``
+| ``$ rssbot -d``
 | ``$``
 |
 
 start service
 
-|
-| ``$ rssbots``
+| ``$ rssbot -s``
 | ``<runs until ctrl-c>``
 |
 
+**CONFIGURATION**
+
+irc
+
+| ``$ rssbot cfg server=<server>``
+| ``$ rssbot cfg channel=<channel>``
+| ``$ rssobt cfg nick=<nick>``
+|
+
+sasl
+
+| ``$ rssbot pwd <nsvnick> <nspass>``
+| ``$ rssbot cfg password=<frompwd>``
+|
+
+rss
+
+| ``$ rssbot rss <url>``
+| ``$ rssbot dpl <url> <item1,item2>``
+| ``$ rssbot rem <url>``
+| ``$ rssbot nme <url> <name>``
+|
+
+opml
+
+| ``$ rssbot exp``
+| ``$ rssbot imp <filename>``
+|
+
+
+**FILES**
+
+| ``~/.rssbot``
+| ``~/.local/bin/rssbot``
+| ``~/.local/pipx/venvs/rssbot/*``
+|
 
 **COMMANDS**
 
-|
 | ``cfg`` - irc configuration
 | ``cmd`` - commands
 | ``dpl`` - sets display items
@@ -101,63 +133,12 @@ start service
 | ``upt`` - show uptime
 |
 
-**CONFIGURATION**
-
-irc
-
-|
-| ``$ rssbot cfg server=<server>``
-| ``$ rssbot cfg channel=<channel>``
-| ``$ rssobt cfg nick=<nick>``
-|
-
-sasl
-
-|
-| ``$ rssbot pwd <nsvnick> <nspass>``
-| ``$ rssbot cfg password=<frompwd>``
-|
-
-rss
-
-|
-| ``$ rssbot rss <url>``
-| ``$ rssbot dpl <url> <item1,item2>``
-| ``$ rssbot rem <url>``
-| ``$ rssbot nme <url> <name>``
-|
-
-opml
-
-|
-| ``$ rssbot exp``
-| ``$ rssbot imp <filename>``
-|
-
-**SOURCE**
-
-
-source is at `https://github.com/otpcr/rssbot <https://github.com/otpcr/rssbot>`_
-
-
-**FILES**
-
-|
-| ``~/.rssbot``
-| ``~/.local/bin/rssbot``
-| ``~/.local/bin/rssbotd``
-| ``~/.local/bin/rssbots``
-| ``~/.local/pipx/venvs/rssbot/*``
-|
-
 **AUTHOR**
 
-|
 | Bart Thate <``bthate@dds.nl``>
 |
 
 **COPYRIGHT**
 
-|
-| ``RSSBOT`` is Public Domain.
+| ``rssbot`` is Public Domain.
 |

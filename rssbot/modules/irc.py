@@ -1,5 +1,5 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,R,W0105,W0201,W0613,w0622,W0718,E1102
+# pylint: disable=R,C0115,C0116,W0105,W0613,W0718,E0402
 
 
 "internet relay chat"
@@ -16,16 +16,21 @@ import time
 import _thread
 
 
-from ..object  import Object, edit, format, keys
-from ..persist import Cache, ident, last, write
-from ..runtime import Event, Reactor, later, launch
+from rssbot.clients import Config as Main
+from rssbot.clients import output
+from rssbot.command import command
+from rssbot.default import Default
+from rssbot.locater import last
+from rssbot.objects import Object, edit, fmt, keys
+from rssbot.persist import ident, write
+from rssbot.reactor import Event, Fleet, Reactor
+from rssbot.threads import later, launch
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"]
-NAME   = __file__.rsplit(os.sep, maxsplit=3)[-3]
+NAME   = Main.name
 
 
-output = None
 saylock = _thread.allocate_lock()
 
 
@@ -33,24 +38,22 @@ def debug(txt):
     for ign in IGNORE:
         if ign in txt:
             return
-    if output:
-        output(txt)
+    output(txt)
 
 
 def init():
     irc = IRC()
     irc.start()
     irc.events.ready.wait()
-    debug(f'{format(Config, skip="edited,password")}')
+    debug(f'{fmt(irc.cfg, skip="edited,password")}')
     return irc
 
 
-class Config(Object):
+class Config(Default):
 
     channel = f'#{NAME}'
     commands = False
     control = '!'
-    edited = time.time()
     nick = NAME
     password = ""
     port = 6667
@@ -63,7 +66,8 @@ class Config(Object):
     users = False
 
     def __init__(self):
-        Object.__init__(self)
+        Default.__init__(self)
+        self.control = Config.control
         self.channel = Config.channel
         self.commands = Config.commands
         self.nick = Config.nick
@@ -101,7 +105,7 @@ class Output:
 
     @staticmethod
     def extend(channel, txtlist):
-        if channel not in Output.cache:
+        if channel not in dir(Output.cache):
             Output.cache[channel] = []
         chanlist = getattr(Output.cache, channel)
         chanlist.extend(txtlist)
@@ -118,7 +122,7 @@ class Output:
         return txt
 
     def oput(self, channel, txt):
-        if channel and channel not in Output.cache:
+        if channel and channel not in dir(Output.cache):
             setattr(Output.cache, channel, [])
         self.oqueue.put_nowait((channel, txt))
 
@@ -129,6 +133,8 @@ class Output:
                 break
             if self.dostop.is_set():
                 break
+            if not txt:
+                continue
             txtlist = wrapper.wrap(txt)
             if len(txtlist) > 3:
                 self.extend(channel, txtlist)
@@ -145,7 +151,7 @@ class Output:
 
     @staticmethod
     def size(chan):
-        if chan in Output.cache:
+        if chan in dir(Output.cache):
             return len(getattr(Output.cache, chan, []))
         return 0
 
@@ -181,10 +187,11 @@ class IRC(Reactor, Output):
         self.register('ERROR', cb_error)
         self.register('LOG', cb_log)
         self.register('NOTICE', cb_notice)
+        self.register('PRIVMSG', cb_privmsg)
         self.register('QUIT', cb_quit)
         self.register("366", cb_ready)
         self.ident = ident(self)
-        Cache.add(self.ident, self)
+        Fleet.add(self)
 
     def announce(self, txt):
         for channel in self.channels:
@@ -382,9 +389,9 @@ class IRC(Reactor, Output):
             obj.txt = rawstr.split(':', 2)[-1]
         if not obj.txt and len(arguments) == 1:
             obj.txt = arguments[1]
-        spl = obj.txt.split()
-        if len(spl) > 1:
-            obj.args = spl[1:]
+        splitted = obj.txt.split()
+        if len(splitted) > 1:
+            obj.args = splitted[1:]
         if obj.args:
             obj.rest = " ".join(obj.args)
         obj.orig = object.__repr__(self)
@@ -498,17 +505,20 @@ class IRC(Reactor, Output):
 
 
 def cb_auth(bot, evt):
+    bot = Fleet.get(evt.orig)
     bot.docommand(f'AUTHENTICATE {bot.cfg.password}')
 
 
-def cb_cap(bot, evt):
+def cb_cap(evt):
+    bot = Fleet.get(evt.orig)
     if bot.cfg.password and 'ACK' in evt.arguments:
         bot.direct('AUTHENTICATE PLAIN')
     else:
         bot.direct('CAP REQ :sasl')
 
 
-def cb_error(bot, evt):
+def cb_error(evt):
+    bot = Fleet.get(evt.orig)
     if not bot.state.nrerror:
         bot.state.nrerror = 0
     bot.state.nrerror += 1
@@ -516,12 +526,14 @@ def cb_error(bot, evt):
     debug(evt.txt)
 
 
-def cb_h903(bot, evt):
+def cb_h903(evt):
+    bot = Fleet.get(evt.orig)
     bot.direct('CAP END')
     bot.events.authed.set()
 
 
-def cb_h904(bot, evt):
+def cb_h904(evt):
+    bot = Fleet.get(evt.orig)
     bot.direct('CAP END')
     bot.events.authed.set()
 
@@ -529,24 +541,47 @@ def cb_h904(bot, evt):
 def cb_kill(bot, evt):
     pass
 
-def cb_log(bot, evt):
+
+def cb_log(evt):
     pass
 
-def cb_ready(bot, evt):
+
+def cb_ready(evt):
+    bot = Fleet.get(evt.orig)
     bot.events.ready.set()
 
 
-def cb_001(bot, evt):
+def cb_001(evt):
+    bot = Fleet.get(evt.orig)
     bot.logon()
 
 
-def cb_notice(bot, evt):
+def cb_notice(evt):
+    bot = Fleet.get(evt.orig)
     if evt.txt.startswith('VERSION'):
         txt = f'\001VERSION {NAME.upper()} 140 - {bot.cfg.username}\001'
         bot.docommand('NOTICE', evt.channel, txt)
 
 
-def cb_quit(bot, evt):
+def cb_privmsg(evt):
+    bot = Fleet.get(evt.orig)
+    if not bot.cfg.commands:
+        return
+    if evt.txt:
+        cmnd = False
+        if evt.txt.startswith(f'{bot.cfg.nick}:'):
+            evt.txt = evt.txt[len(bot.cfg.nick)+1:]
+            cmnd = True
+        elif evt.txt[0] == bot.cfg.control:
+            evt.txt = evt.txt[1:]
+            evt.txt = evt.txt[0].lower() + evt.txt[1:]
+            cmnd = True
+        if cmnd:
+            command(evt)
+
+
+def cb_quit(evt):
+    bot = Fleet.get(evt.orig)
     debug(f"quit from {bot.cfg.server}")
     if evt.orig and evt.orig in bot.zelf:
         bot.stop()
@@ -554,10 +589,10 @@ def cb_quit(bot, evt):
 
 def cfg(event):
     config = Config()
-    last(config)
+    fnm = last(config)
     if not event.sets:
         event.reply(
-                    format(
+                    fmt(
                         config,
                         keys(config),
                         skip='control,password,realname,sleep,username'.split(",")
@@ -565,8 +600,26 @@ def cfg(event):
                    )
     else:
         edit(config, event.sets)
-        write(config)
-        event.reply('ok')
+        write(config, fnm)
+        event.done()
+
+
+def mre(event):
+    if not event.channel:
+        event.reply('channel is not set.')
+        return
+    bot = Fleet.get(event.orig)
+    if 'cache' not in dir(bot):
+        event.reply('bot is missing cache')
+        return
+    if event.channel not in dir(Output.cache):
+        event.reply(f'no output in {event.channel} cache.')
+        return
+    for _x in range(3):
+        txt = Output.gettxt(event.channel)
+        event.reply(txt)
+    size = IRC.size(event.channel)
+    event.reply(f'{size} more in cache')
 
 
 def pwd(event):
