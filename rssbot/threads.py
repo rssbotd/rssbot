@@ -29,7 +29,6 @@ class Thread(threading.Thread):
 
     def run(self) -> None:
         func, args = self.queue.get()
-        print(func, args)
         try:
             self.result = func(*args)
         except Exception as ex:

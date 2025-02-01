@@ -93,7 +93,6 @@ class Fetcher(Object):
         return result[:-2].rstrip()
 
     def fetch(self, feed, silent=False):
-        print(fmt(feed))
         with fetchlock:
             result = []
             seen = getattr(self.seen, feed.rss, [])
@@ -115,21 +114,21 @@ class Fetcher(Object):
                 if self.dosave:
                     write(fed)
                 result.append(fed)
+            print(result)
             setattr(self.seen, feed.rss, urls)
             if not self.seenfn:
                 self.seenfn = store(ident(self.seen))
             write(self.seen, self.seenfn)
-        if silent:
+            if silent:
+                return counter
+            txt = ''
+            feedname = getattr(feed, 'name', None)
+            if feedname:
+                txt = f'[{feedname}] '
+            for obj in result:
+                txt2 = txt + self.display(obj)
+                Fleet.announce(txt2)
             return counter
-        txt = ''
-        feedname = getattr(feed, 'name', None)
-        if feedname:
-            txt = f'[{feedname}] '
-        print(result)
-        for obj in result:
-            txt2 = txt + self.display(obj)
-            Fleet.announce(txt2)
-        return counter
 
     def run(self, silent=False):
         thrs = []
@@ -239,7 +238,6 @@ def gettinyurl(url):
 
 
 def geturl(url):
-    print(url)
     if not url.startswith("http://") and not url.startswith("https://"):
         return ""
     url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
@@ -247,7 +245,6 @@ def geturl(url):
     req.add_header('User-agent', useragent("rss fetcher"))
     with urllib.request.urlopen(req) as response: # nosec
         response.data = response.read()
-        print(response)
         return response
 
 
