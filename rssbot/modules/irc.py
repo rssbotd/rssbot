@@ -16,15 +16,15 @@ import time
 import _thread
 
 
-from .clients import Config as Main
-from .clients import output
-from .command import command
-from .default import Default
-from .locater import last
-from .objects import Object, edit, fmt, keys
-from .persist import ident, write
-from .reactor import Event, Fleet, Reactor
-from .threads import later, launch
+from ..clients import Config as Main
+from ..clients import output
+from ..command import command
+from ..default import Default
+from ..locater import last
+from ..objects import Object, edit, fmt, keys
+from ..persist import ident, write
+from ..reactor import Event, Fleet, Reactor
+from ..threads import later, launch
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"]

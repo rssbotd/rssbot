@@ -20,7 +20,7 @@ loadlock = threading.RLock()
 
 class Table:
 
-    disable = ["dbg",]
+    disable = ["dbg", "tmr"]
     mods = {}
 
     @staticmethod
@@ -33,6 +33,8 @@ class Table:
         path = pkg.__path__[0]
         pname = ".".join(path.split(os.sep)[-2:])
         for nme in Table.modules(path):
+            if nme in Table.disable:
+                continue
             if "__" in nme:
                 continue
             if mods and nme not in spl(mods):

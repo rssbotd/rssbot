@@ -20,6 +20,5 @@ NAMES = {
     "rss": "rssbot.modules.rss",
     "syn": "rssbot.modules.rss",
     "thr": "rssbot.modules.thr",
-    "tmr": "rssbot.modules.tmr",
     "upt": "rssbot.modules.upt"
 }
