@@ -16,15 +16,15 @@ import time
 import _thread
 
 
-from rssbot.clients import Config as Main
-from rssbot.clients import output
-from rssbot.command import command
-from rssbot.default import Default
-from rssbot.locater import last
-from rssbot.objects import Object, edit, fmt, keys
-from rssbot.persist import ident, write
-from rssbot.reactor import Event, Fleet, Reactor
-from rssbot.threads import later, launch
+from .clients import Config as Main
+from .clients import output
+from .command import command
+from .default import Default
+from .locater import last
+from .objects import Object, edit, fmt, keys
+from .persist import ident, write
+from .reactor import Event, Fleet, Reactor
+from .threads import later, launch
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"]

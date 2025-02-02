@@ -8,7 +8,7 @@
 import time
 
 
-from rssbot.utility import elapsed
+from ..utility import elapsed
 
 
 STARTTIME = time.time()
