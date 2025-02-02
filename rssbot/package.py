@@ -20,7 +20,7 @@ loadlock = threading.RLock()
 
 class Table:
 
-    disable = ["wsd",]
+    disable = ["dbg",]
     mods = {}
 
     @staticmethod

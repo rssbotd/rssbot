@@ -114,7 +114,6 @@ class Fetcher(Object):
                 if self.dosave:
                     write(fed)
                 result.append(fed)
-            print(result)
             setattr(self.seen, feed.rss, urls)
             if not self.seenfn:
                 self.seenfn = store(ident(self.seen))

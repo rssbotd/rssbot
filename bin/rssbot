@@ -21,8 +21,8 @@ from rssbot.clients import Client, Config, output
 from rssbot.command import Commands, command, parse
 from rssbot.encoder import dumps
 from rssbot.excepts import errors, later
+from rssbot.package import Table
 from rssbot.reactor import Event, Fleet
-from rssbot.tabling import Table
 from rssbot.threads import launch
 from rssbot.utility import spl
 from rssbot.workdir import Workdir, pidname

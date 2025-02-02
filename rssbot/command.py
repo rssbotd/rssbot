@@ -9,7 +9,7 @@ import threading
 
 
 from .default import Default
-from .tabling import Table, gettable
+from .package import Table, gettable
 
 
 initlock = threading.RLock()

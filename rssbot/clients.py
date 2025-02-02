@@ -96,8 +96,8 @@ def debug(txt) -> None:
 
 
 def output(txt) -> None:
-    # output here
-    print(txt)
+    "output here"
+    # print(txt)
 
 
 def __dir__():

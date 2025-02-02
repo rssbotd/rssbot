@@ -74,7 +74,6 @@ class TestObject(unittest.TestCase):
     def test_attributes(self):
         okd = True
         for meth in attrs2:
-            print(meth)
             mth = getattr(OBJECT, meth, None)
             if mth is None:
                 okd = meth

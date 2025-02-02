@@ -26,9 +26,9 @@ import rssbot.excepts
 import rssbot.locater
 import rssbot.lookups
 import rssbot.objects
+import rssbot.package
 import rssbot.persist
 import rssbot.reactor
-import rssbot.tabling
 import rssbot.threads
 import rssbot.utility
 import rssbot.workdir
@@ -45,9 +45,9 @@ PACKAGE = [
     'locater',
     'lookups',
     'objects',
+    'package',
     'persist',
     'reactor',
-    'tabling',
     'threads',
     'utility',
     'workdir'
@@ -99,7 +99,6 @@ class TestInterface(unittest.TestCase):
         okd = True
         obj = Object()
         dirr = dir(obj)
-        print(dirr)
         for meth in METHODS:
             if meth not in dirr:
                 okd = False

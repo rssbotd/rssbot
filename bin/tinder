@@ -17,11 +17,11 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.tabling import Table
 from rssbot.clients import Buffered, Config
 from rssbot.command import Commands, command, parse
 from rssbot.excepts import errors, later
 from rssbot.objects import Object, keys
+from rssbot.package import Table
 from rssbot.reactor import Event
 from rssbot.threads import launch
 from rssbot.utility import elapsed

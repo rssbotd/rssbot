@@ -100,7 +100,7 @@ class Reactor:
 
     def stop(self) -> None:
         self.stopped.set()
-        self.queue.push(None)
+        self.queue.put(None)
 
     def wait(self) -> None:
         self.ready.wait()
@@ -116,7 +116,6 @@ class Fleet:
 
     @staticmethod
     def announce(txt) -> None:
-        print(Fleet.bots.values())
         for bot in Fleet.bots.values():
             bot.announce(txt)
 
