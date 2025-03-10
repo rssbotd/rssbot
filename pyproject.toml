@@ -25,7 +25,7 @@ classifiers = [
 
 
 [project.scripts]
-"rssbot" = "rssbot.runtime:wrapped"
+"rssbot" = "rssbot.main:main"
 
 [project.urls]
 "home" = "https://pypi.org/project/rssbot"
