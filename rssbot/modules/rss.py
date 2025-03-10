@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C0115,C0116,W0105,R0903,E0402
 
 
 "rich site syndicate"
@@ -20,13 +19,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..objects import Object, fmt, update
-from ..locater import find, fntime, last
-from ..persist import ident, write
-from ..reactor import Fleet
-from ..threads import Repeater, launch
-from ..workdir import store
-from ..utility import elapsed, spl
+from ..handler import Fleet
+from ..object  import Object, fmt, update
+from ..persist import elapsed, find, fntime, ident, last, spl, store, write
+from ..thread  import Repeater, launch
 
 
 DEBUG = False
@@ -112,22 +108,23 @@ class Fetcher(Object):
                 if uurl in seen:
                     continue
                 if self.dosave:
-                    write(fed)
+                    write(fed, store(ident(fed)))
                 result.append(fed)
             setattr(self.seen, feed.rss, urls)
             if not self.seenfn:
                 self.seenfn = store(ident(self.seen))
             write(self.seen, self.seenfn)
-            if silent:
-                return counter
-            txt = ''
-            feedname = getattr(feed, 'name', None)
-            if feedname:
-                txt = f'[{feedname}] '
-            for obj in result:
-                txt2 = txt + self.display(obj)
-                Fleet.announce(txt2)
+        if silent:
             return counter
+        txt = ''
+        feedname = getattr(feed, 'name', None)
+        if feedname:
+            txt = f'[{feedname}] '
+        for obj in result:
+            txt2 = txt + self.display(obj)
+            for bot in Fleet.bots.values():
+                bot.announce(txt2)
+        return counter
 
     def run(self, silent=False):
         thrs = []
@@ -191,6 +188,9 @@ class Parser:
                     setattr(obj, itm, val)
             result.append(obj)
         return result
+
+
+"utilities"
 
 
 def cdata(line):
@@ -334,7 +334,7 @@ def rss(event):
             return
     feed = Rss()
     feed.rss = event.args[0]
-    write(feed)
+    write(feed, store(ident(feed)))
     event.done()
 
 
@@ -351,7 +351,7 @@ def syn(event):
     event.reply(f"{nrs} feeds synced")
 
 
-"OPML"
+"opml"
 
 
 class OPML:
@@ -418,6 +418,9 @@ class OPML:
         return result
 
 
+"utilities"
+
+
 def attrs(obj, txt):
     update(obj, OPML.parse(txt))
 
@@ -430,18 +433,19 @@ def shortid():
 
 
 def exp(event):
-    event.reply(TEMPLATE)
-    nrs = 0
-    for _fn, ooo in find("rss"):
-        nrs += 1
-        obj = Rss()
-        update(obj, ooo)
-        name = f"url{nrs}"
-        txt = f'<outline name="{name}" display_list="{obj.display_list}" xmlUrl="{obj.rss}"/>'
-        event.reply(" "*12 + txt)
-    event.reply(" "*8 + "</outline>")
-    event.reply("    <body>")
-    event.reply("</opml>")
+    with importlock:
+        event.reply(TEMPLATE)
+        nrs = 0
+        for _fn, ooo in find("rss"):
+            nrs += 1
+            obj = Rss()
+            update(obj, ooo)
+            name = f"url{nrs}"
+            txt = f'<outline name="{name}" display_list="{obj.display_list}" xmlUrl="{obj.rss}"/>'
+            event.reply(" "*12 + txt)
+        event.reply(" "*8 + "</outline>")
+        event.reply("    <body>")
+        event.reply("</opml>")
 
 
 def imp(event):
@@ -474,7 +478,7 @@ def imp(event):
             update(feed, obj)
             feed.rss = obj.xmlUrl
             feed.insertid = insertid
-            write(feed)
+            write(feed, store(ident(feed)))
             nrs += 1
     if nrskip:
         event.reply(f"skipped {nrskip} urls.")

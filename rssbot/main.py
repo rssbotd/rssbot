@@ -1,40 +1,31 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,R0903,W0105,W0212,W0611,W0613,W0718,E0402
 
 
-"main"
+"main program"
 
 
+import hashlib
 import os
 import pathlib
+import signal
 import sys
 import time
-import traceback
 import _thread
 
 
-from .clients import Client, Config, debug, output
-from .command import Commands, command, parse
-from .encoder import dumps
-from .excepts import errors, later
-from .package import Table
-from .reactor import Event, Fleet
-from .threads import launch
-from .utility import spl
-from .workdir import Workdir, pidname
+from .cmnd    import Commands, Config, command, parse
+from .errors  import Errors, later, nodebug
+from .handler import Client, Event
+from .object  import dumps
+from .persist import Workdir, pidname
+from .table   import Table
 
 
-from . import clients
-from . import modules as MODS
+p = os.path.join
 
 
-cfg   = Config()
-p     = os.path.join
-pname = f"{Config.name}.modules"
-
-
-Workdir.wdr    = os.path.expanduser(f"~/.{Config.name}")
-clients.output = print
+def output(txt):
+    print(txt)
 
 
 class CLI(Client):
@@ -42,9 +33,6 @@ class CLI(Client):
     def __init__(self):
         Client.__init__(self)
         self.register("command", command)
-
-    def announce(self, txt):
-        pass
 
     def raw(self, txt):
         output(txt.encode('utf-8', 'replace').decode("utf-8"))
@@ -64,6 +52,26 @@ class Console(CLI):
         evt.txt = input("> ")
         evt.type = "command"
         return evt
+
+
+"output"
+
+
+def nil(txt):
+    pass
+
+
+def enable():
+    global output
+    output = print
+
+
+def disable():
+    global output
+    output = nil
+
+
+"utilities"
 
 
 def banner():
@@ -110,6 +118,19 @@ def forever():
             _thread.interrupt_main()
 
 
+def md5(mod):
+    with open(mod.__file__, "r", encoding="utf-8") as file:
+        txt = file.read().encode("utf-8")
+        return str(hashlib.md5(txt).hexdigest())
+
+
+def modules(path) -> [str]:
+    return [
+            x[:-3] for x in os.listdir(path)
+            if x.endswith(".py") and not x.startswith("__")
+           ]
+
+
 def pidfile(filename):
     if os.path.exists(filename):
         os.unlink(filename)
@@ -127,30 +148,52 @@ def privileges():
     os.setuid(pwnam2.pw_uid)
 
 
+def setwd(name, pname="", path=""):
+    Config.name = name
+    Config.pname = pname or f"{name}.modules"
+    path = path or os.path.expanduser(f"~/.{name}")
+    Workdir.wdr = path
+
+
+"handlers"
+
+
+def handler(signum, frame):
+    if not Errors.errors:
+        output("no errors")
+    for line in Errors.errors:
+        output(line)
+    sys.exit(0)
+
+
+
+
 "scripts"
 
 
 def background():
-    daemon(True)
+    daemon("-v" in sys.argv)
+    setwd(Config.name)
     privileges()
+    disable()
     pidfile(pidname(Config.name))
     Commands.add(cmd)
-    Table.inits(Config.init, pname)
+    Table.inits(Config.init or "irc,rss", Config.pname)
     forever()
 
 
 def console():
     import readline # noqa: F401
+    setwd(Config.name)
+    enable()
     Commands.add(cmd)
-    parse(cfg, " ".join(sys.argv[1:]))
-    Config.init = cfg.sets.init or Config.init
-    Config.opts = cfg.opts
-    if "v" in cfg.opts:
+    parse(Config, " ".join(sys.argv[1:]))
+    Config.init = Config.sets.init or Config.init
+    if "v" in Config.opts:
         banner()
-    if "i" in cfg.opts or Config.init:
-        for _mod, thr in Table.inits(Config.init, pname):
-            if "w" in cfg.opts:
-                thr.join()
+    for _mod, thr in Table.inits(Config.init, Config.pname):
+        if "w" in Config.opts:
+            thr.join()
     csl = Console()
     csl.start()
     forever()
@@ -159,23 +202,32 @@ def console():
 def control():
     if len(sys.argv) == 1:
         return
+    setwd(Config.name)
+    Workdir.wdr = os.path.expanduser(f"~/.{Config.name}")
+    enable()
     Commands.add(cmd)
     Commands.add(srv)
     Commands.add(tbl)
-    parse(cfg, " ".join(sys.argv[1:]))
+    parse(Config, " ".join(sys.argv[1:]))
     csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
     evt.type = "command"
-    evt.txt = cfg.otxt
+    evt.txt = Config.otxt
     command(evt)
     evt.wait()
 
+
 def service():
+    if not check("v"):
+        nodebug()
+        disable()
+    signal.signal(signal.SIGHUP, handler)
+    setwd(Config.name)
     privileges()
     pidfile(pidname(Config.name))
     Commands.add(cmd)
-    Table.inits(Config.init, pname)
+    Table.inits(Config.init or "irc,rss", Config.pname)
     forever()
 
 
@@ -193,6 +245,8 @@ def srv(event):
 
 
 def tbl(event):
+    nodebug()
+    from . import modules as MODS
     for mod in Table.all(MODS):
         Commands.scan(mod)
     event.reply("# This file is placed in the Public Domain.")
@@ -202,7 +256,14 @@ def tbl(event):
     event.reply("")
     event.reply("")
     event.reply(f"NAMES = {dumps(Commands.names, indent=4, sort_keys=True)}")
-    
+    event.reply("")
+    event.reply("")
+    event.reply("MD5 = {")
+    for key, mod in sorted(Table.mods.items()):
+        event.reply(f'    "{mod.__name__}": "{md5(mod)}",')
+    event.reply("}")
+    event.reply
+
 
 "data"
 
@@ -224,6 +285,19 @@ WantedBy=multi-user.target"""
 "runtime"
 
 
+def wrapped(func):
+    try:
+        func()
+    except (KeyboardInterrupt, EOFError):
+        output("")
+    except Exception as exc:
+        later(exc)
+    for line in Errors.errors:
+        output(line)
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+
 def wrap(func):
     import termios
     old = None
@@ -232,37 +306,25 @@ def wrap(func):
     except termios.error:
         pass
     try:
-        func()
-    except (KeyboardInterrupt, EOFError):
-        output("")
-    except Exception as exc:
-        later(exc)
+        wrapped(func)
     finally:
         if old:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-    for line in errors():
-        output(line)
-
-
-def wrapped():
-    wrap(main)
-
-
-def wraps():
-    wrap(service)
 
 
 def main():
+    if check("v"):
+        setattr(Config.opts, "v", True)
+        enable()
     if check("c"):
         wrap(console)
     elif check("d"):
         background()
     elif check("s"):
-        wrap(service)
+        wrapped(service)
     else:
-        control()
+        wrapped(control)
 
 
 if __name__ == "__main__":
     main()
-    sys.exit(0)

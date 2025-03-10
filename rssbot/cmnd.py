@@ -1,43 +1,64 @@
 # This file is placed in the Public Domain.
 
 
-"command"
+"commands"
 
 
 import inspect
-import threading
+import time
+import typing
 
 
-from .default import Default
-from .package import Table, gettable
+from .object import Default
+from .table  import Table
 
 
-initlock = threading.RLock()
-loadlock = threading.RLock()
-lock     = threading.RLock()
+try:
+    from .lookup import NAMES
+except Exception:
+    NAMES = {}
+
+
+STARTTIME = time.time()
+
+
+class Config(Default):
+
+    init  = ""
+    name  = Default.__module__.split(".")[0]
+    pname = f"{name}.modules"
+    opts  = Default()
 
 
 class Commands:
 
     cmds = {}
-    names = gettable()
+    names = NAMES
 
     @staticmethod
-    def add(func, mod=None):
+    def add(func, mod=None) -> None:
         Commands.cmds[func.__name__] = func
         if mod:
             Commands.names[func.__name__] = mod.__name__
 
     @staticmethod
-    def get(cmd):
-        return Commands.cmds.get(cmd, None)
+    def get(cmd) -> typing.Callable:
+        func = Commands.cmds.get(cmd, None)
+        if not func:
+            name = Commands.names.get(cmd)
+            if name:
+                if Table.check(name):
+                    mod = Table.load(name)
+                    Commands.scan(mod)
+                    func = Commands.cmds.get(cmd)
+        return func
 
     @staticmethod
-    def getname(cmd):
+    def getname(cmd) -> None:
         return Commands.names.get(cmd)
 
     @staticmethod
-    def scan(mod):
+    def scan(mod) -> None:
         for key, cmdz in inspect.getmembers(mod, inspect.isfunction):
             if key.startswith("cb"):
                 continue
@@ -45,39 +66,33 @@ class Commands:
                 Commands.add(cmdz, mod)
 
 
-def command(evt):
+def command(evt) -> None:
     parse(evt)
     func = Commands.get(evt.cmd)
-    if not func:
-        mname = Commands.names.get(evt.cmd)
-        if mname:
-            mod = Table.load(mname)
-            Commands.scan(mod)
-            func = Commands.get(evt.cmd)
-    if not func:
-        evt.ready()
-        return
-    func(evt)
-    evt.display()
+    if func:
+        func(evt)
+        evt.display()
+    evt.ready()
 
 
-def parse(obj, txt=None):
+def parse(obj, txt=None) -> None:
     if txt is None:
         if "txt" in dir(obj):
             txt = obj.txt
         else:
             txt = ""
     args = []
-    obj.args    = []
-    obj.cmd     = ""
-    obj.gets    = Default()
-    obj.index   = None
-    obj.mod     = ""
-    obj.opts    = ""
-    obj.result  = {}
-    obj.sets    = Default()
-    obj.txt     = txt or ""
-    obj.otxt    = obj.txt
+    obj.args   = []
+    obj.cmd    = ""
+    obj.gets   = Default()
+    obj.index  = None
+    obj.mod    = ""
+    obj.opts   = ""
+    obj.result = {}
+    obj.sets   = Default()
+    obj.silent = Default()
+    obj.txt    = txt or ""
+    obj.otxt   = obj.txt
     _nr = -1
     for spli in obj.otxt.split():
         if spli.startswith("-"):
@@ -86,7 +101,12 @@ def parse(obj, txt=None):
             except ValueError:
                 obj.opts += spli[1:]
             continue
-        if "==" in spli:
+        if "-=" in spli:
+            key, value = spli.split("-=", maxsplit=1)
+            setattr(obj.silent, key, value)
+            setattr(obj.gets, key, value)
+            continue
+        elif "==" in spli:
             key, value = spli.split("==", maxsplit=1)
             setattr(obj.gets, key, value)
             continue
@@ -112,13 +132,12 @@ def parse(obj, txt=None):
         obj.txt  = obj.cmd + " " + obj.rest
     else:
         obj.txt = obj.cmd or ""
-    return obj
 
 
 def __dir__():
     return (
+        'STARTTIME',
         'Commands',
         'command',
-        'cmd',
         'parse'
     )

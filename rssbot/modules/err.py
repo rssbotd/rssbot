@@ -1,11 +1,10 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C0116,E0402
 
 
 "errors"
 
 
-from ..excepts import Errors
+from ..errors import Errors
 
 
 def err(event):

@@ -1,8 +1,7 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C0115,C0116,R0912,W0105,E0402
 
 
-"timer"
+"parse time"
 
 
 import datetime
@@ -10,49 +9,7 @@ import re
 import time as ttime
 
 
-from ..locater import find
-from ..objects import update
-from ..persist import write
-from ..reactor import Event, Fleet
-from ..threads import Timer, launch
-from ..utility import elapsed
-
-
-MONTHS = [
-    'Bo',
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
-]
-
-
-FORMATS = [
-    "%Y-%m-%d",
-    "%d-%m-%Y",
-    "%d-%m",
-    "%m-%d",
-]
-
-
-def init():
-    for _fn, obj in find("timer"):
-        if "time" not in dir(obj):
-            continue
-        diff = float(obj.time) - ttime.time()
-        if diff > 0:
-            evt = Event()
-            update(evt, obj)
-            timer = Timer(diff, Fleet.announce, evt.rest)
-            timer.start()
+from .errors import later
 
 
 class NoDate(Exception):
@@ -61,13 +18,14 @@ class NoDate(Exception):
 
 
 def extract_date(daystr):
-    res = None
+    daystr = daystr.encode('utf-8', 'replace').decode("utf-8")
+    res = ttime.time()
     for fmt in FORMATS:
         try:
             res = ttime.mktime(ttime.strptime(daystr, fmt))
             break
-        except ValueError:
-            res = None
+        except ValueError as ex:
+            later(ex)
     return res
 
 
@@ -85,7 +43,7 @@ def get_day(daystr):
             if ymre:
                 (day, month) = ymre.groups()
                 yea = ttime.strftime("%Y", ttime.localtime())
-        except Exception as ex: # pylint: disable=W0212
+        except Exception as ex:
             raise NoDate(daystr) from ex
     if day:
         day = int(day)
@@ -171,50 +129,46 @@ def today():
     return str(datetime.datetime.today()).split()[0]
 
 
-def tmr(event):
-    "add a timer."
-    result = ""
-    if not event.rest:
-        nmr = 0
-        for _fn, obj in find('timer'):
-            lap = float(obj.time) - ttime.time()
-            if lap > 0:
-                event.reply(f'{nmr} {obj.txt} {elapsed(lap)}')
-                nmr += 1
-        if not nmr:
-            event.reply("no timers.")
-        return result
-    seconds = 0
-    line = ""
-    for word in event.args:
-        if word.startswith("+"):
-            try:
-                seconds = int(word[1:])
-            except (ValueError, IndexError):
-                event.reply(f"{seconds} is not an integer")
-                return result
-        else:
-            line += word + " "
-    if seconds:
-        target = ttime.time() + seconds
-    else:
-        try:
-            target = get_day(event.rest)
-        except NoDate:
-            target = to_day(today())
-        hour =  get_hour(event.rest)
-        if hour:
-            target += hour
-    if not target or ttime.time() > target:
-        event.reply("already passed given time.")
-        return result
-    event.time = target
-    diff = target - ttime.time()
-    event.reply("ok " +  elapsed(diff))
-    del event.args
-    event.result.append(event.rest)
-    timer = Timer(diff, event.display)
-    update(timer, event)
-    write(timer)
-    launch(timer.start)
-    return result
+"data"
+
+
+MONTHS = [
+    'Bo',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+]
+
+
+FORMATS = [
+    "%Y-%M-%D %H:%M:%S",
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%d",
+    "%d-%m-%Y",
+    "%d-%m",
+    "%m-%d",
+]
+
+
+"interface"
+
+
+def __dir__():
+    return (
+        'extract_date',
+        'get_day',
+        'get_hour',
+        'get_time',
+        'parse_time',
+        'to_day',
+        'today'
+    )

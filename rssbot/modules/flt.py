@@ -1,13 +1,12 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C0116,E0402
 
 
 "fleet"
 
 
-from ..objects import fmt
-from ..threads import name
-from ..clients import Fleet
+from ..object  import fmt
+from ..handler import Fleet
+from ..thread  import name
 
 
 def flt(event):

@@ -1,18 +1,19 @@
 # This file is placed in the Public Domain.
 
 
-"exception handling"
+"deferred exception handling"
 
 
+import os
+import sys
 import traceback
 
 
-DEBUG = True
 
 
 class Errors:
 
-    name = __file__.rsplit(".", maxsplit=2)[-2]
+    name = __file__.rsplit("/", maxsplit=2)[-2]
     errors = []
 
     @staticmethod
@@ -22,12 +23,14 @@ class Errors:
         result = ""
         for i in trace:
             fname = i[0]
+            if fname.endswith(".py"):
+                fname = fname[:-3]
             linenr = i[1]
-            plugfile = fname[:-3].split("/")
+            plugfile = fname.split("/")
             mod = []
             for i in plugfile[::-1]:
                 mod.append(i)
-                if Errors.name in i:
+                if Errors.name in i or "bin" in i:
                     break
             ownname = '.'.join(mod[::-1])
             if ownname.endswith("__"):
@@ -48,8 +51,11 @@ class Errors:
         )
 
 
-def errors() -> []:
-    return Errors.errors
+def debug(*args):
+    for arg in args:
+        sys.stderr.write(str(arg))
+        sys.stderr.write("\n")
+        sys.stderr.flush()
 
 
 def later(exc) -> None:
@@ -57,3 +63,17 @@ def later(exc) -> None:
     fmt = Errors.format(excp)
     if fmt not in Errors.errors:
         Errors.errors.append(fmt)
+
+
+def nodebug():
+    with open('/dev/null', 'a+', encoding="utf-8") as ses:
+        os.dup2(ses.fileno(), sys.stderr.fileno())
+
+
+def __dir__():
+    return (
+        'Errors',
+        'debug',
+        'later',
+        'nodebug'
+    )

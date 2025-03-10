@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=R,C0115,C0116,W0105,W0613,W0718,E0402
 
 
 "internet relay chat"
@@ -10,25 +9,25 @@ import os
 import queue
 import socket
 import ssl
+import sys
 import textwrap
 import threading
 import time
 import _thread
 
 
-from ..clients import Config as Main
-from ..clients import output
-from ..command import command
-from ..default import Default
-from ..locater import last
-from ..objects import Object, edit, fmt, keys
-from ..persist import ident, write
-from ..reactor import Event, Fleet, Reactor
-from ..threads import later, launch
+from ..cmnd    import Config as Main
+from ..cmnd    import command
+from ..errors  import debug as ldebug
+from ..errors  import later
+from ..persist import ident, last, store, write
+from ..object  import Default, Object, edit, fmt, keys
+from ..handler import Client, Event, Fleet
+from ..thread  import launch
 
 
-IGNORE = ["PING", "PONG", "PRIVMSG"]
-NAME   = Main.name
+IGNORE  = ["PING", "PONG", "PRIVMSG"]
+NAME    = sys.argv[0].split(os.sep)[-1]
 
 
 saylock = _thread.allocate_lock()
@@ -38,36 +37,35 @@ def debug(txt):
     for ign in IGNORE:
         if ign in txt:
             return
-    output(txt)
+    ldebug(txt)
 
 
 def init():
     irc = IRC()
     irc.start()
     irc.events.ready.wait()
-    debug(f'{fmt(irc.cfg, skip="edited,password")}')
+    debug(f'{fmt(Config, skip="edited,password")}')
     return irc
 
 
 class Config(Default):
 
-    channel = f'#{NAME}'
+    channel = f'#{Main.name}'
     commands = False
     control = '!'
-    nick = NAME
+    nick = Main.name
     password = ""
     port = 6667
-    realname = NAME
+    realname = Main.name
     sasl = False
     server = 'localhost'
     servermodes = ''
     sleep = 60
-    username = NAME
+    username = Main.name
     users = False
 
     def __init__(self):
         Default.__init__(self)
-        self.control = Config.control
         self.channel = Config.channel
         self.commands = Config.commands
         self.nick = Config.nick
@@ -75,6 +73,9 @@ class Config(Default):
         self.realname = Config.realname
         self.server = Config.server
         self.username = Config.username
+
+
+"output"
 
 
 class TextWrap(textwrap.TextWrapper):
@@ -126,7 +127,7 @@ class Output:
             setattr(Output.cache, channel, [])
         self.oqueue.put_nowait((channel, txt))
 
-    def out(self):
+    def output(self):
         while not self.dostop.is_set():
             (channel, txt) = self.oqueue.get()
             if channel is None and txt is None:
@@ -155,11 +156,17 @@ class Output:
             return len(getattr(Output.cache, chan, []))
         return 0
 
+    def start(self):
+        launch(self.output)
 
-class IRC(Reactor, Output):
+
+"irc"
+
+
+class IRC(Client, Output):
 
     def __init__(self):
-        Reactor.__init__(self)
+        Client.__init__(self)
         Output.__init__(self)
         self.buffer = []
         self.cfg = Config()
@@ -191,7 +198,6 @@ class IRC(Reactor, Output):
         self.register('QUIT', cb_quit)
         self.register("366", cb_ready)
         self.ident = ident(self)
-        Fleet.add(self)
 
     def announce(self, txt):
         for channel in self.channels:
@@ -482,8 +488,8 @@ class IRC(Reactor, Output):
         self.events.ready.clear()
         self.events.connected.clear()
         self.events.joined.clear()
-        launch(Output.out, self)
-        Reactor.start(self)
+        Output.start(self)
+        Client.start(self)
         launch(
                self.doconnect,
                self.cfg.server or "localhost",
@@ -498,10 +504,13 @@ class IRC(Reactor, Output):
         self.disconnect()
         self.dostop.set()
         self.oput(None, None)
-        Reactor.stop(self)
+        Client.stop(self)
 
     def wait(self):
         self.events.ready.wait()
+
+
+"callbacks"
 
 
 def cb_auth(bot, evt):
@@ -541,10 +550,8 @@ def cb_h904(evt):
 def cb_kill(bot, evt):
     pass
 
-
 def cb_log(evt):
     pass
-
 
 def cb_ready(evt):
     bot = Fleet.get(evt.orig)
@@ -559,7 +566,7 @@ def cb_001(evt):
 def cb_notice(evt):
     bot = Fleet.get(evt.orig)
     if evt.txt.startswith('VERSION'):
-        txt = f'\001VERSION {NAME.upper()} 140 - {bot.cfg.username}\001'
+        txt = f'\001VERSION {Main.name.upper()} 140 - {bot.cfg.username}\001'
         bot.docommand('NOTICE', evt.channel, txt)
 
 
@@ -568,15 +575,15 @@ def cb_privmsg(evt):
     if not bot.cfg.commands:
         return
     if evt.txt:
-        cmnd = False
-        if evt.txt.startswith(f'{bot.cfg.nick}:'):
-            evt.txt = evt.txt[len(bot.cfg.nick)+1:]
-            cmnd = True
-        elif evt.txt[0] == bot.cfg.control:
+        if evt.txt[0] in ['!',]:
             evt.txt = evt.txt[1:]
+        elif evt.txt.startswith(f'{bot.cfg.nick}:'):
+            evt.txt = evt.txt[len(bot.cfg.nick)+1:]
+        else:
+            return
+        if evt.txt:
             evt.txt = evt.txt[0].lower() + evt.txt[1:]
-            cmnd = True
-        if cmnd:
+        if evt.txt:
             command(evt)
 
 
@@ -585,6 +592,9 @@ def cb_quit(evt):
     debug(f"quit from {bot.cfg.server}")
     if evt.orig and evt.orig in bot.zelf:
         bot.stop()
+
+
+"commands"
 
 
 def cfg(event):
@@ -600,7 +610,7 @@ def cfg(event):
                    )
     else:
         edit(config, event.sets)
-        write(config, fnm)
+        write(config, fnm or store(ident(config)))
         event.done()
 
 

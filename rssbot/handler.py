@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"reactor"
+"event handler"
 
 
 import queue
@@ -10,13 +10,13 @@ import time
 import _thread
 
 
-from .default import Default
-from .excepts import later
-from .threads import launch
+from .errors import later
+from .object import Default
+from .thread import launch, name
 
 
-cblock = threading.RLock()
-lock   = threading.RLock()
+lock    = threading.RLock()
+outlock = threading.RLock()
 
 
 class Event(Default):
@@ -48,7 +48,7 @@ class Event(Default):
             self._thr.join()
 
 
-class Reactor:
+class Handler:
 
     def __init__(self):
         self.cbs     = {}
@@ -57,14 +57,62 @@ class Reactor:
         self.stopped = threading.Event()
 
     def callback(self, evt) -> None:
-        with cblock:
+        with lock:
             func = self.cbs.get(evt.type, None)
-            if func:
-                try:
-                    evt._thr = launch(func, evt, name=evt.cmd or evt.txt)
-                except Exception as ex:
-                    later(ex)
-                    evt.ready()
+            if not func:
+                evt.ready()
+                return
+            try:
+                evt._thr = launch(func, evt, name=(
+                                                   evt.txt
+                                                   and evt.txt.split()[0]
+                                                  ) or name(func)
+                                 )
+            except Exception as ex:
+                later(ex)
+                evt.ready()
+
+    def loop(self) -> None:
+        while not self.stopped.is_set():
+            try:
+                evt = self.queue.get()
+                if evt is None:
+                    break
+                evt.orig = repr(self)
+                self.callback(evt)
+            except (KeyboardInterrupt, EOFError):
+                evt.ready()
+                self.ready,set()
+                _thread.interrupt_main()
+        self.ready.set()
+
+    def put(self, evt) -> None:
+        self.queue.put(evt)
+
+    def register(self, typ, cbs) -> None:
+        self.cbs[typ] = cbs
+
+    def start(self) -> None:
+        self.stopped.clear()
+        self.ready.clear()
+        launch(self.loop)
+
+    def stop(self) -> None:
+        self.stopped.set()
+        self.queue.put(None)
+
+    def wait(self) -> None:
+        self.ready.wait()
+
+
+class Client(Handler):
+
+    def __init__(self):
+        Handler.__init__(self)
+        Fleet.add(self)
+
+    def announce(self, txt) -> None:
+        pass
 
     def loop(self) -> None:
         evt = None
@@ -84,26 +132,11 @@ class Reactor:
     def poll(self) -> Event:
         return self.queue.get()
 
-    def put(self, evt) -> None:
-        self.queue.put(evt)
-
     def raw(self, txt) -> None:
         raise NotImplementedError("raw")
 
-    def register(self, typ, cbs) -> None:
-        self.cbs[typ] = cbs
-
-    def start(self) -> None:
-        self.stopped.clear()
-        self.ready.clear()
-        launch(self.loop)
-
-    def stop(self) -> None:
-        self.stopped.set()
-        self.queue.put(None)
-
-    def wait(self) -> None:
-        self.ready.wait()
+    def say(self, channel, txt) -> None:
+        self.raw(txt)
 
 
 class Fleet:
@@ -121,10 +154,9 @@ class Fleet:
 
     @staticmethod
     def display(evt) -> None:
-        with lock:
+        with outlock:
             for tme in sorted(evt.result):
-                text = evt.result[tme]
-                Fleet.say(evt.orig, evt.channel, text)
+                Fleet.say(evt.orig, evt.channel, evt.result[tme])
             evt.ready()
 
     @staticmethod
@@ -146,7 +178,7 @@ class Fleet:
             bot.say(channel, txt)
 
     @staticmethod
-    def wait():
+    def wait() -> None:
         for bot in Fleet.bots.values():
             if "wait" in dir(bot):
                 bot.wait()
@@ -154,7 +186,8 @@ class Fleet:
 
 def __dir__():
     return (
+        'Client',
         'Event',
         'Fleet',
-        'Reactor'
+        'Handler'
     )
