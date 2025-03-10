@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,R,W0401,W0614,W0622
 # ruff: noqa: F403,F405
 
 
@@ -12,45 +11,30 @@ import unittest
 
 
 import rssbot
-
-
-from rssbot.objects import *
-
-
-import rssbot.caching
-import rssbot.clients
-import rssbot.command
-import rssbot.default
-import rssbot.encoder
-import rssbot.excepts
-import rssbot.locater
-import rssbot.lookups
-import rssbot.objects
-import rssbot.package
+import rssbot.cmnd
+import rssbot.errors
+import rssbot.handler
+import rssbot.main
+import rssbot.object
 import rssbot.persist
-import rssbot.reactor
-import rssbot.threads
-import rssbot.utility
-import rssbot.workdir
+import rssbot.table
+import rssbot.thread
+import rssbot.time
+
+
+from rssbot.object import *
 
 
 PACKAGE = [
-    'caching',
-    'clients',
-    'command',
-    'decoder',
-    'default',
-    'encoder',
-    'excepts',
-    'locater',
-    'lookups',
-    'objects',
-    'package',
+    'cmnd',
+    'errors',
+    'handler',
+    'main',
+    'object',
     'persist',
-    'reactor',
-    'threads',
-    'utility',
-    'workdir'
+    'table',
+    'thread',
+    'time'
 ]
 
 
@@ -64,11 +48,13 @@ METHODS = [
     '__format__',
     '__ge__',
     '__getattribute__',
+    '__getstate__',
     '__gt__',
     '__hash__',
     '__init__',
     '__init_subclass__',
     '__le__',
+    '__len__',
     '__lt__',
     '__module__',
     '__ne__',
@@ -78,6 +64,7 @@ METHODS = [
     '__repr__',
     '__setattr__',
     '__sizeof__',
+    '__str__',
     '__subclasshook__',
     '__weakref__'
 ]

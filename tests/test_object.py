@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C,R,W0105,W0622
 
 
 "objects"
@@ -8,10 +7,10 @@
 import unittest
 
 
-from rssbot.objects import Object, items, keys, update, values
+from rssbot.object import Object, items, keys, update, values
 
 
-import rssbot
+import rssbot.object
 
 
 VALIDJSON = '{"test": "bla"}'
@@ -22,10 +21,14 @@ attrs1 = (
     'Obj',
     'construct',
     'dumps',
+    'edit',
+    'format',
     'fqn',
     'items',
     'keys',
     'loads',
+    'match',
+    'search',
     'update',
     'values'
 )
@@ -66,7 +69,7 @@ attrs2 = (
 
 
 OBJECT  = Object()
-PACKAGE = rssbot
+PACKAGE = rssbot.object
 
 
 class TestObject(unittest.TestCase):
@@ -97,6 +100,14 @@ class TestObject(unittest.TestCase):
     def test_dict(self):
         obj = Object()
         self.assertEqual(obj.__dict__, {})
+
+    def test_fmt(self):
+        obj = Object()
+        self.assertEqual(format(obj), '{}')
+
+    def test_format(self):
+        obj = Object()
+        self.assertEqual(format(obj), '{}')
 
     def test_getattribute(self):
         obj = Object()
@@ -137,6 +148,10 @@ class TestObject(unittest.TestCase):
             ],
         )
 
+    def test_len(self):
+        obj = Object()
+        self.assertEqual(len(obj), 0)
+
     def test_methods(self):
         okd = True
         for attr in attrs1:
@@ -147,7 +162,7 @@ class TestObject(unittest.TestCase):
         self.assertTrue(okd)
 
     def test_module(self):
-        self.assertEqual(Object().__module__, "rssbot.objects")
+        self.assertEqual(Object().__module__, "rssbot.object")
 
     def test_register(self):
         obj = Object()
@@ -161,6 +176,10 @@ class TestObject(unittest.TestCase):
         obj = Object()
         obj.__setattr__("key", "value")
         self.assertTrue(obj.key, "value")
+
+    def test_str(self):
+        obj = Object()
+        self.assertEqual(str(obj), "{}")
 
     def test_update(self):
         obj = Object()

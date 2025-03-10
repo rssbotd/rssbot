@@ -1,10 +1,7 @@
 # This file is placed in the Public Domain.
-#
-#
-# pylint: disable=C,R,W1503
 
 
-"no tests"
+"github feed test"
 
 
 import unittest

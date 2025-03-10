@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C
 
 
 "composite"
@@ -8,7 +7,7 @@
 import unittest
 
 
-from rssbot.objects import Object
+from rssbot.object import Object
 
 
 class TestComposite(unittest.TestCase):

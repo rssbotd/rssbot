@@ -1,5 +1,4 @@
 # This file is placed in the Public Domain.
-# pylint: disable=C
 
 
 "json"
@@ -8,9 +7,7 @@
 import unittest
 
 
-from rssbot.decoder import loads
-from rssbot.encoder import dumps
-from rssbot.objects import Object
+from rssbot.object import Object, dumps, loads
 
 
 VALIDJSON = "{'test': 'bla'}"
