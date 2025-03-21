@@ -4,11 +4,7 @@
 "deferred exception handling"
 
 
-import os
-import sys
 import traceback
-
-
 
 
 class Errors:
@@ -40,6 +36,9 @@ class Errors:
             result += f"{ownname}:{linenr} "
         del trace
         res = f"{exctype} {result[:-1]} {excvalue}"
+        if "__notes__" in dir(exc):
+            for note in exc.__notes__:
+                res += f" {note}"
         return res
 
     @staticmethod
@@ -51,29 +50,12 @@ class Errors:
         )
 
 
-def debug(*args):
-    for arg in args:
-        sys.stderr.write(str(arg))
-        sys.stderr.write("\n")
-        sys.stderr.flush()
-
-
-def later(exc) -> None:
-    excp = exc.with_traceback(exc.__traceback__)
-    fmt = Errors.format(excp)
-    if fmt not in Errors.errors:
-        Errors.errors.append(fmt)
-
-
-def nodebug():
-    with open('/dev/null', 'a+', encoding="utf-8") as ses:
-        os.dup2(ses.fileno(), sys.stderr.fileno())
+def later(exc, txt="") -> None:
+    Errors.errors.append(exc)
 
 
 def __dir__():
     return (
         'Errors',
-        'debug',
-        'later',
-        'nodebug'
+        'later'
     )

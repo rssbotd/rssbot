@@ -1,15 +1,15 @@
 # This file is placed in the Public Domain.
 
 
-"parse time"
+"utilities"
 
 
 import datetime
+import hashlib
+import os
 import re
-import time as ttime
-
-
-from .errors import later
+import sys
+import time
 
 
 class NoDate(Exception):
@@ -17,15 +17,86 @@ class NoDate(Exception):
     pass
 
 
+def elapsed(seconds, short=True) -> str:
+    txt = ""
+    nsec = float(seconds)
+    if nsec < 1:
+        return f"{nsec:.2f}s"
+    yea = 365*24*60*60
+    week = 7*24*60*60
+    nday = 24*60*60
+    hour = 60*60
+    minute = 60
+    yeas = int(nsec/yea)
+    nsec -= yeas*yea
+    weeks = int(nsec/week)
+    nsec -= weeks*week
+    nrdays = int(nsec/nday)
+    nsec -= nrdays*nday
+    hours = int(nsec/hour)
+    nsec -= hours*hour
+    minutes = int(nsec/minute)
+    nsec -= int(minute*minutes)
+    sec = int(nsec)
+    if yeas:
+        txt += f"{yeas}y"
+    if weeks:
+        nrdays += weeks * 7
+    if nrdays:
+        txt += f"{nrdays}d"
+    if short and txt:
+        return txt.strip()
+    if hours:
+        txt += f"{hours}h"
+    if minutes:
+        txt += f"{minutes}m"
+    if sec:
+        txt += f"{sec}s"
+    txt = txt.strip()
+    return txt
+
+
+def md5sum(path):
+    with open(path, "r", encoding="utf-8") as file:
+        txt = file.read().encode("utf-8")
+        return str(hashlib.md5(txt).hexdigest())
+
+
+def spl(txt) -> str:
+    try:
+        result = txt.split(',')
+    except (TypeError, ValueError):
+        result = txt
+    return [x for x in result if x]
+
+
+"debug"
+
+
+def debug(*args):
+    for arg in args:
+        sys.stderr.write(str(arg))
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
+
+def nodebug():
+    with open('/dev/null', 'a+', encoding="utf-8") as ses:
+        os.dup2(ses.fileno(), sys.stderr.fileno())
+
+
+"time related"
+
+
 def extract_date(daystr):
     daystr = daystr.encode('utf-8', 'replace').decode("utf-8")
-    res = ttime.time()
+    res = time.time()
     for fmt in FORMATS:
         try:
-            res = ttime.mktime(ttime.strptime(daystr, fmt))
+            res = time.mktime(time.strptime(daystr, fmt))
             break
-        except ValueError as ex:
-            later(ex)
+        except ValueError:
+            pass
     return res
 
 
@@ -42,7 +113,7 @@ def get_day(daystr):
             ymre = re.search(r'(\d+)-(\d+)', daystr)
             if ymre:
                 (day, month) = ymre.groups()
-                yea = ttime.strftime("%Y", ttime.localtime())
+                yea = time.strftime("%Y", time.localtime())
         except Exception as ex:
             raise NoDate(daystr) from ex
     if day:
@@ -50,7 +121,7 @@ def get_day(daystr):
         month = int(month)
         yea = int(yea)
         date = f"{day} {MONTHS[month]} {yea}"
-        return ttime.mktime(ttime.strptime(date, r"%d %b %Y"))
+        return time.mktime(time.strptime(date, r"%d %b %Y"))
     raise NoDate(daystr)
 
 
@@ -93,10 +164,10 @@ def parse_time(txt):
     for word in txt.split():
         if word.startswith("+"):
             seconds = int(word[1:])
-            return ttime.time() + seconds
+            return time.time() + seconds
         if word.startswith("-"):
             seconds = int(word[1:])
-            return ttime.time() - seconds
+            return time.time() - seconds
     if not target:
         try:
             target = get_day(txt)
@@ -129,9 +200,6 @@ def today():
     return str(datetime.datetime.today()).split()[0]
 
 
-"data"
-
-
 MONTHS = [
     'Bo',
     'Jan',
@@ -159,16 +227,18 @@ FORMATS = [
 ]
 
 
-"interface"
-
-
 def __dir__():
     return (
+        'debug',
+        'elapsed',
         'extract_date',
         'get_day',
         'get_hour',
         'get_time',
+        'md5sum',
+        'nodebug',
         'parse_time',
         'to_day',
-        'today'
+        'today',
+        'spl'
     )

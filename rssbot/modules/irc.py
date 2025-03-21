@@ -13,29 +13,30 @@ import sys
 import textwrap
 import threading
 import time
-import _thread
 
 
-from ..cmnd    import Config as Main
-from ..cmnd    import command
-from ..errors  import debug as ldebug
-from ..errors  import later
-from ..persist import ident, last, store, write
+from ..client  import Client, Fleet
+from ..disk    import write
+from ..event   import Event
+from ..find    import ident, last
 from ..object  import Default, Object, edit, fmt, keys
-from ..handler import Client, Event, Fleet
 from ..thread  import launch
+from ..utils   import debug as ldebug
+from ..workdir import store
+
+from . import Main, command
 
 
 IGNORE  = ["PING", "PONG", "PRIVMSG"]
 NAME    = sys.argv[0].split(os.sep)[-1]
 
 
-saylock = _thread.allocate_lock()
+saylock = threading.RLock()
 
 
 def debug(txt):
     for ign in IGNORE:
-        if ign in txt:
+        if ign in str(txt):
             return
     ldebug(txt)
 
@@ -51,7 +52,7 @@ def init():
 class Config(Default):
 
     channel = f'#{Main.name}'
-    commands = False
+    commands = True
     control = '!'
     nick = Main.name
     password = ""
@@ -204,6 +205,7 @@ class IRC(Client, Output):
             self.oput(channel, txt)
 
     def connect(self, server, port=6667):
+        debug(f"connecting to {server}:{port}")
         self.state.nrconnect += 1
         self.events.connected.clear()
         if self.cfg.password:
@@ -243,8 +245,6 @@ class IRC(Client, Output):
                 BrokenPipeError
                ) as _ex:
             pass
-        except Exception as ex:
-            later(ex)
 
     def display(self, evt):
         for txt in evt.result:
@@ -310,7 +310,7 @@ class IRC(Client, Output):
             self.events.joined.set()
         elif cmd == '433':
             self.state.error = txt
-            nck = self.cfg.nick + '_'
+            nck = self.cfg.nick = self.cfg.nick + '_'
             self.docommand('NICK', nck)
         return evt
 
@@ -421,7 +421,6 @@ class IRC(Client, Output):
                     ConnectionResetError,
                     BrokenPipeError
                    ) as ex:
-                later(ex)
                 self.stop()
                 debug("handler stopped")
                 evt = self.event(str(ex))
@@ -447,19 +446,15 @@ class IRC(Client, Output):
                     ssl.SSLZeroReturnError,
                     ConnectionResetError,
                     BrokenPipeError
-                   ) as ex:
-                later(ex)
+                   ):
                 self.stop()
                 return
         self.state.last = time.time()
         self.state.nrsend += 1
 
     def reconnect(self):
-        debug(f"reconnecting to {self.cfg.server}")
-        try:
-            self.disconnect()
-        except (ssl.SSLError, OSError):
-            pass
+        debug(f"reconnecting to {self.cfg.server}:{self.cfg.port}")
+        self.disconnect()
         self.events.connected.clear()
         self.events.joined.clear()
         self.doconnect(self.cfg.server, self.cfg.nick, int(self.cfg.port))
