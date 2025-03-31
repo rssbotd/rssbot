@@ -19,7 +19,7 @@ class Main(Default):
     debug   = False
     ignore  = 'brk,llm,mbx,udp'
     init    = ""
-    md5     = False
+    md5     = True
     name    = __package__.split('.', maxsplit=1)[0]
     opts    = Default()
     verbose = False
