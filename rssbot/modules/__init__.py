@@ -24,8 +24,7 @@ initlock = threading.RLock()
 loadlock = threading.RLock()
 
 
-checksum = "64878c531bcee4980eae300e23323de4"
-checksum = ""
+checksum = "0f8d1a5238c6cdbef9865bbce1379220"
 
 
 path  = os.path.dirname(__file__)
