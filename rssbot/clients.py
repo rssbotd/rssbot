@@ -1,13 +1,44 @@
 # This file is placed in the Public Domain.
 
 
-"list of clients"
+"clients"
 
 
 import threading
 
 
+from .objects import Default
+from .runtime import Handler
+
+
 outlock = threading.RLock()
+
+
+class Main(Default):
+
+    debug   = False
+    ignore  = 'brk,llm,mbx,udp'
+    init    = ""
+    md5     = False
+    name    = __package__.split('.', maxsplit=1)[0]
+    opts    = Default()
+    verbose = False
+
+
+class Client(Handler):
+
+    def __init__(self):
+        Handler.__init__(self)
+        Fleet.add(self)
+
+    def announce(self, txt) -> None:
+        pass
+
+    def raw(self, txt) -> None:
+        raise NotImplementedError("raw")
+
+    def say(self, channel, txt) -> None:
+        self.raw(txt)
 
 
 class Fleet:
@@ -57,5 +88,7 @@ class Fleet:
 
 def __dir__():
     return (
+        'Client',
         'Fleet',
+        'Main'
     )

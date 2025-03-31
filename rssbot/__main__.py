@@ -4,34 +4,32 @@
 "main program"
 
 
-import hashlib
 import os
 import pathlib
-import signal
 import sys
 import time
-import types
 import _thread
 
 
-sys.path.insert(0, os.getcwd())
+from .clients import Client, Main
+from .command import Commands, command, parse, scan, table
+from .modules import inits, mods, modules
+from .objects import dumps
+from .persist import Workdir, pidname
+from .runtime import Errors, Event
+from .utility import md5sum, nodebug, unbuffered
 
 
-from .client  import Client
-from .error   import Errors
-from .event   import Event
-from .modules import Commands, Main, command, load, mods, modules, parse, scan
-from .object  import dumps
-from .thread  import launch
-from .utils   import nodebug, spl
-from .workdir import Workdir, pidname
+"cli"
 
 
-p = os.path.join
+def doprint(txt):
+    print(txt.rstrip())
+    sys.stdout.flush()
 
 
 def output(txt):
-    print(txt)
+    doprint(txt)
 
 
 class CLI(Client):
@@ -47,7 +45,7 @@ class CLI(Client):
 class Console(CLI):
 
     def announce(self, txt):
-        output(txt)
+        pass
 
     def callback(self, evt):
         CLI.callback(self, evt)
@@ -69,7 +67,7 @@ def nil(txt):
 
 def enable():
     global output
-    output = print
+    output = doprint
 
 
 def disable():
@@ -83,6 +81,7 @@ def disable():
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     output(f"{Main.name.upper()} since {tme}")
+    output(",".join(sorted(modules())))
 
 
 def check(txt):
@@ -124,31 +123,6 @@ def forever():
             _thread.interrupt_main()
 
 
-def inits(names) -> [types.ModuleType]:
-    mods = []
-    for name in spl(names):
-        mod = load(name)
-        if not mod:
-            continue
-        if "init" in dir(mod):
-            thr = launch(mod.init)
-        mods.append((mod, thr))
-    return mods
-
-
-def md5sum(mod):
-    with open(mod.__file__, "r", encoding="utf-8") as file:
-        txt = file.read().encode("utf-8")
-        return str(hashlib.md5(txt).hexdigest())
-
-
-def modnames(path) -> [str]:
-    return [
-            x[:-3] for x in os.listdir(path)
-            if x.endswith(".py") and not x.startswith("__")
-           ]
-
-
 def pidfile(filename):
     if os.path.exists(filename):
         os.unlink(filename)
@@ -188,6 +162,7 @@ def background():
     privileges()
     disable()
     pidfile(pidname(Main.name))
+    table()
     Commands.add(cmd)
     inits(Main.init or "irc,rss")
     forever()
@@ -197,6 +172,7 @@ def console():
     import readline # noqa: F401
     setwd(Main.name)
     enable()
+    table()
     Commands.add(cmd)
     parse(Main, " ".join(sys.argv[1:]))
     Main.init = Main.sets.init or Main.init
@@ -215,7 +191,7 @@ def control():
     if len(sys.argv) == 1:
         return
     setwd(Main.name)
-    Workdir.wdr = os.path.expanduser(f"~/.{Main.name}")
+    table()
     enable()
     Commands.add(cmd)
     Commands.add(md5)
@@ -232,9 +208,12 @@ def control():
 
 
 def service():
-    signal.signal(signal.SIGHUP, handler)
-    nodebug()
     setwd(Main.name)
+    table()
+    nodebug()
+    #unbuffered()
+    enable()
+    banner()
     privileges()
     pidfile(pidname(Main.name))
     Commands.add(cmd)
@@ -251,7 +230,7 @@ def cmd(event):
 
 def md5(event):
     table = mods("tbl")[0]
-    event.reply(md5sum(table))
+    event.reply(md5sum(table.__file__))
 
 
 def srv(event):
@@ -261,7 +240,6 @@ def srv(event):
 
 
 def tbl(event):
-    import rssbot.modules
     for mod in mods():
         scan(mod)
     event.reply("# This file is placed in the Public Domain.")
@@ -275,7 +253,7 @@ def tbl(event):
     event.reply("")
     event.reply("MD5 = {")
     for mod in mods():
-        event.reply(f'    "{mod.__name__.split(".")[-1]}": "{md5sum(mod)}",')
+        event.reply(f'    "{mod.__name__.split(".")[-1]}": "{md5sum(mod.__file__)}",')
     event.reply("}")
 
 
@@ -305,7 +283,8 @@ def wrapped(func):
     except (KeyboardInterrupt, EOFError):
         output("")
     for exc in Errors.errors:
-        print(Errors.format(exc))
+        for line in Errors.full(exc):
+            output(line)
 
 
 def wrap(func):
@@ -324,7 +303,7 @@ def wrap(func):
 
 def main():
     if check("a"):
-        Main.ignore = ""
+        Main.ignore = "udp"
         Main.init   = ",".join(modules())
         for mod in mods():
             mod.DEBUG = False

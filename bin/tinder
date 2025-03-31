@@ -17,15 +17,13 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.client  import Client
-from rssbot.error   import Errors
-from rssbot.event   import Event
-from rssbot.modules import STARTTIME, Main, Commands, command, mods, parse
-from rssbot.object  import Object, fmt, keys
-from rssbot.reactor import Reactor
-from rssbot.thread  import Thread, launch
-from rssbot.utils   import elapsed, spl
-from rssbot.workdir import Workdir, skel
+from rssbot.clients import Client, Main
+from rssbot.command import Commands, command, parse, table
+from rssbot.modules import mods, modules
+from rssbot.objects import Object, fmt, keys
+from rssbot.persist import Workdir, skel
+from rssbot.runtime import STARTTIME, Errors, Event, Thread, launch
+from rssbot.utility import elapsed, spl
 
 
 Main.debug  = True
@@ -93,7 +91,7 @@ class CLI(Client):
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     print(f"{Main.name.upper()} since {tme}")
-    print("loaded " + ",".join(sorted(Commands.names)))
+    print("loaded " + ",".join(sorted(modules())))
 
 
 def consume(evts):
@@ -108,7 +106,7 @@ def consume(evts):
 
 def payload(clt, cmds):
     nmr = 0
-    cmdz = keys(cmds)
+    cmdz = sorted(keys(cmds))
     if "s" in Main.opts:
         rand.shuffle(cmdz)
     for cmd in cmdz:
@@ -138,13 +136,16 @@ def wrap(function):
     finally:
         if old3:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old3)
+    for exc in Errors.errors:
+        print(Errors.format(exc))
 
 
 def main():
     global nrs
     global nrcommand
+    table()
     parse(Main, " ".join(sys.argv[1:]))
-    nrcommand = len(Commands.names) or 1
+    nrcommand = 0
     if "v" in Main.opts:
         banner()
     if "f" not in Main.opts:
@@ -158,24 +159,28 @@ def main():
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, pre))
     for thr in thrs:
-       thr.join()
+       nr = thr.join()
+       nrcommand += nr
+    thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, param))
     for thr in thrs:
-       thr.join()
+       nr = thr.join()
+       nrcommand += nr
+    thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, post))
     for thr in thrs:
-       thr.join()
+       nr = thr.join()
+       nrcommand += nr
+    nrz = len(events)
     consume(events)
 
 
 if __name__ == "__main__":
     wrap(main)
-    for exc in Errors.errors:
-        print(Errors.format(exc))
     endtime = time.time()
     lap = elapsed(endtime-STARTTIME)
-    percall = (endtime-STARTTIME)/(nrs*nrcommand)
+    percall = (endtime-STARTTIME)/(nrcommand)
     if "v" in Main.opts:
-        print(f"total: {lap} nrs: {nrs} cmds: {nrcommand} call: {percall}")
+        print(f"total: {lap} nrs: {nrs} cmds: {nrcommand} call: %.6fs" % percall)

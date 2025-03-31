@@ -1,21 +1,121 @@
 # This file is placed in the Public Domain.
 
 
-"locate objects"
+"persistence"
 
 
 import datetime
+import json
 import os
+import pathlib
+import threading
+import typing
 import time
 
 
-from .cache   import Cache
-from .disk    import read
-from .object  import Object, fqn, items, update
-from .workdir import long, store
+from .objects import Object, dumps, fqn, items, loads, update
 
 
-p = os.path.join
+lock = threading.RLock()
+p    = os.path.join
+
+
+class DecodeError(Exception):
+
+    pass
+
+
+class Workdir:
+
+    name = __file__.rsplit(os.sep, maxsplit=2)[-2]
+    wdr  = ""
+
+
+class Cache:
+
+    objs = {}
+
+    @staticmethod
+    def add(path, obj) -> None:
+        Cache.objs[path] = obj
+
+    @staticmethod
+    def get(path) -> typing.Any:
+        return Cache.objs.get(path, None)
+
+    @staticmethod
+    def typed(matcher) -> [typing.Any]:
+        for key in Cache.objs:
+            if matcher not in key:
+                continue
+            yield Cache.objs.get(key)
+
+
+"disk"
+
+
+def cdir(pth) -> None:
+    path = pathlib.Path(pth)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def read(obj, pth):
+    with lock:
+        with open(pth, 'r', encoding='utf-8') as ofile:
+            try:
+                obj2 = loads(ofile.read())
+                update(obj, obj2)
+            except json.decoder.JSONDecodeError as ex:
+                raise DecodeError(pth) from ex
+    return pth
+
+
+def write(obj, pth):
+    with lock:
+        cdir(pth)
+        txt = dumps(obj, indent=4)
+        with open(pth, 'w', encoding='utf-8') as ofile:
+            ofile.write(txt)
+        Cache.add(pth, obj)
+    return pth
+
+
+"paths"
+
+
+def long(name) -> str:
+    split = name.split(".")[-1].lower()
+    res = name
+    for names in types():
+        if split == names.split(".")[-1].lower():
+            res = names
+            break
+    return res
+
+
+def pidname(name) -> str:
+    return p(Workdir.wdr, f"{name}.pid")
+
+
+def skel() -> str:
+    path = pathlib.Path(store())
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def store(pth="") -> str:
+    return p(Workdir.wdr, "store", pth)
+
+
+def strip(pth, nmr=2) -> str:
+    return os.sep.join(pth.split(os.sep)[-nmr:])
+
+
+def types() -> [str]:
+    return os.listdir(store())
+
+
+"find"
 
 
 def fns(clz) -> [str]:
@@ -43,6 +143,7 @@ def fntime(daystr) -> int:
 
 
 def find(clz, selector=None, deleted=False, matching=False) -> [Object]:
+    skel()
     res = []
     clz = long(clz)
     for pth in fns(clz):
@@ -99,12 +200,28 @@ def search(obj, selector, matching=None) -> bool:
     return res
 
 
+"interface"
+
+
 def __dir__():
     return (
+        'Cache',
+        'DecodeError',
+        'Workdir',
+        'cdir',
         'fns',
         'fntime',
         'find',
-        'last',
         'ident',
-        'search'
+        'last',
+        'long',
+        'pidname',
+        'read',
+        'search',
+        'setwd',
+        'skel',
+        'store',
+        'strip',
+        'types',
+        'write'
     )

@@ -20,7 +20,7 @@ NAMES = {
 
 
 MD5 = {
-    "irc": "4d528e48a802ad50d9308523ec57c23c",
-    "rss": "6baac83d5d9ad009fd83cceb3433983e",
+    "irc": "f41a5d543e4c19a82a2410bbe9a01e72",
+    "rss": "87228af1e5f859ce4cc25f0b3242feeb",
     "tbl": "d41d8cd98f00b204e9800998ecf8427e",
 }

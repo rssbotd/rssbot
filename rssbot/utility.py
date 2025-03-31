@@ -9,12 +9,48 @@ import hashlib
 import os
 import re
 import sys
+import textwrap
 import time
 
 
 class NoDate(Exception):
 
     pass
+
+
+class TextWrap(textwrap.TextWrapper):
+
+    def __init__(self):
+        super().__init__()
+        self.break_long_words = False
+        self.drop_whitespace = False
+        self.fix_sentence_endings = True
+        self.replace_whitespace = True
+        self.tabsize = 4
+        self.width = 120
+
+
+wrapper = TextWrap()
+
+
+class Unbuffered(object):
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
+
+    def write(self, data):
+        for line in wrapper.wrap(data):
+            self.stream.write(line.rstrip())
+            self.stream.write("\n")
+            self.stream.flush()
+
+    def writelines(self, datas):
+        for data in datas:
+            self.write(data)
+
 
 
 def elapsed(seconds, short=True) -> str:
@@ -85,7 +121,11 @@ def nodebug():
         os.dup2(ses.fileno(), sys.stderr.fileno())
 
 
-"time related"
+def unbuffered():
+    sys.stdout = Unbuffered(sys.stdout)
+
+
+"time"
 
 
 def extract_date(daystr):
@@ -200,6 +240,9 @@ def today():
     return str(datetime.datetime.today()).split()[0]
 
 
+"data"
+
+
 MONTHS = [
     'Bo',
     'Jan',
@@ -225,6 +268,9 @@ FORMATS = [
     "%d-%m",
     "%m-%d",
 ]
+
+
+"interface"
 
 
 def __dir__():
