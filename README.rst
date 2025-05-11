@@ -4,16 +4,15 @@ R S S B O T
 
 **NAME**
 
-
+|
 | ``rssbot`` - 24/7 Feed Fetcher.
 |
 
 **SYNOPSIS**
 
-
+|
 | ``rssbot <cmd> [key=val] [key==val]``
 |
-
 
 **DESCRIPTION**
 
@@ -25,12 +24,14 @@ R S S B O T
 background, hooking the daemon in systemd brings a 24/7 available
 rssbot in your channel.
 
+|
 
 **INSTALL**
 
 
 installation is done with pipx
 
+|
 | ``$ pipx install rssbot``
 | ``$ pipx ensurepath``
 |
@@ -47,33 +48,24 @@ installation is done with pipx
 
 use ``rssbot`` to control the program, default it does nothing
 
+|
 | ``$ rssbot``
 | ``$``
 |
 
 see list of commands
 
+|
 | ``$ rssbot cmd``
-| ``cfg,cmd,dne,dpl,err,exp,imp,mod,mre,nme,``
-| ``pwd,rem,res,rss,srv,syn,thr,upt``
+| ``cfg,dpl,exp,imp,mre,nme,pwd,rem,res,rss,syn``
 |
 
-start daemon
-
-| ``$ rssbot -d``
-| ``$``
-|
-
-start service
-
-| ``$ rssbot -s``
-| ``<runs until ctrl-c>``
-|
 
 **CONFIGURATION**
 
 irc
 
+|
 | ``$ rssbot cfg server=<server>``
 | ``$ rssbot cfg channel=<channel>``
 | ``$ rssobt cfg nick=<nick>``
@@ -81,12 +73,14 @@ irc
 
 sasl
 
+|
 | ``$ rssbot pwd <nsvnick> <nspass>``
 | ``$ rssbot cfg password=<frompwd>``
 |
 
 rss
 
+|
 | ``$ rssbot rss <url>``
 | ``$ rssbot dpl <url> <item1,item2>``
 | ``$ rssbot rem <url>``
@@ -95,16 +89,18 @@ rss
 
 opml
 
+|
 | ``$ rssbot exp``
 | ``$ rssbot imp <filename>``
 |
 
+
 **COMMANDS**
 
+|
 | ``cfg`` - irc configuration
 | ``cmd`` - commands
 | ``dpl`` - sets display items
-| ``err`` - show errors
 | ``exp`` - export opml (stdout)
 | ``imp`` - import opml
 | ``mre`` - display cached output
@@ -113,12 +109,12 @@ opml
 | ``res`` - restore deleted feeds
 | ``rss`` - add a feed
 | ``syn`` - sync rss feeds
-| ``thr`` - show running threads
-| ``upt`` - show uptime
+| ``ver`` - show version
 |
 
 **FILES**
 
+|
 | ``~/.rssbot``
 | ``~/.local/bin/rssbot``
 | ``~/.local/pipx/venvs/rssbot/*``
@@ -126,10 +122,12 @@ opml
 
 **AUTHOR**
 
-| Bart Thate <``bthate@dds.nl``>
+|
+| Bart Thate <``rssbotd@gmail.com``>
 |
 
 **COPYRIGHT**
 
+|
 | ``rssbot`` is Public Domain.
 |

@@ -17,16 +17,17 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.clients import Client, Main
-from rssbot.command import Commands, command, parse, table
-from rssbot.modules import mods, modules
-from rssbot.objects import Object, fmt, keys
-from rssbot.persist import Workdir, skel
-from rssbot.runtime import STARTTIME, Errors, Event, Thread, launch
-from rssbot.utility import elapsed, spl
+from rssbot.client  import Client
+from rssbot.event   import Event
+from rssbot.modules import Main, command, elapsed, modules, parse, settable, spl
+from rssbot.modules import inits
+from rssbot.object  import Object, keys
+from rssbot.store   import Workdir, skel
+from rssbot.thread  import STARTTIME, Errors, full, launch
 
 
 Main.debug  = True
+Main.md5    = False
 Workdir.wdr = ".test"
 
 
@@ -47,6 +48,7 @@ param.dis = [""]
 param.dpl = ["hnrss title,url", ""]
 param.flt = [""]
 param.fnd = ["log", "rss", "config", "todo", ""]
+param.man = [""]
 param.mod = [""]
 param.mre = [""]
 param.nme = ["hnrss hackernews", ""]
@@ -104,6 +106,11 @@ def consume(evts):
     return done
 
 
+def nodebug():
+    with open('/dev/null', 'a+', encoding="utf-8") as ses:
+        os.dup2(ses.fileno(), sys.stderr.fileno())
+
+
 def payload(clt, cmds):
     nmr = 0
     cmdz = sorted(keys(cmds))
@@ -137,13 +144,14 @@ def wrap(function):
         if old3:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old3)
     for exc in Errors.errors:
-        print(Errors.format(exc))
+        for line in full(exc):
+            print(line.rstrip())
 
 
 def main():
     global nrs
     global nrcommand
-    table()
+    settable()
     parse(Main, " ".join(sys.argv[1:]))
     nrcommand = 0
     if "v" in Main.opts:
@@ -152,6 +160,8 @@ def main():
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)
     skel()
+    nodebug()
+    #inits(",".join(modules()))
     clt = CLI()
     clt.start()
     nrs = Main.index or 1
@@ -159,21 +169,20 @@ def main():
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, pre))
     for thr in thrs:
-       nr = thr.join()
-       nrcommand += nr
+        nr = thr.join()
+        nrcommand += nr
     thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, param))
     for thr in thrs:
-       nr = thr.join()
-       nrcommand += nr
+        nr = thr.join()
+        nrcommand += nr
     thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, post))
     for thr in thrs:
-       nr = thr.join()
-       nrcommand += nr
-    nrz = len(events)
+        nr = thr.join()
+        nrcommand += nr
     consume(events)
 
 

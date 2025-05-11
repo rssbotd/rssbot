@@ -15,12 +15,14 @@ NAMES = {
     "rem": "rss",
     "res": "rss",
     "rss": "rss",
-    "syn": "rss"
+    "syn": "rss",
+    "ver": "ver"
 }
 
 
 MD5 = {
-    "irc": "f41a5d543e4c19a82a2410bbe9a01e72",
-    "rss": "87228af1e5f859ce4cc25f0b3242feeb",
+    "irc": "dfc903e1fd13743743b3b13f09d2d60e",
+    "rss": "28a9814dbfb227b8ccf27b606cf0dd00",
     "tbl": "d41d8cd98f00b204e9800998ecf8427e",
+    "ver": "ba6cfe6e26cbaff110fb7afa356c5a7f",
 }

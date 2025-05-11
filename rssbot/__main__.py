@@ -11,25 +11,13 @@ import time
 import _thread
 
 
-from .clients import Client, Main
-from .command import Commands, command, parse, scan, table
-from .modules import inits, mods, modules
-from .objects import dumps
-from .persist import Workdir, pidname
-from .runtime import Errors, Event
-from .utility import md5sum, nodebug, unbuffered
-
-
-"cli"
-
-
-def doprint(txt):
-    print(txt.rstrip())
-    sys.stdout.flush()
-
-
-def output(txt):
-    doprint(txt)
+from .client  import Client
+from .event   import Event
+from .json    import dumps
+from .modules import Commands, Main, command, inits
+from .modules import md5sum, mods, modules, parse, scan, settable
+from .store   import Workdir, pidname
+from .thread  import Errors, full
 
 
 class CLI(Client):
@@ -58,7 +46,20 @@ class Console(CLI):
         return evt
 
 
+def handler(signum, frame):
+    _thread.interrupt_main()
+
+
 "output"
+
+
+def doprint(txt):
+    print(txt.rstrip())
+    sys.stdout.flush()
+
+
+def output(txt):
+    doprint(txt)
 
 
 def nil(txt):
@@ -81,7 +82,6 @@ def disable():
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     output(f"{Main.name.upper()} since {tme}")
-    output(",".join(sorted(modules())))
 
 
 def check(txt):
@@ -89,8 +89,8 @@ def check(txt):
     for arg in args:
         if not arg.startswith("-"):
             continue
-        for c in txt:
-            if c in arg:
+        for char in txt:
+            if char in arg:
                 return True
     return False
 
@@ -115,12 +115,23 @@ def daemon(verbose=False):
     os.nice(10)
 
 
+def errors():
+    for exc in Errors.errors:
+        for line in full(exc):
+            output(line)
+
+
 def forever():
     while True:
         try:
             time.sleep(0.1)
         except (KeyboardInterrupt, EOFError):
             _thread.interrupt_main()
+
+
+def nodebug():
+    with open('/dev/null', 'a+', encoding="utf-8") as ses:
+        os.dup2(ses.fileno(), sys.stderr.fileno())
 
 
 def pidfile(filename):
@@ -146,81 +157,6 @@ def setwd(name, path=""):
     Workdir.wdr = path
 
 
-"handlers"
-
-
-def handler(signum, frame):
-    _thread.interrupt_main()
-
-
-"scripts"
-
-
-def background():
-    daemon("-v" in sys.argv)
-    setwd(Main.name)
-    privileges()
-    disable()
-    pidfile(pidname(Main.name))
-    table()
-    Commands.add(cmd)
-    inits(Main.init or "irc,rss")
-    forever()
-
-
-def console():
-    import readline # noqa: F401
-    setwd(Main.name)
-    enable()
-    table()
-    Commands.add(cmd)
-    parse(Main, " ".join(sys.argv[1:]))
-    Main.init = Main.sets.init or Main.init
-    Main.verbose = Main.sets.verbose or Main.verbose
-    if "v" in Main.opts:
-        banner()
-    for _mod, thr in inits(Main.init):
-        if "w" in Main.opts:
-            thr.join()
-    csl = Console()
-    csl.start()
-    forever()
-
-
-def control():
-    if len(sys.argv) == 1:
-        return
-    setwd(Main.name)
-    table()
-    enable()
-    Commands.add(cmd)
-    Commands.add(md5)
-    Commands.add(srv)
-    Commands.add(tbl)
-    parse(Main, " ".join(sys.argv[1:]))
-    csl = CLI()
-    evt = Event()
-    evt.orig = repr(csl)
-    evt.type = "command"
-    evt.txt = Main.otxt
-    command(evt)
-    evt.wait()
-
-
-def service():
-    setwd(Main.name)
-    table()
-    nodebug()
-    #unbuffered()
-    enable()
-    banner()
-    privileges()
-    pidfile(pidname(Main.name))
-    Commands.add(cmd)
-    inits(Main.init or "irc,rss")
-    forever()
-
-
 "commands"
 
 
@@ -240,6 +176,8 @@ def srv(event):
 
 
 def tbl(event):
+    if not check("f"):
+        Commands.names = {}
     for mod in mods():
         scan(mod)
     event.reply("# This file is placed in the Public Domain.")
@@ -255,6 +193,98 @@ def tbl(event):
     for mod in mods():
         event.reply(f'    "{mod.__name__.split(".")[-1]}": "{md5sum(mod.__file__)}",')
     event.reply("}")
+
+
+"scripts"
+
+
+def background():
+    daemon("-v" in sys.argv)
+    setwd(Main.name)
+    privileges()
+    disable()
+    pidfile(pidname(Main.name))
+    settable()
+    Commands.add(cmd)
+    inits(Main.init or "irc,rss")
+    forever()
+
+
+def console():
+    import readline # noqa: F401
+    setwd(Main.name)
+    enable()
+    settable()
+    Commands.add(cmd)
+    parse(Main, " ".join(sys.argv[1:]))
+    Main.init = Main.sets.init or Main.init
+    Main.verbose = Main.sets.verbose or Main.verbose
+    if "v" in Main.opts:
+        banner()
+    for _mod, thr in inits(Main.init):
+        if "w" in Main.opts:
+            thr.join(30.0)
+    csl = Console()
+    csl.start()
+    forever()
+
+
+def control():
+    if len(sys.argv) == 1:
+        return
+    setwd(Main.name)
+    settable()
+    enable()
+    Commands.add(cmd)
+    Commands.add(md5)
+    Commands.add(srv)
+    Commands.add(tbl)
+    parse(Main, " ".join(sys.argv[1:]))
+    csl = CLI()
+    evt = Event()
+    evt.orig = repr(csl)
+    evt.type = "command"
+    evt.txt = Main.otxt
+    command(evt)
+    evt.wait()
+
+
+def service():
+    setwd(Main.name)
+    settable()
+    nodebug()
+    enable()
+    banner()
+    privileges()
+    pidfile(pidname(Main.name))
+    Commands.add(cmd)
+    inits(Main.init or "irc,rss")
+    forever()
+
+
+"runtime"
+
+
+def wrapped(func):
+    try:
+        func()
+    except (KeyboardInterrupt, EOFError):
+        output("")
+    errors()
+
+
+def wrap(func):
+    import termios
+    old = None
+    try:
+        old = termios.tcgetattr(sys.stdin.fileno())
+    except termios.error:
+        pass
+    try:
+        wrapped(func)
+    finally:
+        if old:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
 
 "data"
@@ -274,39 +304,12 @@ ExecStart=/home/%s/.local/bin/%s -s
 WantedBy=multi-user.target"""
 
 
-"runtime"
-
-
-def wrapped(func):
-    try:
-        func()
-    except (KeyboardInterrupt, EOFError):
-        output("")
-    for exc in Errors.errors:
-        for line in Errors.full(exc):
-            output(line)
-
-
-def wrap(func):
-    import termios
-    old = None
-    try:
-        old = termios.tcgetattr(sys.stdin.fileno())
-    except termios.error:
-        pass
-    try:
-        wrapped(func)
-    finally:
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+"main"
 
 
 def main():
     if check("a"):
-        Main.ignore = "udp"
-        Main.init   = ",".join(modules())
-        for mod in mods():
-            mod.DEBUG = False
+        Main.init = ",".join(modules())
     if check("v"):
         setattr(Main.opts, "v", True)
         enable()

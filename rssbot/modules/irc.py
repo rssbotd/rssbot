@@ -14,12 +14,15 @@ import threading
 import time
 
 
-from ..clients import Client, Fleet, Main
-from ..command import command
-from ..objects import Default, Object, edit, fmt, keys
-from ..persist import ident, last, store, write
-from ..runtime import Event, launch
-from ..utility import debug as ldebug
+from ..client  import Client
+from ..disk    import getpath, ident, write
+from ..event   import Event
+from ..fleet   import Fleet
+from ..find    import last
+from ..object  import Object, keys
+from ..thread  import launch
+from .         import debug as ldebug
+from .         import Default, Main, command, edit, fmt
 
 
 IGNORE  = ["PING", "PONG", "PRIVMSG"]
@@ -38,15 +41,15 @@ def debug(txt):
 def init():
     irc = IRC()
     irc.start()
-    irc.events.ready.wait()
-    debug(f'{fmt(Config, skip="edited,password")}')
+    irc.events.joined.wait(30.0)
+    debug(f'irc at {irc.cfg.server}:{irc.cfg.port} {irc.cfg.channel}')
     return irc
 
 
 class Config(Default):
 
     channel = f'#{Main.name}'
-    commands = False
+    commands = True
     control = '!'
     nick = Main.name
     password = ""
@@ -68,9 +71,6 @@ class Config(Default):
         self.realname = Config.realname
         self.server = Config.server
         self.username = Config.username
-
-
-"output"
 
 
 class TextWrap(textwrap.TextWrapper):
@@ -131,19 +131,23 @@ class Output:
                 break
             if not txt:
                 continue
+            textlist = []
             txtlist = wrapper.wrap(txt)
             if len(txtlist) > 3:
-                self.extend(channel, txtlist)
-                length = len(txtlist)
+                self.extend(channel, txtlist[3:])
+                textlist = txtlist[:3]
+            else:
+                textlist = txtlist
+            _nr = -1
+            for txt in textlist:
+                _nr += 1
+                self.dosay(channel, txt)
+            if len(txtlist) > 3:
+                length = len(txtlist) - 3
                 self.say(
                          channel,
                          f"use !mre to show more (+{length})"
                         )
-                continue
-            _nr = -1
-            for txt in txtlist:
-                _nr += 1
-                self.dosay(channel, txt)
 
     @staticmethod
     def size(chan):
@@ -153,9 +157,6 @@ class Output:
 
     def start(self):
         launch(self.output)
-
-
-"irc"
 
 
 class IRC(Client, Output):
@@ -179,6 +180,7 @@ class IRC(Client, Output):
         self.state.keeprunning = False
         self.state.lastline = ""
         self.state.nrconnect = 0
+        self.state.nrerror = 0
         self.state.nrsend = 0
         self.state.stopkeep = False
         self.zelf = ''
@@ -324,7 +326,7 @@ class IRC(Client, Output):
             self.state.pongcheck = True
             self.docommand('PING', self.cfg.server)
             if self.state.pongcheck:
-                debug("failed pongcheck, restarting")
+                debug("failed pong check, restarting")
                 self.state.pongcheck = False
                 self.state.keeprunning = False
                 self.events.connected.clear()
@@ -416,6 +418,8 @@ class IRC(Client, Output):
                     BrokenPipeError
                    ) as ex:
                 self.stop()
+                self.state.nrerror += 1
+                self.state.error = str(ex)
                 debug("handler stopped")
                 evt = self.event(str(ex))
                 return evt
@@ -440,7 +444,9 @@ class IRC(Client, Output):
                     ssl.SSLZeroReturnError,
                     ConnectionResetError,
                     BrokenPipeError
-                   ):
+                   ) as ex:
+                self.state.nrerror += 1
+                self.state.error = str(ex)
                 self.stop()
                 return
         self.state.last = time.time()
@@ -499,10 +505,7 @@ class IRC(Client, Output):
         self.events.ready.wait()
 
 
-"callbacks"
-
-
-def cb_auth(bot, evt):
+def cb_auth(evt):
     bot = Fleet.get(evt.orig)
     bot.docommand(f'AUTHENTICATE {bot.cfg.password}')
 
@@ -517,8 +520,6 @@ def cb_cap(evt):
 
 def cb_error(evt):
     bot = Fleet.get(evt.orig)
-    if not bot.state.nrerror:
-        bot.state.nrerror = 0
     bot.state.nrerror += 1
     bot.state.error = evt.txt
     debug(evt.txt)
@@ -536,7 +537,7 @@ def cb_h904(evt):
     bot.events.authed.set()
 
 
-def cb_kill(bot, evt):
+def cb_kill(evt):
     pass
 
 def cb_log(evt):
@@ -579,6 +580,8 @@ def cb_privmsg(evt):
 def cb_quit(evt):
     bot = Fleet.get(evt.orig)
     debug(f"quit from {bot.cfg.server}")
+    bot.state.nrerror += 1
+    bot.state.error = evt.txt
     if evt.orig and evt.orig in bot.zelf:
         bot.stop()
 
@@ -599,7 +602,7 @@ def cfg(event):
                    )
     else:
         edit(config, event.sets)
-        write(config, fnm or store(ident(config)))
+        write(config, fnm or getpath(config))
         event.done()
 
 
@@ -618,7 +621,8 @@ def mre(event):
         txt = Output.gettxt(event.channel)
         event.reply(txt)
     size = IRC.size(event.channel)
-    event.reply(f'{size} more in cache')
+    if size != 0:
+        event.reply(f'{size} more in cache')
 
 
 def pwd(event):
