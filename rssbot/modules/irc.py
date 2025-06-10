@@ -14,14 +14,13 @@ import threading
 import time
 
 
+from ..cache   import last
 from ..client  import Client
-from ..disk    import getpath, ident, write
 from ..event   import Event
 from ..fleet   import Fleet
-from ..find    import last
 from ..object  import Object, keys
+from ..persist import getpath, ident, write
 from ..thread  import launch
-from .         import debug as ldebug
 from .         import Default, Main, command, edit, fmt
 
 
@@ -29,13 +28,6 @@ IGNORE  = ["PING", "PONG", "PRIVMSG"]
 
 
 saylock = threading.RLock()
-
-
-def debug(txt):
-    for ign in IGNORE:
-        if ign in str(txt):
-            return
-    ldebug(txt)
 
 
 def init():

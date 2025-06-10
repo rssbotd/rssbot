@@ -7,8 +7,8 @@
 import unittest
 
 
-from rssbot.json   import dumps, loads
 from rssbot.object import Object
+from rssbot.serial import dumps, loads
 
 
 VALIDJSON = "{'test': 'bla'}"

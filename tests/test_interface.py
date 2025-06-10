@@ -11,12 +11,15 @@ import unittest
 
 
 import rssbot
+import rssbot.cache
 import rssbot.client
+import rssbot.event
+import rssbot.fleet
 import rssbot.handler
-import rssbot.json
 import rssbot.modules
 import rssbot.object
-import rssbot.store
+import rssbot.persist
+import rssbot.serial
 import rssbot.thread
 
 
@@ -24,12 +27,15 @@ from rssbot.object import *
 
 
 PACKAGE = [
+    'cache',
     'client',
+    'event',
+    'fleet',
     'handler',
-    'json',
     'object',
     'modules',
-    'store',
+    'persist',
+    'serial',
     'thread'
 ]
 
