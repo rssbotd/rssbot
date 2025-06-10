@@ -94,6 +94,7 @@ class Fetcher(Object):
         return result[:-2].rstrip()
 
     def fetch(self, feed, silent=False):
+        global seenfn
         with fetchlock:
             result = []
             see = getattr(seen, feed.rss, [])
@@ -138,6 +139,7 @@ class Fetcher(Object):
         return thrs
 
     def start(self, repeat=True):
+        global seenfn
         seenfn = last(seen)
         if repeat:
             repeater = Repeater(300.0, self.run)

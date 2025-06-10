@@ -14,7 +14,7 @@ from .client  import Client
 from .errors  import Errors, full
 from .event   import Event
 from .modules import Commands, Main
-from .modules import command, fmt, inits, level, mods, parse
+from .modules import command, fmt, inits, level, modules, mods, parse
 from .object  import update
 from .persist import setwd
 
@@ -224,6 +224,8 @@ def main():
     if check("v"):
         level("debug")
         setattr(Main.opts, "v", True)
+    if check("a"):
+        Main.init = ",".join(modules())
     if check('c'):
         wrap(console)
     elif check("d"):

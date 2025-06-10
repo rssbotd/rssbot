@@ -46,7 +46,7 @@ class Main(Default):
     init    = ""
     level   = "warn"
     name    = __name__.split(".", maxsplit=1)[0]
-    nick    = "rssf"
+    nick    = __name__.split(".", maxsplit=1)[0]
     opts    = Default()
     otxt    = ""
     port    = 6667

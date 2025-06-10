@@ -112,8 +112,9 @@ def read(obj, path):
         Cache.update(path, obj)
 
 
-def setwd(pth):
-    Workdir.wdr = pth
+def setwd(name, path=""):
+    path = path or os.path.expanduser(f"~/.{name}")
+    Workdir.wdr = path
 
 
 def skel():
