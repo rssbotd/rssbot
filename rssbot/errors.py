@@ -6,6 +6,7 @@
 
 import traceback
 
+
 class Errors:
 
     name   = __file__.rsplit("/", maxsplit=2)[-2]
@@ -13,13 +14,11 @@ class Errors:
 
 
 def full(exc):
-    return "".join(
-                   traceback.format_exception(
-                                              type(exc),
-                                              exc,
-                                              exc.__traceback__
-                                             )
-                  )
+    return traceback.format_exception(
+                                      type(exc),
+                                      exc,
+                                      exc.__traceback__
+                                     )
 
 
 def later(exc):

@@ -18,12 +18,13 @@ sys.path.insert(0, os.getcwd())
 
 
 from rssbot.client  import Client
+from rssbot.errors  import Errors, full
 from rssbot.event   import Event
-from rssbot.modules import Main, command, elapsed, modules, parse, settable, spl
-from rssbot.modules import inits
+from rssbot.modules import STARTTIME, Main
+from rssbot.modules import command, elapsed, inits, mods, modules, parse, spl
 from rssbot.object  import Object, keys
-from rssbot.store   import Workdir, skel
-from rssbot.thread  import STARTTIME, Errors, full, launch
+from rssbot.persist import Workdir, skel
+from rssbot.thread  import launch
 
 
 Main.debug  = True
@@ -151,7 +152,6 @@ def wrap(function):
 def main():
     global nrs
     global nrcommand
-    settable()
     parse(Main, " ".join(sys.argv[1:]))
     nrcommand = 0
     if "v" in Main.opts:
@@ -160,7 +160,7 @@ def main():
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)
     skel()
-    nodebug()
+    mods()
     #inits(",".join(modules()))
     clt = CLI()
     clt.start()

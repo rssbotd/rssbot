@@ -28,21 +28,24 @@ class Cache:
 
     @staticmethod
     def add(path, obj):
-        Cache.objs[path] = obj
+        with lock:
+            Cache.objs[path] = obj
 
     @staticmethod
     def get(path):
-        return Cache.objs.get(path, None)
+        with lock:
+            return Cache.objs.get(path, None)
 
 
     @staticmethod
     def update(path, obj):
-        if not obj:
-            return
-        try:
-            update(Cache.objs[path], obj)
-        except KeyError:
-            Cache.add(path, obj)
+        with lock:
+            if not obj:
+                return
+            try:
+                update(Cache.objs[path], obj)
+            except KeyError:
+                Cache.add(path, obj)
 
 
 def find(clz, selector=None, deleted=False, matching=False):
@@ -83,8 +86,6 @@ def isdeleted(obj):
     return '__deleted__' in dir(obj) and obj.__deleted__
 
 
-
-
 def long(name):
     split = name.split(".")[-1].lower()
     res = name
@@ -96,14 +97,16 @@ def long(name):
     
 
 def typed(matcher):
-    for key in Cache.objs:
-        if matcher not in key:
-            continue
-        yield key
+    with lock:
+        for key in Cache.objs:
+            if matcher not in key:
+                continue
+            yield key
 
 
 def types():
-    return set(Cache.objs.keys())
+    with lock:
+        return set(Cache.objs.keys())
 
 
 "methods"

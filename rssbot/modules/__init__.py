@@ -16,7 +16,7 @@ import _thread
 
 
 from ..fleet  import Fleet
-from ..object import Object, keys
+from ..object import Object, items, keys
 from ..thread import later, launch
 
 
@@ -52,6 +52,7 @@ class Main(Default):
     port    = 6667
     server  = "localhost"
     sets    = Default()
+    version = 644
 
 
 "commands"

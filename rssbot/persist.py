@@ -11,8 +11,8 @@ import pathlib
 import threading
 
 
-from .cache  import Cache
-from .object import fqn, update
+from .cache  import Cache, fntime, long
+from .object import Object, fqn, update
 from .serial import dump, load
 
 
@@ -36,12 +36,70 @@ def cdir(path):
     pth.parent.mkdir(parents=True, exist_ok=True)
 
 
+def fns(clz):
+    pth = store(clz)
+    for rootdir, dirs, _files in os.walk(pth, topdown=False):
+        if dirs:
+            for dname in dirs:
+                if dname.count('-') == 2:
+                    ddd = j(rootdir, dname)
+                    for fll in os.listdir(ddd):
+                        yield j(ddd, fll)
+
+
 def getpath(obj):
     return j(store(ident(obj)))
 
 
 def ident(obj):
     return j(fqn(obj),*str(datetime.datetime.now()).split())
+
+
+def isdeleted(obj):
+    return '__deleted__' in dir(obj) and obj.__deleted__
+
+
+
+def last(obj, selector=None):
+    if selector is None:
+        selector = {}
+    result = sorted(locate(fqn(obj), selector), key=lambda x: fntime(x[0]))
+    res = ""
+    if result:
+        inp = result[-1]
+        update(obj, inp[-1])
+        res = inp[0]
+    return res
+
+
+def locate(clz, selector=None, deleted=False, matching=False):
+    skel()
+    res = []
+    clz = long(clz)
+    if selector is None:
+        selector = {}
+    for pth in fns(clz):
+        obj = Cache.get(pth)
+        if not obj:
+            obj = Object()
+            read(obj, pth)
+            Cache.add(pth, obj)
+        if not deleted and isdeleted(obj):
+            continue
+        if selector and not search(obj, selector, matching):
+            continue
+        res.append((pth, obj))
+    return sorted(res, key=lambda x: fntime(x[0]))
+
+
+def long(name):
+    split = name.split(".")[-1].lower()
+    res = name
+    for names in types():
+        if split == names.split(".")[-1].lower():
+            res = names
+            break
+    return res
 
 
 def read(obj, path):
@@ -61,8 +119,6 @@ def setwd(pth):
 def skel():
     pth = pathlib.Path(store())
     pth.mkdir(parents=True, exist_ok=True)
-    pth = pathlib.Path(moddir())
-    pth.mkdir(parents=True, exist_ok=True)
     return str(pth)
 
 
@@ -72,6 +128,10 @@ def store(pth=""):
 
 def strip(pth, nmr=2):
     return j(pth.split(os.sep)[-nmr:])
+
+
+def types():
+    return os.listdir(store())
 
 
 def write(obj, path=""):
@@ -90,8 +150,10 @@ def __dir__():
         'Error',
         'Workdir',
         'cdir',
+        'fns',
         'getpath',
         'ident',
+        'locate',
         'read',
         'setwd',
         'store',

@@ -13,6 +13,7 @@ import unittest
 import rssbot
 import rssbot.cache
 import rssbot.client
+import rssbot.errors
 import rssbot.event
 import rssbot.fleet
 import rssbot.handler
@@ -29,6 +30,7 @@ from rssbot.object import *
 PACKAGE = [
     'cache',
     'client',
+    'errors',
     'event',
     'fleet',
     'handler',

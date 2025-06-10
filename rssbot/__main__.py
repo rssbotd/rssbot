@@ -163,7 +163,8 @@ def daemon(verbose=False):
 
 def errors():
     for exc in Errors.errors:
-        out(full(exc))
+        for line in full(exc):
+            print(line.rstrip())
 
 
 def forever():
