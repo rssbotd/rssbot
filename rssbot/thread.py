@@ -7,7 +7,6 @@
 import queue
 import time
 import threading
-import traceback
 import _thread
 
 

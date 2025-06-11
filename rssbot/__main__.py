@@ -6,14 +6,13 @@
 
 import os
 import sys
-import threading
 import time
-import _thread
 
 
 from .client  import Client
 from .errors  import Errors, full
 from .event   import Event
+from .fleet   import Fleet
 from .modules import Commands, Main
 from .modules import command, fmt, inits, level, modules, mods, parse
 from .object  import update
@@ -56,7 +55,6 @@ class Console(CLI):
 def background():
     daemon("-v" in sys.argv)
     privileges()
-    fnm = checkargs()
     banner()
     inits("irc,rss")
     forever()
@@ -102,11 +100,8 @@ def service():
     update(Main, Main.sets)
     Main.level = Main.sets.level or "warn"
     level(Main.level)
-    fnm = checkargs()
     banner()
     out(fmt(Main, skip="cmd,sets,txt,otxt", empty=False))
-    nrs = sync()
-    out(f"{nrs} feeds synced")
     privileges()
     inits("irc,rss")
     forever()
@@ -201,13 +196,6 @@ def cmd(event):
 
 
 "runtime"
-
-
-def excepthook(type, value, traceback);
-    traceback.print_exception(type, value, taceback)
-    
-
-threading.excepthook = sys.excepthook = excepthook
 
 
 def wrapped(func):

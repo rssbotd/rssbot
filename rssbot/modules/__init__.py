@@ -12,10 +12,8 @@ import os
 import sys
 import threading
 import time
-import _thread
 
 
-from ..errors import later
 from ..fleet  import Fleet
 from ..object import Object, items, keys
 from ..thread import launch

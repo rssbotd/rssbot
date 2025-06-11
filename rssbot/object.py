@@ -52,7 +52,7 @@ def keys(obj):
 
 
 def update(obj, data):
-    if obj.__class__ == type:
+    if obj.__class__ is type:
         for k,v in items(data):
            setattr(obj, k, v)
     elif isinstance(data, dict):

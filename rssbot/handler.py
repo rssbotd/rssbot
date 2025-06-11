@@ -6,10 +6,8 @@
 
 import queue
 import threading
-import _thread
 
 
-from .errors import later
 from .thread import launch, name
 
 
