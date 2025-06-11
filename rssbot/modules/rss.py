@@ -6,10 +6,14 @@
 
 import html
 import html.parser
+import http.client
+import logging
 import os
 import re
+import sys
 import time
 import urllib
+import urllib.parse
 import urllib.request
 import uuid
 import _thread
@@ -19,13 +23,12 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..cache   import fntime
-from ..fleet   import Fleet
-from ..object  import Object, update
-from ..persist import getpath, last, locate, write
-from ..thread  import launch
-from ..timer   import Repeater
-from .         import elapsed, fmt, spl
+from ..disk   import getpath, write
+from ..find   import find, fntime, last
+from ..fleet  import Fleet
+from ..object import Object, update
+from ..thread import Repeater, launch, line
+from .        import Default, elapsed, fmt, rlog, spl
 
 
 DEBUG = False
@@ -42,35 +45,19 @@ def init():
     return fetcher
 
 
-class Feed(Object):
+class Feed(Default):
 
     def __init__(self):
-        Object.__init__(self)
-        self.link = ""
-
-
-class Rss(Object):
-
-    def __init__(self):
-        Object.__init__(self)
-        self.display_list = 'title,link,author'
-        self.insertid     = None
-        self.rss          = ''
-
-
-class Urls(Object):
-
-    pass
-
-
-seen   = Urls()
-seenfn = ''
+        Default.__init__(self)
+        self.name = ""
 
 
 class Fetcher(Object):
 
     def __init__(self):
         self.dosave = False
+        self.seen = Urls()
+        self.seenfn = None
 
     @staticmethod
     def display(obj):
@@ -94,10 +81,9 @@ class Fetcher(Object):
         return result[:-2].rstrip()
 
     def fetch(self, feed, silent=False):
-        global seenfn
         with fetchlock:
             result = []
-            see = getattr(seen, feed.rss, [])
+            seen = getattr(self.seen, feed.rss, [])
             urls = []
             counter = 0
             for obj in reversed(getfeed(feed.rss, feed.display_list)):
@@ -111,15 +97,15 @@ class Fetcher(Object):
                 else:
                     uurl = fed.link
                 urls.append(uurl)
-                if uurl in see:
+                if uurl in seen:
                     continue
                 if self.dosave:
                     write(fed)
                 result.append(fed)
-            setattr(seen, feed.rss, urls)
-            if not seenfn:
-                seenfn = getpath(seen)
-            write(seen, seenfn)
+            setattr(self.seen, feed.rss, urls)
+            if not self.seenfn:
+                self.seenfn = getpath(self.seen)
+            write(self.seen, self.seenfn)
         if silent:
             return counter
         txt = ''
@@ -134,13 +120,12 @@ class Fetcher(Object):
 
     def run(self, silent=False):
         thrs = []
-        for _fn, feed in locate('rss'):
+        for _fn, feed in find('rss'):
             thrs.append(launch(self.fetch, feed, silent))
         return thrs
 
     def start(self, repeat=True):
-        global seenfn
-        seenfn = last(seen)
+        self.seenfn = last(self.seen)
         if repeat:
             repeater = Repeater(300.0, self.run)
             repeater.start()
@@ -261,6 +246,20 @@ class Parser:
         return result
 
 
+class Rss(Default):
+
+    def __init__(self):
+        Default.__init__(self)
+        self.display_list = 'title,link,author'
+        self.insertid     = None
+        self.name         = ""
+        self.rss          = ""
+
+
+class Urls(Default):
+
+    pass
+
 
 "utilities"
 
@@ -284,7 +283,8 @@ def getfeed(url, items):
         return result
     try:
         rest = geturl(url)
-    except (ValueError, HTTPError, URLError):
+    except (http.client.HTTPException, ValueError, HTTPError, URLError) as ex:
+        rlog("error", f"{url} {ex}")
         return result
     if rest:
         if url.endswith('atom'):
@@ -313,14 +313,13 @@ def gettinyurl(url):
 
 
 def geturl(url):
-    if not url.startswith("http://") and not url.startswith("https://"):
-        return ""
     url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
-    req = urllib.request.Request(url)
+    req = urllib.request.Request(str(url))
     req.add_header('User-agent', useragent("rss fetcher"))
     with urllib.request.urlopen(req) as response: # nosec
         response.data = response.read()
         return response
+
 
 def shortid():
     return str(uuid.uuid4())[:8]
@@ -348,10 +347,10 @@ def dpl(event):
         event.reply('dpl <stringinurl> <item1,item2>')
         return
     setter = {'display_list': event.args[1]}
-    for fnm, feed in locate("rss", {'rss': event.args[0]}):
-        if feed:
-            update(feed, setter)
-            write(feed, fnm)
+    for fnm,  rss in find("rss", {'rss': event.args[0]}):
+        if rss:
+            update(rss, setter)
+            write(rss, fnm)
     event.done()
 
 
@@ -359,7 +358,7 @@ def exp(event):
     with importlock:
         event.reply(TEMPLATE)
         nrs = 0
-        for _fn, ooo in locate("rss"):
+        for _fn, ooo in find("rss"):
             nrs += 1
             obj = Rss()
             update(obj, ooo)
@@ -392,16 +391,16 @@ def imp(event):
                 continue
             if not url.startswith("http"):
                 continue
-            has = list(locate("rss", {'rss': url}, matching=True))
+            has = list(find("rss", {'rss': url}, matching=True))
             if has:
                 skipped.append(url)
                 nrskip += 1
                 continue
-            feed = Rss()
-            update(feed, obj)
-            feed.rss = obj.xmlUrl
-            feed.insertid = insertid
-            write(feed)
+            rss = Rss()
+            update(rss, obj)
+            rss.rss = obj.xmlUrl
+            rss.insertid = insertid
+            write(rss)
             nrs += 1
     if nrskip:
         event.reply(f"skipped {nrskip} urls.")
@@ -414,9 +413,11 @@ def nme(event):
         event.reply('nme <stringinurl> <name>')
         return
     selector = {'rss': event.args[0]}
-    for fnm, feed in locate("rss", selector):
+    for fnm, rss in find("rss", selector):
+        feed = Rss()
+        update(feed, rss)
         if feed:
-            feed.name = event.args[1]
+            feed.name = str(event.args[1])
             write(feed, fnm)
     event.done()
 
@@ -425,12 +426,14 @@ def rem(event):
     if len(event.args) != 1:
         event.reply('rem <stringinurl>')
         return
-    for fnm, feed in locate("rss"):
+    for fnm, rss in find("rss"):
+        feed = Default()
+        update(feed, rss)
         if event.args[0] not in feed.rss:
             continue
         if feed:
             feed.__deleted__ = True
-            write(feed, fnm)
+            write(rss, fnm)
     event.done()
 
 
@@ -438,7 +441,9 @@ def res(event):
     if len(event.args) != 1:
         event.reply('res <stringinurl>')
         return
-    for fnm, feed in locate("rss", deleted=True):
+    for fnm, rss in find("rss", deleted=True):
+        feed = Default()
+        update(feed, rss)
         if event.args[0] not in feed.rss:
             continue
         if feed:
@@ -450,24 +455,24 @@ def res(event):
 def rss(event):
     if not event.rest:
         nrs = 0
-        for fnm, feed in locate('rss'):
+        for fnm, rss in find('rss'):
             nrs += 1
             elp = elapsed(time.time()-fntime(fnm))
-            txt = fmt(feed)
+            txt = fmt(rss)
             event.reply(f'{nrs} {txt} {elp}')
         if not nrs:
-            event.reply('no rss feed found.')
+            event.reply('no feed found.')
         return
     url = event.args[0]
     if 'http' not in url:
         event.reply('i need an url')
         return
-    for fnm, result in locate("rss", {'rss': url}):
+    for fnm, result in find("rss", {'rss': url}):
         if result:
             return
-    feed = Rss()
-    feed.rss = event.args[0]
-    write(feed)
+    rss = Rss()
+    rss.rss = event.args[0]
+    write(rss)
     event.done()
 
 

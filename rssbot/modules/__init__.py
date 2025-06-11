@@ -4,6 +4,7 @@
 "modules"
 
 
+import hashlib
 import importlib
 import importlib.util
 import inspect
@@ -12,11 +13,12 @@ import os
 import sys
 import threading
 import time
+import _thread
 
 
 from ..fleet  import Fleet
 from ..object import Object, items, keys
-from ..thread import launch
+from ..thread import later, launch
 
 
 STARTTIME = time.time()
@@ -26,7 +28,10 @@ lock = threading.RLock()
 path = os.path.dirname(__file__)
 
 
-"config"
+CHECKSUM = "ddbf810f4e00cd1604a57e90452c1670"
+CHECKSUM = ""
+MD5      = {}
+NAMES    = {}
 
 
 class Default(Object):
@@ -41,31 +46,29 @@ class Main(Default):
 
     debug   = False
     gets    = Default()
-    ignore  = ""
+    ignore  = "now,req"
     init    = ""
     level   = "warn"
+    md5     = True
     name    = __name__.split(".", maxsplit=1)[0]
-    nick    = __name__.split(".", maxsplit=1)[0]
     opts    = Default()
     otxt    = ""
-    port    = 6667
-    server  = "localhost"
     sets    = Default()
-    version = 644
-
-
-"commands"
+    verbose = False
+    version = 323
 
 
 class Commands:
 
     cmds  = {}
+    md5   = {}
     names = {}
 
     @staticmethod
-    def add(func):
+    def add(func, mod=None):
         Commands.cmds[func.__name__] = func
-        Commands.names[func.__name__] = func.__module__.split(".")[-1]
+        if mod:
+            Commands.names[func.__name__] = mod.__name__.split(".")[-1]
 
     @staticmethod
     def get(cmd):
@@ -73,6 +76,8 @@ class Commands:
         if not func:
             name = Commands.names.get(cmd, None)
             if not name:
+                return None
+            if Main.md5 and not check(name):
                 return None
             mod = load(name)
             if mod:
@@ -91,159 +96,20 @@ def command(evt):
         evt.ready()
 
 
-def scan(mod):
-    for key, cmdz in inspect.getmembers(mod, inspect.isfunction):
-        if key.startswith("cb"):
-            continue
-        if 'event' in cmdz.__code__.co_varnames:
-            Commands.add(cmdz)
-
-
-"modules"
-
-
 def inits(names):
     modz = []
     for name in sorted(spl(names)):
-        mod = load(name)
-        if not mod:
-            continue
-        if "init" in dir(mod):
-            thr = launch(mod.init)
-            modz.append((mod, thr))
+        try:
+            mod = load(name)
+            if not mod:
+                continue
+            if "init" in dir(mod):
+                thr = launch(mod.init)
+                modz.append((mod, thr))
+        except Exception as ex:
+            later(ex)
+            _thread.interrupt_main()
     return modz
-
-
-def load(name):
-    with lock:
-        module = None
-        mname = f"{__name__}.{name}"
-        module = sys.modules.get(mname, None)
-        if not module:
-            pth = os.path.join(path, f"{name}.py")
-            if not os.path.exists(pth):
-                return None
-            spec = importlib.util.spec_from_file_location(mname, pth)
-            if not spec or not spec.loader:
-                return None
-            module = importlib.util.module_from_spec(spec)
-            if not module:
-                return None
-            spec.loader.exec_module(module)
-            sys.modules[mname] = module
-        return module
-
-
-def mods(names=""):
-    res = []
-    for nme in modules():
-        if names and nme not in spl(names):
-            continue
-        mod = load(nme)
-        if not mod:
-            continue
-        res.append(mod)
-        scan(mod)
-    return res
-
-
-def modules(mdir=""):
-    return sorted([
-                   x[:-3] for x in os.listdir(mdir or path)
-                   if x.endswith(".py") and not x.startswith("__") and
-                   x[:-3] not in Main.ignore
-                  ])
-
-
-"utilities"
-
-
-def elapsed(seconds, short=True):
-    txt = ""
-    nsec = float(seconds)
-    if nsec < 1:
-        return f"{nsec:.2f}s"
-    yea = 365*24*60*60
-    week = 7*24*60*60
-    nday = 24*60*60
-    hour = 60*60
-    minute = 60
-    yeas = int(nsec/yea)
-    nsec -= yeas*yea
-    weeks = int(nsec/week)
-    nsec -= weeks*week
-    nrdays = int(nsec/nday)
-    nsec -= nrdays*nday
-    hours = int(nsec/hour)
-    nsec -= hours*hour
-    minutes = int(nsec/minute)
-    nsec -= int(minute*minutes)
-    sec = int(nsec)
-    if yeas:
-        txt += f"{yeas}y"
-    if weeks:
-        nrdays += weeks * 7
-    if nrdays:
-        txt += f"{nrdays}d"
-    if short and txt:
-        return txt.strip()
-    if hours:
-        txt += f"{hours}h"
-    if minutes:
-        txt += f"{minutes}m"
-    if sec:
-        txt += f"{sec}s"
-    txt = txt.strip()
-    return txt
-
-
-"methods"
-
-
-def edit(obj, setter, skip=True):
-    for key, val in items(setter):
-        if skip and val == "":
-            continue
-        try:
-            setattr(obj, key, int(val))
-            continue
-        except ValueError:
-            pass
-        try:
-            setattr(obj, key, float(val))
-            continue
-        except ValueError:
-            pass
-        if val in ["True", "true"]:
-            setattr(obj, key, True)
-        elif val in ["False", "false"]:
-            setattr(obj, key, False)
-        else:
-            setattr(obj, key, val)
-
-
-
-def fmt(obj, args=None, skip=None, plain=False, empty=False):
-    if args is None:
-        args = keys(obj)
-    if skip is None:
-        skip = []
-    txt = ""
-    for key in args:
-        if key.startswith("__"):
-            continue
-        if skip and key in spl(skip):
-            continue
-        value = getattr(obj, key, None)
-        if not empty and not value:
-            continue
-        if plain:
-            txt += f"{value} "
-        elif isinstance(value, str):
-            txt += f'{key}="{value}" '
-        else:
-            txt += f'{key}={value} '
-    return txt.strip()
 
 
 def parse(obj, txt=""):
@@ -305,12 +171,117 @@ def parse(obj, txt=""):
         obj.txt = obj.cmd or ""
 
 
-def spl(txt):
-    try:
-        result = txt.split(',')
-    except (TypeError, ValueError):
-        result = [txt, ]
-    return [x for x in result if x]
+def scan(mod):
+    for key, cmdz in inspect.getmembers(mod, inspect.isfunction):
+        if key.startswith("cb"):
+            continue
+        if 'event' in cmdz.__code__.co_varnames:
+            Commands.add(cmdz, mod)
+
+
+def settable():
+    Commands.names.update(table())
+
+
+"modules"
+
+
+def check(name, md5=""):
+    if not CHECKSUM:
+        return True
+    mname = f"{__name__}.{name}"
+    if sys.modules.get(mname):
+        return True
+    pth = os.path.join(path, name + ".py")
+    spec = importlib.util.spec_from_file_location(mname, pth)
+    if not spec:
+        return False
+    if md5sum(pth) == (md5 or MD5.get(name, "")):
+        return True
+    if CHECKSUM and Main.md5:
+        rlog("debug", f"{name} failed md5sum check")
+    return False
+
+
+def gettbl(name):
+    pth = os.path.join(path, "tbl.py")
+    if not os.path.exists(pth):
+        rlog("debug", "tbl.py is not there")
+        return {}
+    if CHECKSUM and (md5sum(pth) != CHECKSUM):
+        rlog("debug", "table checksum doesn't match")
+        return {}
+    mname = f"{__name__}.tbl"
+    mod = sys.modules.get(mname, None)
+    if not mod:
+        spec = importlib.util.spec_from_file_location(mname, pth)
+        if not spec or not spec.loader:
+                return {}
+        mod = importlib.util.module_from_spec(spec)
+        if mod:
+            spec.loader.exec_module(mod)
+            sys.modules[mname] = mod
+    return getattr(mod, name, {})
+
+
+def load(name):
+    with lock:
+        if name in Main.ignore:
+            return None
+        module = None
+        mname = f"{__name__}.{name}"
+        module = sys.modules.get(mname, None)
+        if not module:
+            pth = os.path.join(path, f"{name}.py")
+            if not os.path.exists(pth):
+                return None
+            spec = importlib.util.spec_from_file_location(mname, pth)
+            if not spec or not spec.loader:
+                return None
+            module = importlib.util.module_from_spec(spec)
+            if not module:
+                return None
+            spec.loader.exec_module(module)
+            sys.modules[mname] = module
+        if Main.debug:
+            module.DEBUG = True
+        return module
+
+
+def md5sum(modpath):
+    with open(modpath, "r", encoding="utf-8") as file:
+        txt = file.read().encode("utf-8")
+        return str(hashlib.md5(txt).hexdigest())
+
+
+def mods(names=""):
+    res = []
+    for nme in modules():
+        if names and nme not in spl(names):
+            continue
+        mod = load(nme)
+        if not mod:
+            continue
+        res.append(mod)
+    return res
+
+
+def modules(mdir=""):
+    return sorted([
+                   x[:-3] for x in os.listdir(mdir or path)
+                   if x.endswith(".py") and not x.startswith("__") and
+                   x[:-3] not in Main.ignore
+                  ])
+
+
+def table():
+    md5s = gettbl("MD5")
+    if md5s:
+        MD5.update(md5s)
+    names = gettbl("NAMES")
+    if names:
+        NAMES.update(names)
+    return NAMES
 
 
 "logging"
@@ -325,13 +296,115 @@ def level(loglevel="debug"):
         logging.getLogger().setLevel(LEVELS.get(loglevel))
 
 
-def rlog(lvl, txt, ignore=None):
+
+def rlog(level, txt, ignore=None):
     if ignore is None:
         ignore = []
     for ign in ignore:
         if ign in str(txt):
             return
-    logging.log(LEVELS.get(lvl), txt)
+    logging.log(LEVELS.get(level), txt)
+
+
+"utilities"
+
+
+def elapsed(seconds, short=True):
+    txt = ""
+    nsec = float(seconds)
+    if nsec < 1:
+        return f"{nsec:.2f}s"
+    yea = 365*24*60*60
+    week = 7*24*60*60
+    nday = 24*60*60
+    hour = 60*60
+    minute = 60
+    yeas = int(nsec/yea)
+    nsec -= yeas*yea
+    weeks = int(nsec/week)
+    nsec -= weeks*week
+    nrdays = int(nsec/nday)
+    nsec -= nrdays*nday
+    hours = int(nsec/hour)
+    nsec -= hours*hour
+    minutes = int(nsec/minute)
+    nsec -= int(minute*minutes)
+    sec = int(nsec)
+    if yeas:
+        txt += f"{yeas}y"
+    if weeks:
+        nrdays += weeks * 7
+    if nrdays:
+        txt += f"{nrdays}d"
+    if short and txt:
+        return txt.strip()
+    if hours:
+        txt += f"{hours}h"
+    if minutes:
+        txt += f"{minutes}m"
+    if sec:
+        txt += f"{sec}s"
+    txt = txt.strip()
+    return txt
+
+
+def spl(txt):
+    try:
+        result = txt.split(',')
+    except (TypeError, ValueError):
+        result = [txt, ]
+    return [x for x in result if x]
+
+
+"methods"
+
+
+def edit(obj, setter, skip=True):
+    for key, val in items(setter):
+        if skip and val == "":
+            continue
+        try:
+            setattr(obj, key, int(val))
+            continue
+        except ValueError:
+            pass
+        try:
+            setattr(obj, key, float(val))
+            continue
+        except ValueError:
+            pass
+        if val in ["True", "true"]:
+            setattr(obj, key, True)
+        elif val in ["False", "false"]:
+            setattr(obj, key, False)
+        else:
+            setattr(obj, key, val)
+
+
+def fmt(obj, args=None, skip=None, plain=False):
+    if args is None:
+        args = keys(obj)
+    if skip is None:
+        skip = []
+    txt = ""
+    for key in args:
+        if key.startswith("__"):
+            continue
+        if key in skip:
+            continue
+        value = getattr(obj, key, None)
+        if value is None:
+            continue
+        if plain:
+            txt += f"{value} "
+        elif isinstance(value, str):
+            txt += f'{key}="{value}" '
+        else:
+            txt += f'{key}={value} '
+    return txt.strip()
+
+
+"data"
 
 
 LEVELS = {'debug': logging.DEBUG,

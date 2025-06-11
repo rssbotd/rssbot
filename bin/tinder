@@ -24,7 +24,7 @@ from rssbot.event   import Event
 from rssbot.modules import STARTTIME, Main
 from rssbot.modules import command, elapsed, inits, mods, modules, parse, spl
 from rssbot.object  import Object, keys
-from rssbot.persist import Workdir, skel
+from rssbot.persist import Workdir, skel, setwd
 from rssbot.thread  import launch
 
 

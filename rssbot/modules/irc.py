@@ -5,6 +5,7 @@
 
 
 import base64
+import logging
 import os
 import queue
 import socket
@@ -14,14 +15,14 @@ import threading
 import time
 
 
-from ..cache   import last
-from ..client  import Client
-from ..event   import Event as IEvent
-from ..fleet   import Fleet
-from ..object  import Object, keys
-from ..persist import getpath, ident, write
-from ..thread  import launch
-from .         import Default, Main, command, edit, fmt, rlog
+from ..client import Client
+from ..disk   import getpath, ident, write
+from ..event  import Event as IEvent
+from ..find   import last
+from ..fleet  import Fleet
+from ..object import Object, keys
+from ..thread import launch
+from .        import Default, Main, command, edit, fmt, rlog
 
 
 IGNORE  = ["PING", "PONG", "PRIVMSG"]
@@ -603,7 +604,7 @@ def cfg(event):
                     fmt(
                         config,
                         keys(config),
-                        skip='control,password,realname,sleep,username'
+                        skip='control,password,realname,sleep,username'.split(",")
                        )
                    )
     else:
