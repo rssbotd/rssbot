@@ -55,7 +55,8 @@ def handler(signum, frame):
 
 
 def out(txt):
-    rlog("debug", txt.rstrip())
+    print(txt)
+    sys.stdout.flush()
 
 
 "utilities"
