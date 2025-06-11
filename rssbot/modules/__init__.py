@@ -11,7 +11,6 @@ import inspect
 import logging
 import os
 import sys
-import threading
 import time
 import _thread
 
@@ -24,7 +23,6 @@ from ..thread import later, launch
 STARTTIME = time.time()
 
 
-#lock = threading.RLock()
 lock = _thread.allocate_lock()
 path = os.path.dirname(__file__)
 

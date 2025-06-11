@@ -30,6 +30,7 @@ IGNORE  = ["PING", "PONG", "PRIVMSG"]
 
 saylock = threading.RLock()
 
+#saylock = _thread.allocate_lock()
 
 def init():
     irc = IRC()
