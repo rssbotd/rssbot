@@ -4,7 +4,11 @@
 "errors"
 
 
+import threading
 import traceback
+
+
+lock = threading.RLock()
 
 
 class Errors:
@@ -14,15 +18,17 @@ class Errors:
 
 
 def full(exc):
-    return traceback.format_exception(
-                                      type(exc),
-                                      exc,
-                                      exc.__traceback__
-                                     )
+    with lock:
+        return traceback.format_exception(
+                                          type(exc),
+                                          exc,
+                                          exc.__traceback__
+                                         )
 
 
 def later(exc):
-    Errors.errors.append(exc)
+    with lock:
+        Errors.errors.append(exc)
 
 
 def line(exc):

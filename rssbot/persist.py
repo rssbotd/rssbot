@@ -11,7 +11,7 @@ import pathlib
 import threading
 
 
-from .cache  import Cache, fntime
+from .cache  import Cache, fntime, search
 from .object import Object, fqn, update
 from .serial import dump, load
 
@@ -127,7 +127,6 @@ def store(pth=""):
 
 
 def strip(pth, nmr=3):
-    print(pth)
     return j(*pth.split(os.sep)[-nmr:])
 
 

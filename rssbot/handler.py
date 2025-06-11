@@ -9,7 +9,8 @@ import threading
 import _thread
 
 
-from .thread import later, launch, name
+from .errors import later
+from .thread import launch, name
 
 
 lock = threading.RLock()
@@ -19,6 +20,7 @@ class Handler:
 
     def __init__(self):
         self.cbs     = {}
+        self.missed  = []
         self.queue   = queue.Queue()
         self.ready   = threading.Event()
         self.stopped = threading.Event()
@@ -33,21 +35,18 @@ class Handler:
                 cmd = evt.txt.split(maxsplit=1)[0]
             else:
                 cmd = name(func)
-            evt._thr = launch(func, evt, name=cmd)
+            try:
+                evt._thr = launch(func, evt, name=cmd)
+            except RuntimeError:
+                self.missed.append(evt)
 
     def loop(self):
         while not self.stopped.is_set():
-            try:
-                evt = self.poll()
-                if evt is None:
-                    break
-                evt.orig = repr(self)
-                self.callback(evt)
-            except (KeyboardInterrupt, EOFError):
-                _thread.interrupt_main()
-            except Exception as ex:
-                later(ex)
-                _thread.interrupt_main()
+            evt = self.poll()
+            if evt is None:
+                break
+            evt.orig = repr(self)
+            self.callback(evt)
         self.ready.set()
 
     def poll(self):

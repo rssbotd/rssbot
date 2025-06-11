@@ -10,6 +10,7 @@ import random
 import shutil
 import sys
 import termios
+import threading
 import time
 import _thread
 
@@ -25,6 +26,9 @@ from rssbot.modules import command, elapsed, inits, mods, modules, parse, spl
 from rssbot.object  import Object, keys
 from rssbot.persist import Workdir, skel
 from rssbot.thread  import launch
+
+
+lock = threading.RLock()
 
 
 Main.debug  = True
@@ -107,6 +111,12 @@ def consume(evts):
     return done
 
 
+def errors():
+    with lock:
+        for exc in Errors.errors:
+            print("".join(full(exc)))
+
+
 def nodebug():
     with open('/dev/null', 'a+', encoding="utf-8") as ses:
         os.dup2(ses.fileno(), sys.stderr.fileno())
@@ -140,13 +150,10 @@ def wrap(function):
     try:
         function()
     except (KeyboardInterrupt, EOFError):
-        pass
+        print("")
     finally:
         if old3:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old3)
-    for exc in Errors.errors:
-        for line in full(exc):
-            print(line.rstrip())
 
 
 def main():
@@ -188,6 +195,7 @@ def main():
 
 if __name__ == "__main__":
     wrap(main)
+    errors()
     endtime = time.time()
     lap = elapsed(endtime-STARTTIME)
     percall = (endtime-STARTTIME)/(nrcommand)

@@ -6,6 +6,7 @@
 
 import os
 import sys
+import threading
 import time
 import _thread
 
@@ -169,11 +170,15 @@ def errors():
 
 def forever():
     while True:
-        try:
-            time.sleep(0.1)
-        except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
-
+        time.sleep(0.1)
+        done = []
+        for hdl in Fleet.bots:
+            for evt in hdl.missing:
+                hdl.callback(evt)
+                done.append(evt)
+            for evt in done:
+                hdl.missing.remove(evt)
+            
 
 def out(txt):
     print(txt.rstrip())
@@ -198,12 +203,18 @@ def cmd(event):
 "runtime"
 
 
+def excepthook(type, value, traceback);
+    traceback.print_exception(type, value, taceback)
+    
+
+threading.excepthook = sys.excepthook = excepthook
+
+
 def wrapped(func):
     try:
         func()
     except (KeyboardInterrupt, EOFError):
         out("")
-    errors()
 
 
 def wrap(func):
@@ -234,6 +245,7 @@ def main():
         wrap(service)
     else:
         control()
+    errors()
 
 
 if __name__ == "__main__":

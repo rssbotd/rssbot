@@ -39,10 +39,11 @@ class Thread(threading.Thread):
         except Exception as ex:
             later(ex)
             try:
-                args[0].ready()
+               args[0].ready()
             except (IndexError, AttributeError):
-                pass
+               pass
             _thread.interrupt_main()
+
 
     def join(self, timeout=0.0):
         if timeout != 0.0:

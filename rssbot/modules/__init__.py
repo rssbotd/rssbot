@@ -15,9 +15,10 @@ import time
 import _thread
 
 
+from ..errors import later
 from ..fleet  import Fleet
 from ..object import Object, items, keys
-from ..thread import later, launch
+from ..thread import launch
 
 
 STARTTIME = time.time()
@@ -106,16 +107,12 @@ def scan(mod):
 def inits(names):
     modz = []
     for name in sorted(spl(names)):
-        try:
-            mod = load(name)
-            if not mod:
-                continue
-            if "init" in dir(mod):
-                thr = launch(mod.init)
-                modz.append((mod, thr))
-        except Exception as ex:
-            later(ex)
-            _thread.interrupt_main()
+        mod = load(name)
+        if not mod:
+            continue
+        if "init" in dir(mod):
+            thr = launch(mod.init)
+            modz.append((mod, thr))
     return modz
 
 
