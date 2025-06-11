@@ -14,18 +14,16 @@ from .persist import Cache, read
 from .paths   import long, skel, store
 
 
-lock = threading.RLock()
-j    = os.path.join
-
-
 def find(clz, selector=None, deleted=False, matching=False):
-    skel()
-    res = []
     clz = long(clz)
     if selector is None:
         selector = {}
     for pth in fns(clz):
         obj = Cache.get(pth)
+        if not obj:
+            obj = Object()
+            read(obj, pth)
+            Cache.add(pth, obj)
         if '__deleted__' in dir(obj) and obj.__deleted__:
             continue
         if selector and not search(obj, selector, matching):
@@ -37,9 +35,9 @@ def fns(clz):
     pth = store(clz)
     for rootdir, dirs, _files in os.walk(pth, topdown=False):
         for dname in dirs:
-            ddd = j(rootdir, dname)
+            ddd = os.path.join(rootdir, dname)
             for fll in os.listdir(ddd):
-                yield j(ddd, fll)
+                yield os.path.join(ddd, fll)
 
 
 def fntime(daystr):

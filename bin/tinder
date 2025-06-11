@@ -39,7 +39,7 @@ percall   = 1
 
 
 events = []
-ignore = "dbg,"
+ignore = "dbg,tbl"
 paylock = _thread.allocate_lock()
 
 
@@ -98,13 +98,16 @@ def banner():
 
 
 def consume(evts):
-    done = []
-    for event in evts:
-        event.wait()
-        done.append(event)
-    for todo in done:
-        events.remove(todo)
-    return done
+    while 1:
+        for event in evts:
+            if event._ready.is_set():
+                event.wait()
+        done = True
+        for event in evts:
+            if not event._ready.is_set():
+                done = False
+        if done:
+           break
 
 
 def payload(clt, cmds):
@@ -177,6 +180,7 @@ def main():
     for thr in thrs:
         nr = thr.join()
         nrcommand += nr
+    time.sleep(0.1)
     consume(events)
 
 if __name__ == "__main__":

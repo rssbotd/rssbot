@@ -17,7 +17,7 @@ class Thread(threading.Thread):
 
     def __init__(self, func, thrname, *args, daemon=True, **kwargs):
         super().__init__(None, self.run, thrname, (), daemon=daemon)
-        self.name   = thrname or kwargs.get("name", name(func))
+        self.name      = thrname or kwargs.get("name", name(func))
         self.queue     = queue.Queue()
         self.result    = None
         self.starttime = time.time()
@@ -48,7 +48,7 @@ class Thread(threading.Thread):
             while 1:
                 if not self.is_alive():
                     break
-                time.sleep(0.01)
+                time.sleep(0.1)
         super().join(timeout)
         return self.result
 
@@ -99,7 +99,7 @@ class Repeater(Timed):
 
 
 def launch(func, *args, **kwargs):
-    nme = kwargs.get("name")
+    nme = kwargs.get("name", None)
     if not nme:
         nme = name(func)
     thread = Thread(func, nme, *args, **kwargs)

@@ -91,7 +91,7 @@ def command(evt):
     func = Commands.get(evt.cmd)
     if func:
         func(evt)
-        Fleet.display(evt)
+        evt.display()
     else:
         evt.ready()
 
@@ -381,7 +381,7 @@ def edit(obj, setter, skip=True):
             setattr(obj, key, val)
 
 
-def fmt(obj, args=None, skip=None, plain=False):
+def fmt(obj, args=None, skip=None, plain=False, empty=False):
     if args is None:
         args = keys(obj)
     if skip is None:
@@ -394,6 +394,8 @@ def fmt(obj, args=None, skip=None, plain=False):
             continue
         value = getattr(obj, key, None)
         if value is None:
+            continue
+        if not empty and not value:
             continue
         if plain:
             txt += f"{value} "
