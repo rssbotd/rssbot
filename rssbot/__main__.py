@@ -12,12 +12,12 @@ import _thread
 
 
 from .client  import Client
+from .errors  import Errors, full
 from .event   import Event
-from .modules import Commands, Main, command, inits
+from .modules import Commands, Main, command, fmt, inits
 from .modules import md5sum, mods, level, modules, parse, rlog, scan, settable
 from .serial  import dumps
 from .paths   import Workdir, pidname
-from .thread  import Errors, full
 
 
 class CLI(Client):
@@ -55,8 +55,7 @@ def handler(signum, frame):
 
 
 def out(txt):
-    print(txt.rstrip())
-    #sys.stdout.flush()
+    rlog("debug", txt.rstrip())
 
 
 "utilities"
@@ -64,7 +63,8 @@ def out(txt):
 
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
-    out(f"{Main.name.upper()} since {tme} ({Main.level.upper()})")
+    out(f"{Main.name.upper()} {Main.version} since {tme} ({Main.level.upper()})")
+    out(fmt(Main, skip=["args", "cmd", "gets", "otxt", "result", "sets", "silent", "txt"]))
 
 
 def check(txt):
@@ -221,7 +221,7 @@ def control():
     Commands.add(srv)
     Commands.add(tbl)
     parse(Main, " ".join(sys.argv[1:]))
-    level(Main.level or "warn")
+    level(Main.level or "debug")
     csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
@@ -234,7 +234,7 @@ def control():
 def service():
     setwd(Main.name)
     settable()
-    level(Main.level or "none")
+    level(Main.level or "debug")
     banner()
     privileges()
     pidfile(pidname(Main.name))

@@ -9,9 +9,9 @@ import threading
 import time
 
 
-from .disk   import Cache, read
-from .object import Object, fqn, items, update
-from .paths  import long, skel, store
+from .object  import Object, fqn, items, update
+from .persist import Cache, read
+from .paths   import long, skel, store
 
 
 lock = threading.RLock()
@@ -26,11 +26,7 @@ def find(clz, selector=None, deleted=False, matching=False):
         selector = {}
     for pth in fns(clz):
         obj = Cache.get(pth)
-        if not obj:
-            obj = Object()
-            read(obj, pth)
-            Cache.add(pth, obj)
-        if not deleted and isdeleted(obj):
+        if '__deleted__' in dir(obj) and obj.__deleted__:
             continue
         if selector and not search(obj, selector, matching):
             continue
@@ -57,10 +53,6 @@ def fntime(daystr):
     if rest:
         timed += float('.' + rest)
     return float(timed)
-
-
-def isdeleted(obj):
-    return '__deleted__' in dir(obj) and obj.__deleted__
 
 
 def last(obj, selector=None):

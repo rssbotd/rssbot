@@ -11,7 +11,7 @@ import pathlib
 import threading
 
 
-from .object import fqn, update
+from .object import Object, fqn, update
 from .serial import dump, load
 from .paths  import store
 
@@ -35,7 +35,12 @@ class Cache:
 
     @staticmethod
     def get(path):
-        return Cache.objs.get(path, None)
+        obj = Cache.objs.get(path, None)
+        if not obj:
+            obj = Object()
+            read(obj, path)
+            Cache.add(path, obj)
+        return obj
 
     @staticmethod
     def typed(matcher):
@@ -81,7 +86,7 @@ def write(obj, path=""):
         cdir(path)
         with open(path, "w", encoding="utf-8") as fpt:
             dump(obj, fpt, indent=4)
-        #Cache.update(path, obj)
+        Cache.update(path, obj)
         return path
 
 
