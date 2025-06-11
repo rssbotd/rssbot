@@ -17,8 +17,8 @@ from .serial import dump, load
 from .paths  import store
 
 
-#lock = threading.RLock()
 lock = _thread.allocate_lock()
+
 
 class Error(Exception):
 
@@ -81,7 +81,7 @@ def write(obj, path=""):
         cdir(path)
         with open(path, "w", encoding="utf-8") as fpt:
             dump(obj, fpt, indent=4)
-        #Cache.update(path, obj)
+        Cache.update(path, obj)
         return path
 
 

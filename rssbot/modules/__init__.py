@@ -24,7 +24,8 @@ from ..thread import later, launch
 STARTTIME = time.time()
 
 
-lock = threading.RLock()
+#lock = threading.RLock()
+lock = _thread.allocate_lock()
 path = os.path.dirname(__file__)
 
 

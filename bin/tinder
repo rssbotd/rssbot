@@ -108,6 +108,7 @@ def consume(evts):
                 done = False
         if done:
            break
+        time.sleep(1.5)
 
 
 def payload(clt, cmds):

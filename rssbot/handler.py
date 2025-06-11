@@ -13,7 +13,7 @@ from .errors import later
 from .thread import launch, name
 
 
-lock = threading.RLock()
+lock = _thread.allocate_lock()
 
 
 class Handler:
