@@ -134,7 +134,7 @@ class Fetcher(Object):
 
     def run(self, silent=False):
         thrs = []
-        for _fn, feed in find('rss'):
+        for _fn, feed in locate('rss'):
             thrs.append(launch(self.fetch, feed, silent))
         return thrs
 
@@ -348,7 +348,7 @@ def dpl(event):
         event.reply('dpl <stringinurl> <item1,item2>')
         return
     setter = {'display_list': event.args[1]}
-    for fnm, feed in find("rss", {'rss': event.args[0]}):
+    for fnm, feed in locate("rss", {'rss': event.args[0]}):
         if feed:
             update(feed, setter)
             write(feed, fnm)
@@ -359,7 +359,7 @@ def exp(event):
     with importlock:
         event.reply(TEMPLATE)
         nrs = 0
-        for _fn, ooo in find("rss"):
+        for _fn, ooo in locate("rss"):
             nrs += 1
             obj = Rss()
             update(obj, ooo)
@@ -392,7 +392,7 @@ def imp(event):
                 continue
             if not url.startswith("http"):
                 continue
-            has = list(find("rss", {'rss': url}, matching=True))
+            has = list(locate("rss", {'rss': url}, matching=True))
             if has:
                 skipped.append(url)
                 nrskip += 1
@@ -414,7 +414,7 @@ def nme(event):
         event.reply('nme <stringinurl> <name>')
         return
     selector = {'rss': event.args[0]}
-    for fnm, feed in find("rss", selector):
+    for fnm, feed in locate("rss", selector):
         if feed:
             feed.name = event.args[1]
             write(feed, fnm)
@@ -425,7 +425,7 @@ def rem(event):
     if len(event.args) != 1:
         event.reply('rem <stringinurl>')
         return
-    for fnm, feed in find("rss"):
+    for fnm, feed in locate("rss"):
         if event.args[0] not in feed.rss:
             continue
         if feed:
@@ -438,7 +438,7 @@ def res(event):
     if len(event.args) != 1:
         event.reply('res <stringinurl>')
         return
-    for fnm, feed in find("rss", deleted=True):
+    for fnm, feed in locate("rss", deleted=True):
         if event.args[0] not in feed.rss:
             continue
         if feed:

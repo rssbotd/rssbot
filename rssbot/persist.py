@@ -11,7 +11,7 @@ import pathlib
 import threading
 
 
-from .cache  import Cache, fntime, long
+from .cache  import Cache, fntime
 from .object import Object, fqn, update
 from .serial import dump, load
 
@@ -44,7 +44,7 @@ def fns(clz):
                 if dname.count('-') == 2:
                     ddd = j(rootdir, dname)
                     for fll in os.listdir(ddd):
-                        yield j(ddd, fll)
+                        yield strip(j(ddd, fll))
 
 
 def getpath(obj):
@@ -57,7 +57,6 @@ def ident(obj):
 
 def isdeleted(obj):
     return '__deleted__' in dir(obj) and obj.__deleted__
-
 
 
 def last(obj, selector=None):
@@ -82,7 +81,7 @@ def locate(clz, selector=None, deleted=False, matching=False):
         obj = Cache.get(pth)
         if not obj:
             obj = Object()
-            read(obj, pth)
+            read(obj, store(pth))
             Cache.add(pth, obj)
         if not deleted and isdeleted(obj):
             continue
@@ -127,8 +126,9 @@ def store(pth=""):
     return j(Workdir.wdr, "store", pth)
 
 
-def strip(pth, nmr=2):
-    return j(pth.split(os.sep)[-nmr:])
+def strip(pth, nmr=3):
+    print(pth)
+    return j(*pth.split(os.sep)[-nmr:])
 
 
 def types():
