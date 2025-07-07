@@ -135,7 +135,7 @@ def find(clz, selector=None, deleted=False, matching=False):
             obj = Object()
             read(obj, pth)
             Cache.add(pth, obj)
-        if deleted and isdeleted(obj):
+        if not deleted and isdeleted(obj):
             continue
         if selector and not search(obj, selector, matching):
             continue
