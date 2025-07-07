@@ -5,9 +5,7 @@
 
 
 import base64
-import logging
 import os
-import queue
 import socket
 import ssl
 import textwrap
@@ -15,14 +13,12 @@ import threading
 import time
 
 
-from ..client  import Client
-from ..event   import Event as IEvent
-from ..find    import last
-from ..fleet   import Fleet
-from ..object  import Object, keys
-from ..persist import getpath, ident, write
-from ..thread  import launch
-from .         import Default, Main, command, edit, fmt, rlog
+from ..clients import Fleet, Output
+from ..command import Main, command
+from ..handler import Event as IEvent
+from ..objects import Default, Object, edit, fmt, keys
+from ..persist import getpath, ident, last, write
+from ..runtime import launch, rlog
 
 
 IGNORE  = ["PING", "PONG", "PRIVMSG"]
@@ -30,13 +26,12 @@ IGNORE  = ["PING", "PONG", "PRIVMSG"]
 
 saylock = threading.RLock()
 
-#saylock = _thread.allocate_lock()
 
 def init():
     irc = IRC()
     irc.start()
     irc.events.joined.wait(30.0)
-    rlog("debug", fmt(irc.cfg, skip=["password"]))
+    rlog("debug", fmt(irc.cfg, skip=["password", "realname", "username"]))
     return irc
 
 
@@ -67,90 +62,6 @@ class Config(Default):
         self.username = Config.username
 
 
-class TextWrap(textwrap.TextWrapper):
-
-    def __init__(self):
-        super().__init__()
-        self.break_long_words = False
-        self.drop_whitespace = False
-        self.fix_sentence_endings = True
-        self.replace_whitespace = True
-        self.tabsize = 4
-        self.width = 400
-
-
-wrapper = TextWrap()
-
-
-class Output(Object):
-
-
-    def __init__(self):
-        Object.__init__(self)
-        self.cache  = Default()
-        self.dostop = threading.Event()
-        self.oqueue = queue.Queue()
-
-    def dosay(self, channel, txt):
-        raise NotImplementedError
-
-    def extend(self, channel, txtlist):
-        if channel not in dir(self.cache):
-            self.cache[channel] = []
-        chanlist = getattr(self.cache, channel)
-        chanlist.extend(txtlist)
-
-    def gettxt(self, channel):
-        txt = None
-        try:
-            che = getattr(self.cache, channel, None)
-            if che:
-                txt = che.pop(0)
-        except (KeyError, IndexError):
-            pass
-        return txt
-
-    def oput(self, channel, txt):
-        if channel and channel not in dir(self.cache):
-            setattr(self.cache, channel, [])
-        self.oqueue.put_nowait((channel, txt))
-
-    def output(self):
-        while not self.dostop.is_set():
-            (channel, txt) = self.oqueue.get()
-            if channel is None and txt is None:
-                break
-            if self.dostop.is_set():
-                break
-            if not txt:
-                continue
-            textlist = []
-            txtlist = wrapper.wrap(txt)
-            if len(txtlist) > 3:
-                self.extend(channel, txtlist[3:])
-                textlist = txtlist[:3]
-            else:
-                textlist = txtlist
-            _nr = -1
-            for txt in textlist:
-                _nr += 1
-                self.dosay(channel, txt)
-            if len(txtlist) > 3:
-                length = len(txtlist) - 3
-                self.say(
-                         channel,
-                         f"use !mre to show more (+{length})"
-                        )
-
-    def size(self, chan):
-        if chan in dir(self.cache):
-            return len(getattr(self.cache, chan, []))
-        return 0
-
-    def start(self):
-        launch(self.output)
-
-
 class Event(IEvent):
 
     def __init__(self):
@@ -166,12 +77,27 @@ class Event(IEvent):
         self.txt       = ""
 
 
-class IRC(Output, Client):
+class TextWrap(textwrap.TextWrapper):
+
+    def __init__(self):
+        super().__init__()
+        self.break_long_words = False
+        self.drop_whitespace = False
+        self.fix_sentence_endings = True
+        self.replace_whitespace = True
+        self.tabsize = 4
+        self.width = 400
+
+
+wrapper = TextWrap()
+
+
+class IRC(Output):
 
     def __init__(self):
         Output.__init__(self)
-        Client.__init__(self)
         self.buffer = []
+        self.cache = Object()
         self.cfg = Config()
         self.channels = []
         self.events = Object()
@@ -182,13 +108,14 @@ class IRC(Output, Client):
         self.idents = []
         self.sock = None
         self.state = Object()
-        self.state.dostop = False
         self.state.error = ""
         self.state.keeprunning = False
+        self.state.last = time.time()
         self.state.lastline = ""
         self.state.nrconnect = 0
         self.state.nrerror = 0
         self.state.nrsend = 0
+        self.state.sleep = self.cfg.sleep 
         self.state.stopkeep = False
         self.zelf = ''
         self.register('903', cb_h903)
@@ -205,7 +132,7 @@ class IRC(Output, Client):
 
     def announce(self, txt):
         for channel in self.channels:
-            self.oput(channel, txt)
+            self.say(channel, txt)
 
     def connect(self, server, port=6667):
         rlog("debug", f"connecting to {server}:{port}")
@@ -251,8 +178,25 @@ class IRC(Output, Client):
             pass
 
     def display(self, evt):
-        for txt in evt.result:
-            self.say(evt.channel, txt)
+        for key in sorted(evt.result, key=lambda x: x):
+            txt = evt.result.get(key)
+            textlist = []
+            txtlist = wrapper.wrap(txt)
+            if len(txtlist) > 3:
+                self.extend(evt.channel, txtlist[3:])
+                textlist = txtlist[:3]
+            else:
+                textlist = txtlist
+            _nr = -1
+            for txt in textlist:
+                _nr += 1
+                self.dosay(evt.channel, txt)
+            if len(txtlist) > 3:
+                length = len(txtlist) - 3
+                self.say(
+                         evt.channel,
+                         f"use !mre to show more (+{length})"
+                        )
 
     def docommand(self, cmd, *args):
         with saylock:
@@ -318,6 +262,22 @@ class IRC(Output, Client):
             self.docommand('NICK', nck)
         return evt
 
+    def extend(self, channel, txtlist):
+        if channel not in dir(self.cache):
+            self.cache[channel] = []
+        chanlist = getattr(self.cache, channel)
+        chanlist.extend(txtlist)
+
+    def gettxt(self, channel):
+        txt = None
+        try:
+            che = getattr(self.cache, channel, None)
+            if che:
+                txt = che.pop(0)
+        except (KeyError, IndexError):
+            pass
+        return txt
+
     def joinall(self):
         for channel in self.channels:
             self.docommand('JOIN', channel)
@@ -330,16 +290,14 @@ class IRC(Output, Client):
             self.events.connected.wait()
             self.events.authed.wait()
             self.state.keeprunning = True
+            self.state.latest = time.time()
             time.sleep(self.cfg.sleep)
-            self.state.pongcheck = True
             self.docommand('PING', self.cfg.server)
             if self.state.pongcheck:
-                rlog('error', "failed pong check, restarting")
                 self.state.pongcheck = False
                 self.state.keeprunning = False
                 self.events.connected.clear()
-                self.stop()
-                init()
+                launch(init)
                 break
 
     def logon(self, server, nck):
@@ -347,6 +305,11 @@ class IRC(Output, Client):
         self.events.authed.wait()
         self.direct(f'NICK {nck}')
         self.direct(f'USER {nck} {server} {server} {nck}')
+
+    def oput(self, evt):
+        if evt.channel and evt.channel not in dir(self.cache):
+            setattr(self.cache, evt.channel, [])
+        self.oqueue.put_nowait(evt)
 
     def parsing(self, txt):
         rawstr = str(txt)
@@ -425,12 +388,10 @@ class IRC(Output, Client):
                     ConnectionResetError,
                     BrokenPipeError
                    ) as ex:
-                self.stop()
                 self.state.nrerror += 1
                 self.state.error = str(ex)
-                rlog("error", "handler stopped")
-                evt = self.event(str(ex))
-                return evt
+                rlog("error", self.state.error)
+                return None
         try:
             txt = self.buffer.pop(0)
         except IndexError:
@@ -455,6 +416,7 @@ class IRC(Output, Client):
                    ) as ex:
                 self.state.nrerror += 1
                 self.state.error = str(ex)
+                self.state.pongcheck = True
                 self.stop()
                 return
         self.state.last = time.time()
@@ -467,8 +429,16 @@ class IRC(Output, Client):
         self.events.joined.clear()
         self.doconnect(self.cfg.server, self.cfg.nick, int(self.cfg.port))
 
+    def size(self, chan):
+        if chan in dir(self.cache):
+            return len(getattr(self.cache, chan, []))
+        return 0
+
     def say(self, channel, txt):
-        self.oput(channel, txt)
+        evt = Event()
+        evt.channel = channel
+        evt.reply(txt)
+        self.oput(evt)
 
     def some(self):
         self.events.connected.wait()
@@ -492,7 +462,6 @@ class IRC(Output, Client):
         self.events.connected.clear()
         self.events.joined.clear()
         Output.start(self)
-        Client.start(self)
         launch(
                self.doconnect,
                self.cfg.server or "localhost",
@@ -504,10 +473,8 @@ class IRC(Output, Client):
 
     def stop(self):
         self.state.stopkeep = True
-        self.disconnect()
-        self.dostop.set()
-        self.oput(None, None)
-        Client.stop(self)
+        Output.stop(self)
+        #self.disconnect()
 
     def wait(self):
         self.events.ready.wait()
@@ -582,7 +549,7 @@ def cb_privmsg(evt):
         if evt.txt:
             evt.txt = evt.txt[0].lower() + evt.txt[1:]
         if evt.txt:
-            command(evt)
+            launch(command, evt)
 
 
 def cb_quit(evt):
@@ -611,7 +578,6 @@ def cfg(event):
     else:
         edit(config, event.sets)
         write(config, fnm or getpath(config))
-        event.done()
 
 
 def mre(event):

@@ -1,23 +1,32 @@
 # This file is placed in the Public Domain.
 
 
-"main program"
+"main"
 
 
 import os
 import pathlib
 import sys
 import time
-import _thread
 
 
-from .client  import Client
-from .errors  import Errors, full
-from .event   import Event
-from .modules import Commands, Main, command, fmt, inits
-from .modules import md5sum, mods, level, modules, parse, rlog, scan, settable
-from .serial  import dumps
-from .paths   import Workdir, pidname, skel
+
+from .clients import Client
+from .command import Main, Commands, command, inits, parse, scan
+from .handler import Event
+from .imports import modules
+from .persist import Workdir, pidname, skel, types
+from .runtime import level
+from .modules import rss
+
+
+Main.modpath = os.path.dirname(rss.__file__)
+Main.name = Main.__module__.split(".")[0]
+
+
+def out(txt):
+    print(txt)
+    sys.stdout.flush()
 
 
 class CLI(Client):
@@ -37,7 +46,7 @@ class Console(CLI):
         pass
 
     def callback(self, evt):
-        CLI.callback(self, evt)
+        super().callback(evt)
         evt.wait()
 
     def poll(self):
@@ -47,25 +56,13 @@ class Console(CLI):
         return evt
 
 
-def handler(signum, frame):
-    _thread.interrupt_main()
-
-
-"output"
-
-
-def out(txt):
-    print(txt)
-    sys.stdout.flush()
-
-
 "utilities"
 
 
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     out(f"{Main.name.upper()} {Main.version} since {tme} ({Main.level.upper()})")
-    out(fmt(Main, skip=["args", "cmd", "gets", "otxt", "result", "sets", "silent", "txt", "version"]))
+    out(f"loaded {".".join(modules(Main.modpath))}")
 
 
 def check(txt):
@@ -99,17 +96,12 @@ def daemon(verbose=False):
     os.nice(10)
 
 
-def errors():
-    for exc in Errors.errors:
-        out(full(exc))
-
-
 def forever():
     while True:
         try:
             time.sleep(0.1)
         except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
+            sys.exit(1)
 
 
 def pidfile(filename):
@@ -143,9 +135,8 @@ def cmd(event):
     event.reply(",".join(sorted([x for x in Commands.names if x not in Main.ignore])))
 
 
-def md5(event):
-    table = mods("tbl")[0]
-    event.reply(md5sum(table.__file__))
+def ls(event):
+    event.reply(",".join([x.split(".")[-1].lower() for x in types()]))
 
 
 def srv(event):
@@ -154,50 +145,32 @@ def srv(event):
     event.reply(TXT % (Main.name.upper(), name, name, name, Main.name))
 
 
-def tbl(event):
-    if not check("f"):
-        Commands.names = {}
-    for mod in mods():
-        scan(mod)
-    event.reply("# This file is placed in the Public Domain.")
-    event.reply("")
-    event.reply("")
-    event.reply('"lookup tables"')
-    event.reply("")
-    event.reply("")
-    event.reply(f"NAMES = {dumps(Commands.names, indent=4, sort_keys=True)}")
-    event.reply("")
-    event.reply("")
-    event.reply("MD5 = {")
-    for mod in mods():
-        event.reply(f'    "{mod.__name__.split(".")[-1]}": "{md5sum(mod.__file__)}",')
-    event.reply("}")
-
-
 "scripts"
 
 
 def background():
     daemon("-v" in sys.argv)
-    setwd(Main.name)
     privileges()
+    level(Main.level or "debug")
+    setwd(Main.name)
     pidfile(pidname(Main.name))
-    settable()
     Commands.add(cmd)
+    scan(Main.modpath)
     inits(Main.init or "irc,rss")
     forever()
 
 
 def console():
     import readline # noqa: F401
-    setwd(Main.name)
-    settable()
-    Commands.add(cmd)
     parse(Main, " ".join(sys.argv[1:]))
     Main.init = Main.sets.init or Main.init
     Main.verbose = Main.sets.verbose or Main.verbose
     Main.level   = Main.sets.level or Main.level or "warn"
-    level(Main.level or "debug")
+    level(Main.level)
+    setwd(Main.name)
+    Commands.add(cmd)
+    Commands.add(ls)
+    scan(Main.modpath)    
     if "v" in Main.opts:
         banner()
     for _mod, thr in inits(Main.init):
@@ -211,14 +184,13 @@ def console():
 def control():
     if len(sys.argv) == 1:
         return
-    setwd(Main.name)
-    settable()
-    Commands.add(cmd)
-    Commands.add(md5)
-    Commands.add(srv)
-    Commands.add(tbl)
     parse(Main, " ".join(sys.argv[1:]))
     level(Main.level or "debug")
+    setwd(Main.name)
+    Commands.add(cmd)
+    Commands.add(ls)
+    Commands.add(srv)
+    scan(Main.modpath)
     csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
@@ -229,40 +201,15 @@ def control():
 
 
 def service():
+    level(Main.level or "warn")
     setwd(Main.name)
-    settable()
-    level(Main.level or "debug")
     banner()
     privileges()
     pidfile(pidname(Main.name))
     Commands.add(cmd)
+    scan(Main.modpath)
     inits(Main.init or "irc,rss")
     forever()
-
-
-"runtime"
-
-
-def wrapped(func):
-    try:
-        func()
-    except (KeyboardInterrupt, EOFError):
-        out("")
-    errors()
-
-
-def wrap(func):
-    import termios
-    old = None
-    try:
-        old = termios.tcgetattr(sys.stdin.fileno())
-    except termios.error:
-        pass
-    try:
-        wrapped(func)
-    finally:
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
 
 "data"
@@ -282,12 +229,33 @@ ExecStart=/home/%s/.local/bin/%s -s
 WantedBy=multi-user.target"""
 
 
-"main"
 
+"runtime"
+
+
+def wrapped(func):
+    try:
+        func()
+    except (KeyboardInterrupt, EOFError):
+        out("")
+
+
+def wrap(func):
+    import termios
+    old = None
+    try:
+        old = termios.tcgetattr(sys.stdin.fileno())
+    except termios.error:
+        pass
+    try:
+        wrapped(func)
+    finally:
+        if old:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
 
 def main():
     if check("a"):
-        Main.init = ",".join(modules())
+        Main.init = ",".join(modules(Main.modpath))
     if check("v"):
         setattr(Main.opts, "v", True)
     if check("c"):

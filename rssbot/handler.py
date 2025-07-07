@@ -6,74 +6,102 @@
 
 import queue
 import threading
+import time
 import _thread
 
 
-from .errors import later
-from .thread import launch, name
+from .objects import Object
+from .runtime import launch
 
 
-lock = _thread.allocate_lock()
+"handler"
 
 
 class Handler:
 
     def __init__(self):
-        self.cbs     = {}
-        self.queue   = queue.Queue()
-        self.ready   = threading.Event()
+        self.lock = _thread.allocate_lock()
+        self.cbs = {}
+        self.queue = queue.Queue()
+        self.ready = threading.Event()
         self.stopped = threading.Event()
 
-    def callback(self, evt):
-        with lock:
-            func = self.cbs.get(evt.type, None)
-            if not func:
-                evt.ready()
-                return
-            if evt.txt:
-                cmd = evt.txt.split(maxsplit=1)[0]
-            else:
-                cmd = name(func)
-            evt._thr = launch(func, evt, name=cmd)
+    def available(self, event):
+        return event.type in self.cbs
+
+    def callback(self, event):
+        func = self.cbs.get(event.type, None)
+        if func:
+            event._thr = launch(func, event)
 
     def loop(self):
         while not self.stopped.is_set():
-            try:
-                evt = self.poll()
-                if evt is None:
-                    break
-                evt.orig = repr(self)
-                self.callback(evt)
-            except (KeyboardInterrupt, EOFError):
-                _thread.interrupt_main()
-            except Exception as ex:
-                later(ex)
-                _thread.interrupt_main()
+            event = self.poll()
+            if event is None:
+                break
+            event.orig = repr(self)
+            self.callback(event)
         self.ready.set()
 
     def poll(self):
         return self.queue.get()
 
-    def put(self, evt):
-        self.queue.put(evt)
+    def put(self, event):
+        self.queue.put(event)
 
     def register(self, typ, cbs):
         self.cbs[typ] = cbs
 
-    def start(self):
+    def start(self, daemon=True):
         self.stopped.clear()
-        self.ready.clear()
-        launch(self.loop)
+        launch(self.loop, daemon=daemon)
 
     def stop(self):
         self.stopped.set()
         self.queue.put(None)
+        self.ready.wait()
 
     def wait(self):
-        self.ready.wait()
+        pass
+
+
+"event"
+
+
+class Event(Object):
+
+    def __init__(self):
+        Object.__init__(self)
+        self._ready  = threading.Event()
+        self._thr    = None
+        self.channel = ""
+        self.ctime   = time.time()
+        self.orig    = ""
+        self.rest    = ""
+        self.result  = {}
+        self.type    = "event"
+        self.txt     = ""
+
+    def done(self):
+        self.reply("ok")
+
+    def ready(self):
+        self._ready.set()
+
+    def reply(self, txt):
+        self.result[time.time()] = txt
+
+    def wait(self, timeout=None):
+        self._ready.wait()
+        if self._thr:
+            self._thr.join()
+
+
+"interface"
 
 
 def __dir__():
     return (
         'Handler',
+        'Event'
     )

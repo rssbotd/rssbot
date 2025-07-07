@@ -1,43 +1,51 @@
 # This file is placed in the Public Domain.
 
 
-"locate"
+"cache"
 
 
+import datetime
 import os
-import threading
 import time
 
 
-from .object  import Object, fqn, items, update
-from .persist import Cache, read
-from .paths   import long, skel, store
+from .objects import fqn, items, update
+
+
+class Cache:
+
+    objs = {}
+
+    @staticmethod
+    def add(path, obj):
+        Cache.objs[path] = obj
+
+    @staticmethod
+    def get(path):
+        return Cache.objs.get(path, None)
+
+
+    @staticmethod
+    def update(path, obj):
+        if not obj:
+            return
+        try:
+            update(Cache.objs[path], obj)
+        except KeyError:
+            Cache.add(path, obj)
 
 
 def find(clz, selector=None, deleted=False, matching=False):
     clz = long(clz)
     if selector is None:
         selector = {}
-    for pth in fns(clz):
+    for pth in typed(clz):
         obj = Cache.get(pth)
-        if not obj:
-            obj = Object()
-            read(obj, pth)
-            Cache.add(pth, obj)
-        if '__deleted__' in dir(obj) and obj.__deleted__:
+        if not deleted and isdeleted(obj):
             continue
         if selector and not search(obj, selector, matching):
             continue
         yield pth, obj
-
-
-def fns(clz):
-    pth = store(clz)
-    for rootdir, dirs, _files in os.walk(pth, topdown=False):
-        for dname in dirs:
-            ddd = os.path.join(rootdir, dname)
-            for fll in os.listdir(ddd):
-                yield os.path.join(ddd, fll)
 
 
 def fntime(daystr):
@@ -53,16 +61,37 @@ def fntime(daystr):
     return float(timed)
 
 
-def last(obj, selector=None):
-    if selector is None:
-        selector = {}
-    result = sorted(find(fqn(obj), selector), key=lambda x: fntime(x[0]))
-    res = ""
-    if result:
-        inp = result[-1]
-        update(obj, inp[-1])
-        res = inp[0]
+def getpath(obj):
+    return ident(obj)
+
+
+def ident(obj):
+    return os.path.join(fqn(obj),*str(datetime.datetime.now()).split())
+
+
+def isdeleted(obj):
+    return '__deleted__' in dir(obj) and obj.__deleted__
+
+
+def long(name):
+    split = name.split(".")[-1].lower()
+    res = name
+    for names in types():
+        if split == names.split(".")[-1].lower():
+            res = names
+            break
     return res
+    
+
+def typed(matcher):
+    for key in Cache.objs:
+        if matcher not in key:
+            continue
+        yield key
+
+
+def types():
+    return set(Cache.objs.keys())
 
 
 def search(obj, selector, matching=False):
@@ -85,9 +114,12 @@ def search(obj, selector, matching=False):
 
 def __dir__():
     return (
+        'Cache',
         'find',
         'fns',
         'fntime',
+        'getpath',
+        'ident'
         'last',
-        'search',
+        'search'
     )

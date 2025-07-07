@@ -7,10 +7,8 @@
 import html
 import html.parser
 import http.client
-import logging
 import os
 import re
-import sys
 import time
 import urllib
 import urllib.parse
@@ -23,13 +21,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..errors  import line
-from ..find    import find, fntime, last
-from ..fleet   import Fleet
-from ..object  import Object, update
-from ..persist import getpath, write
-from ..thread  import Repeater, launch
-from .         import Default, elapsed, fmt, rlog, spl
+from ..clients import Fleet
+from ..objects import Default, Object, fmt, update
+from ..persist import find, fntime, getpath, last, write
+from ..runtime import Repeater, elapsed, launch, rlog, spl
 
 
 DEBUG = False
@@ -37,6 +32,7 @@ DEBUG = False
 
 fetchlock  = _thread.allocate_lock()
 importlock = _thread.allocate_lock()
+errors     = []
 skipped    = []
 
 
@@ -101,7 +97,7 @@ class Fetcher(Object):
                 if uurl in seen:
                     continue
                 if self.dosave:
-                    write(fed)
+                    write(fed, getpath(fed))
                 result.append(fed)
             setattr(self.seen, feed.rss, urls)
             if not self.seenfn:
@@ -115,7 +111,7 @@ class Fetcher(Object):
             txt = f'[{feedname}] '
         for obj in result:
             txt2 = txt + self.display(obj)
-            for bot in Fleet.clients.values():
+            for bot in Fleet.all():
                 bot.announce(txt2)
         return counter
 
@@ -280,12 +276,13 @@ def cdata(line):
 
 def getfeed(url, items):
     result = [Object(), Object()]
-    if DEBUG:
+    if DEBUG or url in errors:
         return result
     try:
         rest = geturl(url)
     except (http.client.HTTPException, ValueError, HTTPError, URLError) as ex:
         rlog("error", f"{url} {ex}")
+        errors.append(url)
         return result
     if rest:
         if url.endswith('atom'):
@@ -401,7 +398,7 @@ def imp(event):
             update(rss, obj)
             rss.rss = obj.xmlUrl
             rss.insertid = insertid
-            write(rss)
+            write(rss, getpath(rss))
             nrs += 1
     if nrskip:
         event.reply(f"skipped {nrskip} urls.")
@@ -470,10 +467,11 @@ def rss(event):
         return
     for fnm, result in find("rss", {'rss': url}):
         if result:
+            event.reply(f"{url} is known")
             return
     rss = Rss()
     rss.rss = event.args[0]
-    write(rss)
+    write(rss, getpath(rss))
     event.done()
 
 
