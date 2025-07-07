@@ -115,6 +115,7 @@ class IRC(Output):
         self.state.nrconnect = 0
         self.state.nrerror = 0
         self.state.nrsend = 0
+        self.state.pongcheck = False
         self.state.sleep = self.cfg.sleep 
         self.state.stopkeep = False
         self.zelf = ''
