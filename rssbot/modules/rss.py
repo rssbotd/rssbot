@@ -462,7 +462,7 @@ def rss(event):
             event.reply('no feed found.')
         return
     url = event.args[0]
-    if 'http' not in url:
+    if 'http://' not in url and "https://" not in url:
         event.reply('i need an url')
         return
     for fnm, result in find("rss", {'rss': url}):

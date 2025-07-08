@@ -160,6 +160,7 @@ class IRC(Output):
             self.sock.setblocking(True)
             self.sock.settimeout(180.0)
             self.events.connected.set()
+            rlog("warn", f"connected to {self.cfg.server}:{self.cfg.port} channel {self.cfg.channel}")
             return True
         return False
 
@@ -226,7 +227,7 @@ class IRC(Output):
                     ConnectionResetError
                    ) as ex:
                 self.state.error = str(ex)
-                rlog("error", str(ex))
+                rlog("error", str(type(ex)) + " " + str(ex))
             rlog("error", f"sleeping {self.cfg.sleep} seconds")
             time.sleep(self.cfg.sleep)
         self.logon(server, nck)
@@ -390,7 +391,7 @@ class IRC(Output):
                     BrokenPipeError
                    ) as ex:
                 self.state.nrerror += 1
-                self.state.error = str(ex)
+                self.state.error = str(type(ex)) + " " + str(ex)
                 rlog("error", self.state.error)
                 return None
         try:
@@ -475,7 +476,7 @@ class IRC(Output):
     def stop(self):
         self.state.stopkeep = True
         Output.stop(self)
-        #self.disconnect()
+        self.disconnect()
 
     def wait(self):
         self.events.ready.wait()
@@ -498,6 +499,7 @@ def cb_error(evt):
     bot = Fleet.get(evt.orig)
     bot.state.nrerror += 1
     bot.state.error = evt.txt
+    #rlog('error', fmt(evt))
     rlog("error", evt.txt)
 
 
