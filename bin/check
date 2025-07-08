@@ -9,7 +9,7 @@ import os
 import sys
 
 
-IGNORE = ["lookups.py", "clients.py"]
+IGNORE = ["__main__.py"]
 NAME = "rssbot"
 
 
@@ -31,8 +31,8 @@ def popen(txt):
 def main():
     popen(f'grep -R {NAME} {NAME}')
     popen(f'grep -R "print(" {NAME}')
-    #popen(f'grep -R __import__ {NAME}')
-    #popen(f'grep -R importlib {NAME}')
+    #open(f'grep -R __import__ {NAME}')
+    #open(f'grep -R importlib {NAME}')
     #popen(f'grep -R "import os" {NAME}')
     #popen(f'grep -R "import sys" {NAME}')
     #popen(f'grep -R "import inspect" {NAME}')

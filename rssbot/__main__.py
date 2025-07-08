@@ -185,7 +185,7 @@ def control():
     if len(sys.argv) == 1:
         return
     parse(Main, " ".join(sys.argv[1:]))
-    level(Main.level or "debug")
+    level(Main.level or "warn")
     setwd(Main.name)
     Commands.add(cmd)
     Commands.add(ls)

@@ -8,8 +8,8 @@ import threading
 import time
 
 
-from rssbot.command import STARTTIME
-from rssbot.runtime import elapsed
+from ..command import STARTTIME
+from ..runtime import elapsed
 
 
 def thr(event):

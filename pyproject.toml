@@ -9,15 +9,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rssbot"
 description = "24/7 Feed Fetcher."
-version = "324"
+version = "645"
 authors = [
     {name = "Bart Thate",email = "rssbotd@gmail.com"},
 ]
 readme = "README.rst"
-license = {text="Public Domain"}
+license = "Unlicense"
 classifiers = [ 
     'Development Status :: 4 - Beta',
-    'License :: Public Domain',
     'Operating System :: Unix',
     'Programming Language :: Python',
     'Topic :: Utilities'

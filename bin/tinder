@@ -7,6 +7,7 @@
 
 import os
 import random
+import queue
 import shutil
 import sys
 import termios
@@ -17,14 +18,16 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.client  import Client
-from rssbot.errors  import Errors, full
-from rssbot.event   import Event
-from rssbot.modules import Main, command, elapsed, modules, parse, settable, spl
-from rssbot.modules import STARTTIME, inits
-from rssbot.object  import Object, keys
-from rssbot.paths   import Workdir, skel
-from rssbot.thread  import launch
+from rssbot.clients import Client, Fleet
+from rssbot.command import STARTTIME, Main, command, parse, scan
+from rssbot.handler import Event
+from rssbot.imports import modules
+from rssbot.objects import Object, keys
+from rssbot.persist import Workdir, skel
+from rssbot.runtime import elapsed, launch, spl
+
+
+import rssbot.modules
 
 
 Main.debug  = True
@@ -32,15 +35,7 @@ Main.md5    = False
 Workdir.wdr = ".test"
 
 
-lap = 1
-nrs = 1
-nrcommand = 1
-percall   = 1
-
-
-events = []
-ignore = "dbg,tbl"
-paylock = _thread.allocate_lock()
+path = rssbot.modules.__path__[0]
 
 
 param = Object()
@@ -65,7 +60,7 @@ param.ver = [""]
 
 pre = Object()
 pre.cfg = ["nick=mekker", ""]
-pre.imp = ["tests/feeds.opml", ""]
+pre.imp = ["feeds.opml", ""]
 pre.log = ["bla", ""]
 pre.rss = ["http://hnrss.org/newest", ""]
 pre.tdo = ["mekker", ""]
@@ -75,6 +70,17 @@ post = Object()
 post.exp = ['']
 post.dne = ["hnrss", ""]
 post.rem = ["hnrss", ""]
+
+
+lap = 1
+nrs = 1
+nrcommand = 1
+percall   = 1
+
+
+events = queue.Queue()
+ignore = "dbg,"
+paylock = _thread.allocate_lock()
 
 
 rand = random.SystemRandom()
@@ -94,21 +100,16 @@ class CLI(Client):
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     print(f"{Main.name.upper()} since {tme}")
-    print("loaded " + ",".join(sorted(modules())))
+    print("loaded " + ",".join(sorted(modules(path))))
 
 
 def consume(evts):
-    while 1:
-        for event in evts:
-            if event._ready.is_set():
-                event.wait()
-        done = True
-        for event in evts:
-            if not event._ready.is_set():
-                done = False
-        if done:
-           break
-        time.sleep(1.5)
+    done = []
+    while True:
+        event = events.get()
+        event.wait()
+        if events.qsize() == 0:
+            break
 
 
 def payload(clt, cmds):
@@ -122,9 +123,10 @@ def payload(clt, cmds):
         examples = getattr(cmds, cmd)
         for example in examples:
             event = Event()
+            event.orig = repr(clt)
             event.txt = cmd + " " + example
             event.type = "command"
-            events.append(event)
+            events.put(event)
             clt.put(event)
             nmr += 1
     return nmr
@@ -143,15 +145,13 @@ def wrap(function):
     finally:
         if old3:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old3)
-    for exc in Errors.errors:
-        print(full(exc))
 
 
 def main():
     global nrs
     global nrcommand
-    settable()
     parse(Main, " ".join(sys.argv[1:]))
+    scan(path)
     nrcommand = 0
     if "v" in Main.opts:
         banner()
@@ -159,7 +159,6 @@ def main():
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)
     skel()
-    #inits(",".join(modules()))
     clt = CLI()
     clt.start()
     nrs = Main.index or 1
@@ -168,26 +167,34 @@ def main():
         thrs.append(launch(payload, clt, pre))
     for thr in thrs:
         nr = thr.join()
-        nrcommand += nr
+        if nr:
+            nrcommand += nr
     thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, param))
     for thr in thrs:
         nr = thr.join()
-        nrcommand += nr
+        if nr:
+            nrcommand += nr
     thrs = []
     for _nr in range(nrs):
         thrs.append(launch(payload, clt, post))
     for thr in thrs:
         nr = thr.join()
-        nrcommand += nr
-    time.sleep(0.1)
+        if nr:
+            nrcommand += nr
     consume(events)
+    #Fleet.shutdown()
+    #Fleet.wait()
+
 
 if __name__ == "__main__":
     wrap(main)
     endtime = time.time()
     lap = elapsed(endtime-STARTTIME)
+    nrevents = events.qsize()
     percall = (endtime-STARTTIME)/(nrcommand)
     if "v" in Main.opts:
+        if nrevents:
+            print(f"{nrevents} events left.")
         print(f"total: {lap} nrs: {nrs} cmds: {nrcommand} call: %.6fs" % percall)
