@@ -201,7 +201,9 @@ def control():
 
 
 def service():
-    level(Main.level or "warn")
+    parse(Main, " ".join(sys.argv[1:]))
+    Main.level   = Main.sets.level or Main.level or "warn"
+    level(Main.level)
     setwd(Main.name)
     banner()
     privileges()

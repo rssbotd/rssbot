@@ -21,7 +21,8 @@ from ..persist import getpath, ident, last, write
 from ..runtime import launch, rlog
 
 
-IGNORE  = ["PING", "PONG", "PRIVMSG"]
+IGNORE = ["PING", "PONG", "PRIVMSG"]
+IGNORE = []
 
 
 saylock = threading.RLock()
@@ -104,6 +105,7 @@ class IRC(Output):
         self.events.authed = threading.Event()
         self.events.connected = threading.Event()
         self.events.joined = threading.Event()
+        self.events.logon = threading.Event()
         self.events.ready = threading.Event()
         self.idents = []
         self.sock = None
@@ -139,6 +141,8 @@ class IRC(Output):
         rlog("debug", f"connecting to {server}:{port}")
         self.state.nrconnect += 1
         self.events.connected.clear()
+        self.events.joined.clear()
+        self.events.logon.clear()
         if self.cfg.password:
             rlog("debug", "using SASL")
             self.cfg.sasl = True
@@ -222,6 +226,7 @@ class IRC(Output):
                 if self.connect(server, port):
                     break
             except (
+                    socket.timeout,
                     ssl.SSLError,
                     OSError,
                     ConnectionResetError
@@ -233,6 +238,7 @@ class IRC(Output):
         self.logon(server, nck)
 
     def dosay(self, channel, txt):
+        self.events.logon.wait()
         self.events.joined.wait()
         txt = str(txt).replace('\n', '')
         txt = txt.replace('  ', ' ')
@@ -253,6 +259,7 @@ class IRC(Output):
             self.zelf = evt.args[-1]
         elif cmd == "376":
             self.joinall()
+            self.events.logon.set()
         elif cmd == '002':
             self.state.host = evt.args[2][:-1]
         elif cmd == '366':
@@ -296,10 +303,11 @@ class IRC(Output):
             time.sleep(self.cfg.sleep)
             self.docommand('PING', self.cfg.server)
             if self.state.pongcheck:
+                rlog('error', 'restarting keepalive')
                 self.state.pongcheck = False
                 self.state.keeprunning = False
-                self.events.connected.clear()
                 launch(init)
+                self.stop()
                 break
 
     def logon(self, server, nck):
@@ -307,6 +315,7 @@ class IRC(Output):
         self.events.authed.wait()
         self.direct(f'NICK {nck}')
         self.direct(f'USER {nck} {server} {server} {nck}')
+        #self.events.logon.wait()
 
     def oput(self, evt):
         if evt.channel and evt.channel not in dir(self.cache):
@@ -393,6 +402,7 @@ class IRC(Output):
                 self.state.nrerror += 1
                 self.state.error = str(type(ex)) + " " + str(ex)
                 rlog("error", self.state.error)
+                self.state.pongcheck = True
                 return None
         try:
             txt = self.buffer.pop(0)
@@ -414,8 +424,10 @@ class IRC(Output):
                     ssl.SSLError,
                     ssl.SSLZeroReturnError,
                     ConnectionResetError,
-                    BrokenPipeError
+                    BrokenPipeError,
+                    socket.timeout
                    ) as ex:
+                rlog("error", "send error")
                 self.state.nrerror += 1
                 self.state.error = str(ex)
                 self.state.pongcheck = True
@@ -463,6 +475,7 @@ class IRC(Output):
         self.events.ready.clear()
         self.events.connected.clear()
         self.events.joined.clear()
+        self.events.logon.clear()
         Output.start(self)
         launch(
                self.doconnect,
