@@ -237,14 +237,11 @@ class IRC(Output):
     def doconnect(self, server, nck, port=6667):
         while 1:
             try:
-                self.events.connected.clear()
-                self.events.joined.clear()
-                self.connect(server, port)
-                self.logon(self.cfg.server, self.cfg.nick)
-                self.events.joined.wait(15.0)
-                if self.events.joined.is_set():
-                    break
-                self.disconnect()        
+                if self.connect(server, port):
+                    self.logon(self.cfg.server, self.cfg.nick)
+                    self.events.joined.wait(15.0)
+                    if self.events.joined.is_set():
+                        break
             except (
                     socket.timeout,
                     ssl.SSLError,
@@ -320,7 +317,7 @@ class IRC(Output):
             time.sleep(self.cfg.sleep)
             self.docommand('PING', self.cfg.server)
             if self.state.pongcheck:
-                rlog('error', 'restarting keepalive')
+                rlog('error', 'restarting')
                 self.state.pongcheck = False
                 self.state.keeprunning = False
                 self.state.stopkeep = True
@@ -445,11 +442,10 @@ class IRC(Output):
                     BrokenPipeError,
                     socket.timeout
                    ) as ex:
-                rlog("error", "send error")
+                rlog("error", str(type(ex)) + " " + str(ex))
                 self.state.nrerror += 1
                 self.state.error = str(ex)
                 self.state.pongcheck = True
-                self.stop()
                 return
         self.state.last = time.time()
         self.state.nrsend += 1
@@ -494,13 +490,13 @@ class IRC(Output):
         self.events.connected.clear()
         self.events.joined.clear()
         Output.start(self)
+        if not self.state.keeprunning:
+            launch(self.keep)
         self.doconnect(
                        self.cfg.server or "localhost",
                        self.cfg.nick,
                        int(self.cfg.port) or 6667
                        )
-        if not self.state.keeprunning:
-            launch(self.keep)
 
     def stop(self):
         self.state.stopkeep = True
@@ -531,8 +527,8 @@ def cb_error(evt):
     bot = Fleet.get(evt.orig)
     bot.state.nrerror += 1
     bot.state.error = evt.txt
-    #rlog('error', fmt(evt))
-    rlog("error", evt.txt)
+    rlog('error', fmt(evt))
+    #rlog("error", evt.txt)
 
 
 def cb_h903(evt):
