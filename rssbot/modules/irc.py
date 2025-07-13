@@ -18,7 +18,8 @@ from ..command import Main, command
 from ..handler import Event as IEvent
 from ..objects import Default, Object, edit, fmt, keys
 from ..persist import getpath, ident, last, write
-from ..runtime import launch, rlog
+from ..runtime import launch
+from ..utility import rlog
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"]
@@ -27,12 +28,18 @@ IGNORE = ["PING", "PONG", "PRIVMSG"]
 saylock = threading.RLock()
 
 
+"init"
+
+
 def init():
     irc = IRC()
     irc.start()
     irc.events.joined.wait(30.0)
     rlog("debug", fmt(irc.cfg, skip=["password", "realname", "username"]))
     return irc
+
+
+"config"
 
 
 class Config(Default):
@@ -62,6 +69,9 @@ class Config(Default):
         self.username = Config.username
 
 
+"event"
+
+
 class Event(IEvent):
 
     def __init__(self):
@@ -77,6 +87,9 @@ class Event(IEvent):
         self.txt       = ""
 
 
+"wrapper"
+
+
 class TextWrap(textwrap.TextWrapper):
 
     def __init__(self):
@@ -90,6 +103,9 @@ class TextWrap(textwrap.TextWrapper):
 
 
 wrapper = TextWrap()
+
+
+"IRc"
 
 
 class IRC(Output):
@@ -223,11 +239,12 @@ class IRC(Output):
             try:
                 self.events.connected.clear()
                 self.events.joined.clear()
-                if self.connect(server, port):
-                    self.logon(self.cfg.server, self.cfg.nick)
-                    time.sleep(15.0)
-                    if self.events.logon.is_set():
-                        return True
+                self.connect(server, port)
+                self.logon(self.cfg.server, self.cfg.nick)
+                self.events.joined.wait(15.0)
+                if self.events.joined.is_set():
+                    break
+                self.disconnect()        
             except (
                     socket.timeout,
                     ssl.SSLError,
@@ -238,7 +255,6 @@ class IRC(Output):
                 rlog("error", str(type(ex)) + " " + str(ex))
             rlog("error", f"sleeping {self.cfg.sleep} seconds")
             time.sleep(self.cfg.sleep)
-        return False
 
     def dosay(self, channel, txt):
         self.events.joined.wait()
@@ -478,13 +494,11 @@ class IRC(Output):
         self.events.connected.clear()
         self.events.joined.clear()
         Output.start(self)
-        if not self.doconnect(
+        self.doconnect(
                        self.cfg.server or "localhost",
                        self.cfg.nick,
-                       int(self.cfg.port) or '6667'
-                       ):
-            Output.stop(self)
-            return
+                       int(self.cfg.port) or 6667
+                       )
         if not self.state.keeprunning:
             launch(self.keep)
 
@@ -495,6 +509,9 @@ class IRC(Output):
 
     def wait(self):
         self.events.ready.wait()
+
+
+"callbacks"
 
 
 def cb_auth(evt):

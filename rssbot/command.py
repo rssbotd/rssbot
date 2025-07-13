@@ -4,16 +4,19 @@
 "commands"
 
 
+import importlib
+import importlib.util
 import inspect
+import logging
 import os
 import sys
 import time
 
 
 from .clients import Fleet
-from .imports import load, pathtoname
 from .objects import Default
-from .runtime import launch, spl
+from .runtime import launch
+from .utility import spl
 
 
 STARTTIME = time.time()
@@ -29,13 +32,12 @@ class Main(Default):
     ignore  = ""
     init    = ""
     level   = "warn"
-    modpath = ""
     name    = Default.__module__.split(".")[-2]
     opts    = Default()
     otxt    = ""
     sets    = Default()
     verbose = False
-    version = 325
+    version = 646
 
 
 "commands"
@@ -80,12 +82,10 @@ def command(evt):
     evt.ready()
 
 
-def inits(names):
+def inits(pkg, names):
     modz = []
     for name in sorted(spl(names)):
-        path = os.path.join(Main.modpath, name + ".py")
-        mname = pathtoname(path)
-        mod = load(path, mname)
+        mod = getattr(pkg, name, None)
         if not mod:
             continue
         if "init" in dir(mod):
@@ -153,12 +153,10 @@ def parse(obj, txt=""):
         obj.txt = obj.cmd or ""
 
 
-def scan(path):
-    for fnm in os.listdir(path):
-        pth = os.path.join(path, fnm)
-        mod = load(pth)
-        if mod:
-            Commands.scan(mod)
+def scan(pkg):
+    for modname in dir(pkg):
+        mod = getattr(pkg, modname)
+        Commands.scan(mod)
 
 
 "interface"
@@ -170,6 +168,8 @@ def __dir__():
         'Commands',
         'command',
         'inits',
+        'load',
+        'modules',
         'parse',
         'scan'
     )

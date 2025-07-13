@@ -10,23 +10,26 @@ import sys
 import time
 
 
-
 from .clients import Client
-from .command import Main, Commands, command, inits, parse, scan
+from .command import Main, Commands
+from .command import command, inits, parse, scan
 from .handler import Event
-from .imports import modules
 from .persist import Workdir, pidname, skel, types
-from .runtime import level
-from .modules import rss
+from .utility import level
 
 
-Main.modpath = os.path.dirname(rss.__file__)
+from . import modules as MODS
+
+
 Main.name = Main.__module__.split(".")[0]
 
 
 def out(txt):
     print(txt)
     sys.stdout.flush()
+
+
+"clients"
 
 
 class CLI(Client):
@@ -62,7 +65,7 @@ class Console(CLI):
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     out(f"{Main.name.upper()} {Main.version} since {tme} ({Main.level.upper()})")
-    out(f"loaded {".".join(modules(Main.modpath))}")
+    out(f"loaded {".".join(dir(MODS))}")
 
 
 def check(txt):
@@ -155,8 +158,8 @@ def background():
     setwd(Main.name)
     pidfile(pidname(Main.name))
     Commands.add(cmd)
-    scan(Main.modpath)
-    inits(Main.init or "irc,rss")
+    scan(MODS)
+    inits(MODS, Main.init or "irc,rss")
     forever()
 
 
@@ -170,10 +173,10 @@ def console():
     setwd(Main.name)
     Commands.add(cmd)
     Commands.add(ls)
-    scan(Main.modpath)    
+    scan(MODS)    
     if "v" in Main.opts:
         banner()
-    for _mod, thr in inits(Main.init):
+    for _mod, thr in inits(MODS, Main.init):
         if "w" in Main.opts:
             thr.join(30.0)
     csl = Console()
@@ -190,7 +193,7 @@ def control():
     Commands.add(cmd)
     Commands.add(ls)
     Commands.add(srv)
-    scan(Main.modpath)
+    scan(MODS)
     csl = CLI()
     evt = Event()
     evt.orig = repr(csl)
@@ -201,16 +204,14 @@ def control():
 
 
 def service():
-    parse(Main, " ".join(sys.argv[1:]))
-    Main.level   = Main.sets.level or Main.level or "warn"
-    level(Main.level)
+    level(Main.level or "warn")
     setwd(Main.name)
     banner()
     privileges()
     pidfile(pidname(Main.name))
     Commands.add(cmd)
-    scan(Main.modpath)
-    inits(Main.init or "irc,rss")
+    scan(MODS)
+    inits(MODS, Main.init or "irc,rss")
     forever()
 
 
@@ -229,7 +230,6 @@ ExecStart=/home/%s/.local/bin/%s -s
 
 [Install]
 WantedBy=multi-user.target"""
-
 
 
 "runtime"
@@ -257,7 +257,7 @@ def wrap(func):
 
 def main():
     if check("a"):
-        Main.init = ",".join(modules(Main.modpath))
+        Main.init = ",".join(dir(MODS))
     if check("v"):
         setattr(Main.opts, "v", True)
     if check("c"):
