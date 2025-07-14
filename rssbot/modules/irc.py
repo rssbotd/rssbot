@@ -50,7 +50,7 @@ def init():
 class Config(Default):
 
     channel = f'#{Main.name}'
-    commands = True
+    commands = False
     control = '!'
     nick = Main.name
     password = ""
