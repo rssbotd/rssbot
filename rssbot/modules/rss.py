@@ -22,10 +22,10 @@ from urllib.parse import quote_plus, urlencode
 
 
 from ..clients import Fleet
+from ..command import elapsed, spl
 from ..objects import Default, Object, fmt, update
 from ..persist import find, fntime, getpath, last, write
-from ..runtime import Repeater, launch
-from ..utility import elapsed, rlog, spl
+from ..runtime import Repeater, launch, rlog
 
 
 DEBUG = False
@@ -83,8 +83,8 @@ class Fetcher(Object):
 
     @staticmethod
     def display(obj):
+        displaylist = ""
         result = ''
-        displaylist = []
         try:
             displaylist = obj.display_list or 'title,link'
         except AttributeError:
@@ -117,7 +117,7 @@ class Fetcher(Object):
                 if url.path and not url.path == '/':
                     uurl = f'{url.scheme}://{url.netloc}/{url.path}'
                 else:
-                    uurl = fed.link
+                    uurl = url
                 urls.append(uurl)
                 if uurl in seen:
                     continue
@@ -301,6 +301,8 @@ def getfeed(url, items):
         errors.append(url)
         return result
     if rest:
+        if 'link' not in items:
+            items += ",link"
         if url.endswith('atom'):
             result = Parser.parse(str(rest.data, 'utf-8'), 'entry', items) or []
         else:

@@ -15,7 +15,7 @@ from .command import Main, Commands
 from .command import command, inits, parse, scan
 from .handler import Event
 from .persist import Workdir, pidname, skel, types
-from .utility import level
+from .runtime import level
 
 
 from . import modules as MODS
@@ -104,6 +104,7 @@ def forever():
         try:
             time.sleep(0.1)
         except (KeyboardInterrupt, EOFError):
+            print("")
             sys.exit(1)
 
 
