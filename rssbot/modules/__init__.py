@@ -4,15 +4,23 @@
 "modules"
 
 
-from . import irc, rss, thr, ver
+from . import cmd, lst, thr
+from . import irc, rss
+from . import req, slg
+from . import dbg, srv # noqa: F401
+from . import fnd
 
 
-__all__= (
-        'irc',
-        'rss',
-        'thr',
-        'ver'
-    )
+__all__ = (
+    "cmd",
+    "fnd",
+    "irc",
+    "lst",
+    "req",
+    "rss",
+    "slg",
+    "thr"
+)
 
 
 def __dir__():
