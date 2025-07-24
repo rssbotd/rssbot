@@ -157,6 +157,10 @@ def console():
     scan(MODS)
     if "v" in Main.opts:
         banner(MODS)
+    if "z" in Main.opts:
+        Commands.scan(MODS.log)
+        Commands.scan(MODS.tdo)
+        MODS.irc.Config.commands = True
     for _mod, thr in inits(MODS, Main.init):
         if "w" in Main.opts:
             thr.join(30.0)

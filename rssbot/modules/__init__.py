@@ -7,6 +7,7 @@
 from . import cmd, lst, thr
 from . import irc, rss
 from . import srv # noqa: F401
+from . import log, tdo
 
 
 __all__ = (
