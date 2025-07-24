@@ -4,7 +4,7 @@
 "modules"
 
 
-from . import cmd, lst, thr, ver
+from . import cmd, lst, thr
 from . import irc, rss
 from . import srv # noqa: F401
 
