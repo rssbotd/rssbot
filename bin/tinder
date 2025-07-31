@@ -18,24 +18,34 @@ import _thread
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.clients import Client, Fleet
-from rssbot.command import STARTTIME, Main, command, parse, scan
-from rssbot.handler import Event
-from rssbot.imports import modules
-from rssbot.objects import Object, keys
-from rssbot.persist import Workdir, skel
-from rssbot.runtime import elapsed, launch, spl
+from rssbot.client import Client
+from rssbot.cmnd   import command, scan
+from rssbot.auto   import Default
+from rssbot.event  import Event
+from rssbot.fleet  import Fleet
+from rssbot.object import Object, keys
+from rssbot.parse  import parse
+from rssbot.paths  import Workdir, setwd, skel
+from rssbot.thread import launch
+from rssbot.utils  import elapsed, spl 
 
 
-import rssbot.modules
+from rssbot import modules as MODS
 
 
-Main.debug  = True
-Main.md5    = False
+STARTTIME = time.time()
+
+
+class Main(Default):
+
+    debug  = True
+    name = Default.__module__.split(".")[-2]
+
+
 Workdir.wdr = ".test"
 
 
-path = rssbot.modules.__path__[0]
+path = MODS.__path__[0]
 
 
 param = Object()
@@ -60,7 +70,7 @@ param.ver = [""]
 
 pre = Object()
 pre.cfg = ["nick=mekker", ""]
-pre.imp = ["feeds.opml", ""]
+pre.imp = ["tests/feeds.opml", ""]
 pre.log = ["bla", ""]
 pre.rss = ["http://hnrss.org/newest", ""]
 pre.tdo = ["mekker", ""]
@@ -100,7 +110,7 @@ class CLI(Client):
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
     print(f"{Main.name.upper()} since {tme}")
-    print("loaded " + ",".join(sorted(modules(path))))
+    print("loaded " + ",".join(sorted(dir(MODS))))
 
 
 def consume(evts):
@@ -112,7 +122,7 @@ def consume(evts):
             break
 
 
-def payload(clt, cmds):
+def payload(clts, cmds):
     nmr = 0
     cmdz = sorted(keys(cmds))
     if "s" in Main.opts:
@@ -120,15 +130,16 @@ def payload(clt, cmds):
     for cmd in cmdz:
         if cmd in spl(ignore):
             continue
-        examples = getattr(cmds, cmd)
-        for example in examples:
-            event = Event()
-            event.orig = repr(clt)
-            event.txt = cmd + " " + example
-            event.type = "command"
-            events.put(event)
-            clt.put(event)
-            nmr += 1
+        for clt in clts:
+            examples = getattr(cmds, cmd)
+            for example in examples:
+                event = Event()
+                event.orig = repr(clt)
+                event.txt = cmd + " " + example
+                event.type = "command"
+                events.put(event)
+                clt.put(event)
+                nmr += 1
     return nmr
 
 
@@ -151,7 +162,10 @@ def main():
     global nrs
     global nrcommand
     parse(Main, " ".join(sys.argv[1:]))
-    scan(path)
+    setwd(Main.name,'.test')
+    for mod in scan(MODS):
+        if "Main" in dir(mod):
+            mod.Main.debug = True
     nrcommand = 0
     if "v" in Main.opts:
         banner()
@@ -159,26 +173,32 @@ def main():
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)
     skel()
-    clt = CLI()
-    clt.start()
+    if "z" in Main.opts:
+        nrcpu = os.cpu_count()
+    else:
+        nrcpu = 1
+    for x in range(nrcpu):
+        clt = CLI()
+        clt.start()
+    clts = Fleet.all() 
     nrs = Main.index or 1
     thrs = []
     for _nr in range(nrs):
-        thrs.append(launch(payload, clt, pre))
+        thrs.append(launch(payload, clts, pre))
     for thr in thrs:
         nr = thr.join()
         if nr:
             nrcommand += nr
     thrs = []
     for _nr in range(nrs):
-        thrs.append(launch(payload, clt, param))
+        thrs.append(launch(payload, clts, param))
     for thr in thrs:
         nr = thr.join()
         if nr:
             nrcommand += nr
     thrs = []
     for _nr in range(nrs):
-        thrs.append(launch(payload, clt, post))
+        thrs.append(launch(payload, clts, post))
     for thr in thrs:
         nr = thr.join()
         if nr:
