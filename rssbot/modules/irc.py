@@ -60,7 +60,7 @@ class Main:
 class Config(Auto):
 
     channel = f"#{Main.name}"
-    commands = True
+    commands = False
     control = "!"
     nick = Main.name
     password = ""

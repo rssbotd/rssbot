@@ -28,7 +28,7 @@ class Main(Auto):
     name = Auto.__module__.split(".")[-2]
     opts = Auto()
     verbose = False
-    version = 361
+    version = 651
 
 
 class CLI(Client):
