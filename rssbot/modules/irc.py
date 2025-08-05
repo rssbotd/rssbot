@@ -13,8 +13,7 @@ import threading
 import time
 
 
-from ..auto   import Default
-from ..client import Client
+from ..auto   import Auto
 from ..cmnd   import command
 from ..disk   import write
 from ..event  import Event as IEvent
@@ -55,13 +54,13 @@ def init():
 
 class Main:
 
-    name = Default.__module__.split(".")[-2]
+    name = Auto.__module__.split(".")[-2]
 
 
-class Config(Default):
+class Config(Auto):
 
     channel = f"#{Main.name}"
-    commands = False
+    commands = True
     control = "!"
     nick = Main.name
     password = ""
@@ -75,7 +74,7 @@ class Config(Default):
     users = False
 
     def __init__(self):
-        Default.__init__(self)
+        Auto.__init__(self)
         self.channel = Config.channel
         self.commands = Config.commands
         self.nick = Config.nick
@@ -124,13 +123,12 @@ wrapper = TextWrap()
 "IRC"
 
 
-class IRC(Output, Client):
+class IRC(Output):
 
     def __init__(self):
-        Client.__init__(self)
         Output.__init__(self)
         self.buffer = []
-        self.cache = Default()
+        self.cache = Auto()
         self.cfg = Config()
         self.channels = []
         self.events = Object()
@@ -506,7 +504,6 @@ class IRC(Output, Client):
         self.events.connected.clear()
         self.events.joined.clear()
         Output.start(self)
-        Client.start(self)
         if not self.state.keeprunning:
             launch(self.keep)
         launch(
@@ -518,7 +515,6 @@ class IRC(Output, Client):
 
     def stop(self):
         self.state.stopkeep = True
-        Client.stop(self)
         Output.stop(self)
 
     def wait(self):

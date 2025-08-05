@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"main program"
+"main"
 
 
 import os
@@ -10,9 +10,9 @@ import sys
 import time
 
 
+from .auto   import Auto
 from .client import Client
 from .cmnd   import Commands, command, scan
-from .auto   import Default
 from .event  import Event
 from .parse  import parse
 from .paths  import pidname, setwd
@@ -21,14 +21,14 @@ from .utils  import level, spl
 from .       import modules as MODS
 
 
-class Main(Default):
+class Main(Auto):
 
     init = ""
     level = "warn"
-    name = Default.__module__.split(".")[-2]
-    opts = Default()
+    name = Auto.__module__.split(".")[-2]
+    opts = Auto()
     verbose = False
-    version = 651
+    version = 361
 
 
 class CLI(Client):
@@ -55,49 +55,6 @@ class Console(CLI):
         evt.txt = input("> ")
         evt.type = "command"
         return evt
-
-
-def banner(mods):
-    tme = time.ctime(time.time()).replace("  ", " ")
-    out(f"{Main.name.upper()} {Main.version} since {tme} ({Main.level.upper()})")
-    out(f"loaded {".".join(dir(mods))}")
-
-
-def check(txt):
-    args = sys.argv[1:]
-    for arg in args:
-        if not arg.startswith("-"):
-            continue
-        for char in txt:
-            if char in arg:
-                return True
-    return False
-
-
-def forever():
-    while True:
-        try:
-            time.sleep(0.1)
-        except (KeyboardInterrupt, EOFError):
-            print("")
-            sys.exit(1)
-
-
-def inits(pkg, names):
-    modz = []
-    for name in sorted(spl(names)):
-        mod = getattr(pkg, name, None)
-        if not mod:
-            continue
-        if "init" in dir(mod):
-            thr = launch(mod.init)
-            modz.append((mod, thr))
-    return modz
-
-
-def out(txt):
-    print(txt)
-    sys.stdout.flush()
 
 
 "daemon"
@@ -145,6 +102,52 @@ def privileges():
 
 def ver(event):
     event.reply(f"{Main.name.upper()} {Main.version}")
+
+
+"utilities"
+
+
+def banner(mods):
+    tme = time.ctime(time.time()).replace("  ", " ")
+    out(f"{Main.name.upper()} {Main.version} since {tme} ({Main.level.upper()})")
+    out(f"loaded {".".join(dir(mods))}")
+
+
+def check(txt):
+    args = sys.argv[1:]
+    for arg in args:
+        if not arg.startswith("-"):
+            continue
+        for char in txt:
+            if char in arg:
+                return True
+    return False
+
+
+def forever():
+    while True:
+        try:
+            time.sleep(0.1)
+        except (KeyboardInterrupt, EOFError):
+            print("")
+            sys.exit(1)
+
+
+def inits(pkg, names):
+    modz = []
+    for name in sorted(spl(names)):
+        mod = getattr(pkg, name, None)
+        if not mod:
+            continue
+        if "init" in dir(mod):
+            thr = launch(mod.init)
+            modz.append((mod, thr))
+    return modz
+
+
+def out(txt):
+    print(txt)
+    sys.stdout.flush()
 
 
 "scripts"

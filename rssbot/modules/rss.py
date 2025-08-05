@@ -21,7 +21,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..auto   import Default
+from ..auto   import Auto
 from ..disk   import write
 from ..fleet  import Fleet
 from ..find   import find, fntime, last
@@ -54,24 +54,24 @@ def init():
 "classes"
 
 
-class Feed(Default):
+class Feed(Auto):
 
     def __init__(self):
-        Default.__init__(self)
+        Auto.__init__(self)
         self.name = ""
 
 
-class Rss(Default):
+class Rss(Auto):
 
     def __init__(self):
-        Default.__init__(self)
+        Auto.__init__(self)
         self.display_list = "title,link,author"
         self.insertid = None
         self.name = ""
         self.rss = ""
 
 
-class Urls(Default):
+class Urls(Auto):
 
     pass
 
@@ -449,14 +449,15 @@ def rem(event):
         event.reply("rem <stringinurl>")
         return
     for fnm, rss in find("rss"):
-        feed = Default()
+        feed = Auto()
         update(feed, rss)
         if event.args[0] not in feed.rss:
             continue
         if feed:
             feed.__deleted__ = True
             write(feed, fnm)
-    event.done()
+            event.done()
+            break
 
 
 def res(event):
@@ -464,7 +465,7 @@ def res(event):
         event.reply("res <stringinurl>")
         return
     for fnm, rss in find("rss", deleted=True):
-        feed = Default()
+        feed = Auto()
         update(feed, rss)
         if event.args[0] not in feed.rss:
             continue
