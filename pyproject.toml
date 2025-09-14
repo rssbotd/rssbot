@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rssbot"
 description = "24/7 Feed Fetcher."
-version = "651"
+version = "652"
 authors = [
     {name = "Bart Thate",email = "rssbotd@gmail.com"},
 ]
@@ -21,10 +21,6 @@ classifiers = [
     'Programming Language :: Python',
     'Topic :: Utilities'
 ]
-
-
-[project.scripts]
-"rssbot" = "rssbot.__main__:main"
 
 
 [project.urls]
