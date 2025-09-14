@@ -1,4 +1,4 @@
 # This file is placed in the Public Domain.
 
 
-__doc__ = __name__.upper()
+"Since 4 March 2019."

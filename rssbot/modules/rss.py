@@ -21,16 +21,19 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from ..auto   import Auto
-from ..disk   import write
-from ..fleet  import Fleet
-from ..find   import find, fntime, last
-from ..method import fmt
-from ..object import Object, update
-from ..paths  import getpath
-from ..thread import launch
-from ..timer  import Repeater
-from ..utils  import elapsed, rlog, spl
+from rssbot.methods import elapsed, fmt, rlog, spl
+from rssbot.handler import Fleet
+from rssbot.objects import Object, update
+from rssbot.persist import find, fntime, getpath, last, write
+from rssbot.runtime import Repeater, launch
+
+
+def init():
+    fetcher = Fetcher()
+    fetcher.start()
+    if fetcher.seenfn:
+        rlog("warn", f"rss since {elapsed(time.time()-fntime(fetcher.seenfn))}")
+    return fetcher
 
 
 DEBUG = False
@@ -38,45 +41,29 @@ DEBUG = False
 
 fetchlock = _thread.allocate_lock()
 importlock = _thread.allocate_lock()
-errors = []
+errors = {}
 skipped = []
 
 
-"init"
-
-
-def init():
-    fetcher = Fetcher()
-    fetcher.start()
-    return fetcher
-
-
-"classes"
-
-
-class Feed(Auto):
+class Feed:
 
     def __init__(self):
-        Auto.__init__(self)
+        self.link = ""
         self.name = ""
 
 
-class Rss(Auto):
+class Rss:
 
     def __init__(self):
-        Auto.__init__(self)
         self.display_list = "title,link,author"
         self.insertid = None
         self.name = ""
         self.rss = ""
 
 
-class Urls(Auto):
+class Urls:
 
     pass
-
-
-"fetcher"
 
 
 class Fetcher(Object):
@@ -127,7 +114,7 @@ class Fetcher(Object):
                 if uurl in seen:
                     continue
                 if self.dosave:
-                    write(fed, getpath(fed))
+                    write(fed)
                 result.append(fed)
             setattr(self.seen, feed.rss, urls)
             if not self.seenfn:
@@ -156,9 +143,6 @@ class Fetcher(Object):
         if repeat:
             repeater = Repeater(300.0, self.run)
             repeater.start()
-
-
-"parser"
 
 
 class Parser:
@@ -212,7 +196,7 @@ class Parser:
         return result
 
 
-"opml"
+"OPML"
 
 
 class OPML:
@@ -297,13 +281,13 @@ def cdata(line):
 
 def getfeed(url, items):
     result = [Object(), Object()]
-    if DEBUG or url in errors:
+    if DEBUG or url in errors and (time.time() - errors[url]) < 600:
         return result
     try:
         rest = geturl(url)
     except (http.client.HTTPException, ValueError, HTTPError, URLError) as ex:
         rlog("error", f"{url} {ex}")
-        errors.append(url)
+        errors[url] = time.time()
         return result
     if rest:
         if "link" not in items:
@@ -369,10 +353,10 @@ def dpl(event):
         event.reply("dpl <stringinurl> <item1,item2>")
         return
     setter = {"display_list": event.args[1]}
-    for fnm, rss in find("rss", {"rss": event.args[0]}):
-        if rss:
-            update(rss, setter)
-            write(rss, fnm)
+    for fnm, feed in find("rss", {"rss": event.args[0]}):
+        if feed:
+            update(feed, setter)
+            write(feed, fnm)
     event.done()
 
 
@@ -418,11 +402,11 @@ def imp(event):
                 skipped.append(url)
                 nrskip += 1
                 continue
-            rss = Rss()
-            update(rss, obj)
-            rss.rss = obj.xmlUrl
-            rss.insertid = insertid
-            write(rss, getpath(rss))
+            feed = Rss()
+            update(feed, obj)
+            feed.rss = obj.xmlUrl
+            feed.insertid = insertid
+            write(feed)
             nrs += 1
     if nrskip:
         event.reply(f"skipped {nrskip} urls.")
@@ -435,9 +419,9 @@ def nme(event):
         event.reply("nme <stringinurl> <name>")
         return
     selector = {"rss": event.args[0]}
-    for fnm, rss in find("rss", selector):
+    for fnm, fed in find("rss", selector):
         feed = Rss()
-        update(feed, rss)
+        update(feed, fed)
         if feed:
             feed.name = str(event.args[1])
             write(feed, fnm)
@@ -448,14 +432,14 @@ def rem(event):
     if len(event.args) != 1:
         event.reply("rem <stringinurl>")
         return
-    for fnm, rss in find("rss"):
-        feed = Auto()
-        update(feed, rss)
+    for fnm, fed in find("rss"):
+        feed = Rss()
+        update(feed, fed)
         if event.args[0] not in feed.rss:
             continue
         if feed:
             feed.__deleted__ = True
-            write(feed, fnm)
+            write(feed)
             event.done()
             break
 
@@ -464,9 +448,9 @@ def res(event):
     if len(event.args) != 1:
         event.reply("res <stringinurl>")
         return
-    for fnm, rss in find("rss", deleted=True):
-        feed = Auto()
-        update(feed, rss)
+    for fnm, fed in find("rss", deleted=True):
+        feed = Rss()
+        update(feed, fed)
         if event.args[0] not in feed.rss:
             continue
         if feed:
@@ -478,10 +462,10 @@ def res(event):
 def rss(event):
     if not event.rest:
         nrs = 0
-        for fnm, rss in find("rss"):
+        for fnm, fed in find("rss"):
             nrs += 1
             elp = elapsed(time.time() - fntime(fnm))
-            txt = fmt(rss)
+            txt = fmt(fed)
             event.reply(f"{nrs} {txt} {elp}")
         if not nrs:
             event.reply("no feed found.")
@@ -494,9 +478,9 @@ def rss(event):
         if result:
             event.reply(f"{url} is known")
             return
-    rss = Rss()
-    rss.rss = event.args[0]
-    write(rss, getpath(rss))
+    feed = Rss()
+    feed.rss = event.args[0]
+    write(feed)
     event.done()
 
 
@@ -511,9 +495,6 @@ def syn(event):
         thr.join()
         nrs += 1
     event.reply(f"{nrs} feeds synced")
-
-
-"data"
 
 
 TEMPLATE = """<opml version="1.0">

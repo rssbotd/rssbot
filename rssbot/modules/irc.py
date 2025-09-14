@@ -13,28 +13,21 @@ import threading
 import time
 
 
-from ..auto   import Auto
-from ..cmnd   import command
-from ..disk   import write
-from ..event  import Event as IEvent
-from ..find   import last
-from ..fleet  import Fleet
-from ..method import edit, fmt
-from ..object import Object, keys
-from ..output import Output
-from ..paths  import getpath, ident
-from ..thread import launch
-from ..utils  import rlog
+from rssbot.command import command
+from rssbot.handler import Event as IEvent
+from rssbot.handler import Fleet, Output
+from rssbot.methods import edit, fmt, rlog
+from rssbot.objects import Object, keys
+from rssbot.persist import Workdir, getpath, last, write
+from rssbot.runtime import launch
 
 
 IGNORE = ["PING", "PONG", "PRIVMSG"]
+NAME   = Workdir.name
 
 
 initlock = threading.RLock()
-saylock = threading.RLock()
-
-
-"init"
+saylock  = threading.RLock()
 
 
 def init():
@@ -43,38 +36,29 @@ def init():
         irc.start()
         irc.events.joined.wait(30.0)
         if irc.events.joined.is_set():
-            rlog("debug", fmt(irc.cfg, skip=["password", "realname", "username"]))
+            rlog("warn", f"irc {fmt(irc.cfg, skip=["password", "realname", "username"])} channels {",".join(irc.channels)}")
         else:
             irc.stop()
         return irc
 
 
-"config"
+class Config:
 
-
-class Main:
-
-    name = Auto.__module__.split(".")[-2]
-
-
-class Config(Auto):
-
-    channel = f"#{Main.name}"
+    channel = f"#{NAME}"
     commands = False
     control = "!"
-    nick = Main.name
+    nick = NAME
     password = ""
     port = 6667
-    realname = Main.name
+    realname = NAME
     sasl = False
     server = "localhost"
     servermodes = ""
     sleep = 60
-    username = Main.name
+    username = NAME
     users = False
 
     def __init__(self):
-        Auto.__init__(self)
         self.channel = Config.channel
         self.commands = Config.commands
         self.nick = Config.nick
@@ -82,9 +66,6 @@ class Config(Auto):
         self.realname = Config.realname
         self.server = Config.server
         self.username = Config.username
-
-
-"event"
 
 
 class Event(IEvent):
@@ -102,9 +83,6 @@ class Event(IEvent):
         self.txt = ""
 
 
-"wrapper"
-
-
 class TextWrap(textwrap.TextWrapper):
 
     def __init__(self):
@@ -120,15 +98,12 @@ class TextWrap(textwrap.TextWrapper):
 wrapper = TextWrap()
 
 
-"IRC"
-
-
 class IRC(Output):
 
     def __init__(self):
         Output.__init__(self)
         self.buffer = []
-        self.cache = Auto()
+        self.cache = {}
         self.cfg = Config()
         self.channels = []
         self.events = Object()
@@ -137,7 +112,6 @@ class IRC(Output):
         self.events.joined = threading.Event()
         self.events.logon = threading.Event()
         self.events.ready = threading.Event()
-        self.idents = []
         self.sock = None
         self.state = Object()
         self.state.error = ""
@@ -161,7 +135,6 @@ class IRC(Output):
         self.register("PRIVMSG", cb_privmsg)
         self.register("QUIT", cb_quit)
         self.register("366", cb_ready)
-        self.ident = ident(self)
 
     def announce(self, txt):
         for channel in self.channels:
@@ -296,15 +269,15 @@ class IRC(Output):
         return evt
 
     def extend(self, channel, txtlist):
-        if channel not in dir(self.cache):
-            setattr(self.cache, channel, [])
-        chanlist = getattr(self.cache, channel)
+        if channel not in self.cache:
+            self.cache[channel] = []
+        chanlist = self.cache.get(channel)
         chanlist.extend(txtlist)
 
     def gettxt(self, channel):
         txt = None
         try:
-            che = getattr(self.cache, channel, None)
+            che = self.cache.get(channel, None)
             if che:
                 txt = che.pop(0)
         except (KeyError, IndexError):
@@ -336,8 +309,8 @@ class IRC(Output):
         self.direct(f"USER {nck} {server} {server} {nck}")
 
     def oput(self, event):
-        if event.channel and event.channel not in dir(self.cache):
-            setattr(self.cache, event.channel, [])
+        if event.channel and event.channel not in self.cache:
+            self.cache[event.channel] = []
         self.oqueue.put_nowait(event)
 
     def parsing(self, txt):
@@ -472,8 +445,8 @@ class IRC(Output):
         launch(init)
 
     def size(self, chan):
-        if chan in dir(self.cache):
-            return len(getattr(self.cache, chan, []))
+        if chan in self.cache:
+            return len(self.cache.get(chan, []))
         return 0
 
     def say(self, channel, txt):
@@ -577,7 +550,7 @@ def cb_001(evt):
 def cb_notice(evt):
     bot = Fleet.get(evt.orig)
     if evt.txt.startswith("VERSION"):
-        txt = f"\001VERSION {Main.name.upper()} 140 - {bot.cfg.username}\001"
+        txt = f"\001VERSION {NAME.upper()} 140 - {bot.cfg.username}\001"
         bot.docommand("NOTICE", evt.channel, txt)
 
 
@@ -636,7 +609,7 @@ def mre(event):
     if "cache" not in dir(bot):
         event.reply("bot is missing cache")
         return
-    if event.channel not in dir(bot.cache):
+    if event.channel not in bot.cache:
         event.reply(f"no output in {event.channel} cache.")
         return
     for _x in range(3):

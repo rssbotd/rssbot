@@ -1,34 +1,45 @@
 # This file is placed in the Public Domain.
 
 
-"main"
+"main program"
 
 
+import json
+import logging
 import os
+import os.path
 import pathlib
 import sys
 import time
+import _thread
 
 
-from .auto   import Auto
-from .client import Client
-from .cmnd   import Commands, command, scan
-from .event  import Event
-from .parse  import parse
-from .paths  import pidname, setwd
-from .thread import launch
-from .utils  import level, spl
-from .       import modules as MODS
+from .command import Commands, command, getmod, importer
+from .command import md5sum, modules, parse, scanner, table
+from .handler import Client, Event, Fleet
+from .methods import level, spl
+from .objects import update
+from .persist import Workdir, pidname, setwd
+from .runtime import launch
 
 
-class Main(Auto):
+CHECKSUM = "77ef78cd3fbe505f68343b785b7d3917"
+NAME = Workdir.name
 
-    init = ""
-    level = "warn"
-    name = Auto.__module__.split(".")[-2]
-    opts = Auto()
-    verbose = False
-    version = 651
+
+class Config:
+
+    debug    = False
+    default  = "irc,mdl,rss"
+    gets     = {}
+    init     = ""
+    level    = "warn"
+    mod      = ""
+    opts     = ""
+    otxt     = ""
+    sets     = {}
+    verbose  = False
+    version  = 207
 
 
 class CLI(Client):
@@ -36,6 +47,9 @@ class CLI(Client):
     def __init__(self):
         Client.__init__(self)
         self.register("command", command)
+
+    def announce(self, txt):
+        self.raw(txt)
 
     def raw(self, txt):
         out(txt.encode('utf-8', 'replace').decode("utf-8"))
@@ -47,6 +61,8 @@ class Console(CLI):
         pass
 
     def callback(self, event):
+        if not event.txt:
+            return
         super().callback(event)
         event.wait()
 
@@ -55,6 +71,70 @@ class Console(CLI):
         evt.txt = input("> ")
         evt.type = "command"
         return evt
+
+
+"scripts"
+
+
+def background():
+    daemon("-v" in sys.argv)
+    privileges()
+    boot(False)
+    pidfile(pidname(NAME))
+    inits(Config.init or Config.default)
+    forever()
+
+
+def console():
+    import readline # noqa: F401
+    boot()
+    for _mod, thr in inits(Config.init):
+        if "w" in Config.opts:
+            thr.join(30.0)
+    csl = Console()
+    csl.start(daemon=True)
+    forever()
+
+
+def control():
+    if len(sys.argv) == 1:
+        return
+    boot()
+    Commands.add(md5)
+    Commands.add(srv)
+    Commands.add(tbl)
+    csl = CLI()
+    evt = Event()
+    evt.orig = repr(csl)
+    evt.type = "command"
+    evt.txt = Config.otxt
+    command(evt)
+    evt.wait()
+
+
+def service():
+    privileges()
+    boot(False)
+    pidfile(pidname(NAME))
+    inits(Config.init or Config.default)
+    forever()
+
+
+def boot(doparse=True):
+    if doparse:
+        parse(Config, " ".join(sys.argv[1:]))
+        update(Config, Config.sets, empty=False)
+    if "m" in Config.opts:
+        Commands.mod = Config.mod = "mods"
+    if "a" in Config.opts:
+        Config.init = ",".join(modules())
+    level(Config.level)
+    if "v" in Config.opts:
+        banner()
+    setwd(NAME)
+    table(CHECKSUM)
+    Commands.add(cmd)
+    Commands.add(ver)
 
 
 "daemon"
@@ -80,6 +160,22 @@ def daemon(verbose=False):
     os.nice(10)
 
 
+def inits(names):
+    modz = []
+    for name in sorted(spl(names)):
+        try:
+            module = getmod(name)
+            if not module:
+                continue
+            if "init" in dir(module):
+                thr = launch(module.init)
+                modz.append((module, thr))
+        except Exception as ex:
+            logging.exception(ex)
+            _thread.interrupt_main()
+    return modz
+
+
 def pidfile(filename):
     if os.path.exists(filename):
         os.unlink(filename)
@@ -100,17 +196,52 @@ def privileges():
 "commands"
 
 
+def cmd(event):
+    event.reply(",".join(sorted(Commands.names)))
+
+
+def md5(event):
+    tbl = getmod("tbl")
+    if tbl:
+        event.reply(md5sum(tbl.__file__))
+    else:
+        event.reply("table is not there.")
+
+
+def srv(event):
+    import getpass
+    name = getpass.getuser()
+    event.reply(TXT % (NAME.upper(), name, name, name, NAME))
+
+
+def tbl(event):
+    if not check("f"):
+        Commands.names = {}
+    scanner()
+    event.reply("# This file is placed in the Public Domain.")
+    event.reply("")
+    event.reply("")
+    event.reply('"lookup tables"')
+    event.reply("")
+    event.reply("")
+    event.reply(f"NAMES = {json.dumps(Commands.names, indent=4, sort_keys=True)}")
+    event.reply("")
+    event.reply("MD5 = {")
+    for module in scanner():
+        event.reply(f'    "{module.__name__.split(".")[-1]}": "{md5sum(module.__file__)}",')
+    event.reply("}")
+
+
 def ver(event):
-    event.reply(f"{Main.name.upper()} {Main.version}")
+    event.reply(f"{NAME.upper()} {Config.version}")
 
 
 "utilities"
 
 
-def banner(mods):
+def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
-    out(f"{Main.name.upper()} {Main.version} since {tme} ({Main.level.upper()})")
-    out(f"loaded {".".join(dir(mods))}")
+    out(f"{NAME.upper()} {Config.version} since {tme} ({Config.level.upper()})")
 
 
 def check(txt):
@@ -129,20 +260,7 @@ def forever():
         try:
             time.sleep(0.1)
         except (KeyboardInterrupt, EOFError):
-            print("")
-            sys.exit(1)
-
-
-def inits(pkg, names):
-    modz = []
-    for name in sorted(spl(names)):
-        mod = getattr(pkg, name, None)
-        if not mod:
-            continue
-        if "init" in dir(mod):
-            thr = launch(mod.init)
-            modz.append((mod, thr))
-    return modz
+            break
 
 
 def out(txt):
@@ -150,69 +268,21 @@ def out(txt):
     sys.stdout.flush()
 
 
-"scripts"
+"data"
 
 
-def background():
-    daemon("-v" in sys.argv)
-    privileges()
-    level(Main.level or "debug")
-    setwd(Main.name)
-    pidfile(pidname(Main.name))
-    Commands.add(ver)
-    scan(MODS)
-    inits(MODS, Main.init or "irc,rss")
-    forever()
+TXT = """[Unit]
+Description=%s
+After=network-online.target
 
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/%s -s
 
-def console():
-    import readline # noqa: F401
-    parse(Main, " ".join(sys.argv[1:]))
-    Main.init = Main.sets.init or Main.init
-    Main.verbose = Main.sets.verbose or Main.verbose
-    Main.level   = Main.sets.level or Main.level or "warn"
-    level(Main.level)
-    setwd(Main.name)
-    Commands.add(ver)
-    scan(MODS)
-    if "v" in Main.opts:
-        banner(MODS)
-    for _mod, thr in inits(MODS, Main.init):
-        if "w" in Main.opts:
-            thr.join(30.0)
-    csl = Console()
-    csl.start()
-    forever()
-
-
-def control():
-    if len(sys.argv) == 1:
-        return
-    parse(Main, " ".join(sys.argv[1:]))
-    level(Main.level or "warn")
-    setwd(Main.name)
-    Commands.scan(MODS.srv)
-    Commands.add(ver)
-    scan(MODS)
-    csl = CLI()
-    evt = Event()
-    evt.orig = repr(csl)
-    evt.type = "command"
-    evt.txt = Main.otxt
-    command(evt)
-    evt.wait()
-
-
-def service():
-    level(Main.level or "warn")
-    setwd(Main.name)
-    banner(MODS)
-    privileges()
-    pidfile(pidname(Main.name))
-    Commands.add(ver)
-    scan(MODS)
-    inits(MODS, Main.init or "irc,rss")
-    forever()
+[Install]
+WantedBy=multi-user.target"""
 
 
 "runtime"
@@ -223,6 +293,7 @@ def wrapped(func):
         func()
     except (KeyboardInterrupt, EOFError):
         out("")
+    Fleet.shutdown()
 
 
 def wrap(func):
@@ -240,10 +311,6 @@ def wrap(func):
 
 
 def main():
-    if check("a"):
-        Main.init = ",".join(dir(MODS))
-    if check("v"):
-        setattr(Main.opts, "v", True)
     if check("c"):
         wrap(console)
     elif check("d"):
