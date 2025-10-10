@@ -7,6 +7,7 @@
 import html
 import html.parser
 import http.client
+import logging
 import os
 import re
 import time
@@ -21,18 +22,22 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote_plus, urlencode
 
 
-from rssbot.methods import elapsed, fmt, rlog, spl
-from rssbot.handler import Fleet
-from rssbot.objects import Object, update
-from rssbot.persist import find, fntime, getpath, last, write
-from rssbot.runtime import Repeater, launch
+from ..caching import find, last, write
+from ..clients import Fleet
+from ..methods import fmt
+from ..objects import Object, update
+from ..threads import Repeater, launch
+from ..utility import elapsed, fntime, spl
+from ..workdir import getpath
 
 
 def init():
     fetcher = Fetcher()
     fetcher.start()
     if fetcher.seenfn:
-        rlog("warn", f"rss since {elapsed(time.time()-fntime(fetcher.seenfn))}")
+        logging.warning("since %s", elapsed(time.time()-fntime(fetcher.seenfn)))
+    else:
+        logging.warning("since %s", time.ctime(time.time()))
     return fetcher
 
 
@@ -286,7 +291,7 @@ def getfeed(url, items):
     try:
         rest = geturl(url)
     except (http.client.HTTPException, ValueError, HTTPError, URLError) as ex:
-        rlog("error", f"{url} {ex}")
+        logging.error("%s %s", url, ex)
         errors[url] = time.time()
         return result
     if rest:
@@ -357,7 +362,7 @@ def dpl(event):
         if feed:
             update(feed, setter)
             write(feed, fnm)
-    event.done()
+    event.reply("ok")
 
 
 def exp(event):
@@ -384,13 +389,13 @@ def imp(event):
     if not os.path.exists(fnm):
         event.reply(f"no {fnm} file found.")
         return
-    with open(fnm, "r", encoding="utf-8") as file:
-        txt = file.read()
-    prs = OPML()
-    nrs = 0
-    nrskip = 0
-    insertid = shortid()
     with importlock:
+        with open(fnm, "r", encoding="utf-8") as file:
+            txt = file.read()
+        prs = OPML()
+        nrs = 0
+        nrskip = 0
+        insertid = shortid()
         for obj in prs.parse(txt, "outline", "name,display_list,xmlUrl"):
             url = obj.xmlUrl
             if url in skipped:
@@ -425,7 +430,7 @@ def nme(event):
         if feed:
             feed.name = str(event.args[1])
             write(feed, fnm)
-    event.done()
+    event.reply("ok")
 
 
 def rem(event):
@@ -439,8 +444,8 @@ def rem(event):
             continue
         if feed:
             feed.__deleted__ = True
-            write(feed)
-            event.done()
+            write(feed, fnm)
+            event.reply("ok")
             break
 
 
@@ -448,7 +453,7 @@ def res(event):
     if len(event.args) != 1:
         event.reply("res <stringinurl>")
         return
-    for fnm, fed in find("rss", deleted=True):
+    for fnm, fed in find("rss", removed=True):
         feed = Rss()
         update(feed, fed)
         if event.args[0] not in feed.rss:
@@ -456,7 +461,7 @@ def res(event):
         if feed:
             feed.__deleted__ = False
             write(feed, fnm)
-    event.done()
+    event.reply("ok")
 
 
 def rss(event):
@@ -481,7 +486,7 @@ def rss(event):
     feed = Rss()
     feed.rss = event.args[0]
     write(feed)
-    event.done()
+    event.reply("ok")
 
 
 def syn(event):

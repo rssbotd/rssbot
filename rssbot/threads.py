@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"runtime"
+"non-blocking"
 
 
 import logging
@@ -9,6 +9,9 @@ import queue
 import threading
 import time
 import _thread
+
+
+from .methods import name
 
 
 class Thread(threading.Thread):
@@ -28,6 +31,15 @@ class Thread(threading.Thread):
     def __next__(self):
         yield from dir(self)
 
+    def join(self, timeout=None):
+        result = None
+        try:
+            super().join(timeout)
+            result = self.result
+        except (KeyboardInterrupt, EOFError):
+            _thread.interrupt_main()
+        return result
+
     def run(self):
         func, args = self.queue.get()
         try:
@@ -37,16 +49,6 @@ class Thread(threading.Thread):
         except Exception as ex:
             logging.exception(ex)
             _thread.interrupt_main()
-
-    def join(self, timeout=None):
-        try:
-            super().join(timeout)
-            return self.result
-        except (KeyboardInterrupt, EOFError):
-            _thread.interrupt_main()
-
-
-"timer/repeater"
 
 
 class Timy(threading.Timer):
@@ -94,39 +96,16 @@ class Repeater(Timed):
         super().run()
 
 
-"utilities"
-
-
 def launch(func, *args, **kwargs):
     thread = Thread(func, *args, **kwargs)
     thread.start()
     return thread
 
 
-def name(obj):
-    typ = type(obj)
-    if "__builtins__" in dir(typ):
-        return obj.__name__
-    if "__self__" in dir(obj):
-        return f"{obj.__self__.__class__.__name__}.{obj.__name__}"
-    if "__class__" in dir(obj) and "__name__" in dir(obj):
-        return f"{obj.__class__.__name__}.{obj.__name__}"
-    if "__class__" in dir(obj):
-        return f"{obj.__class__.__module__}.{obj.__class__.__name__}"
-    if "__name__" in dir(obj):
-        return f"{obj.__class__.__name__}.{obj.__name__}"
-    return ""
-
-
-"interface"
-
-
 def __dir__():
     return (
-        'Pool',
         'Repeater',
         'Thread',
-        'Timed',
         'launch',
         'name'
    )
