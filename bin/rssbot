@@ -2,48 +2,52 @@
 # This file is placed in the Public Domain.
 
 
-"main program"
-
-
 import json
 import logging
 import os
 import os.path
-import pathlib
 import sys
 import time
-import _thread
 
 
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.command import Commands, command, getmod, importer
-from rssbot.command import md5sum, modules, parse, scanner, table
-from rssbot.handler import Client, Event, Fleet
-from rssbot.methods import level, spl
+from rssbot.clients import Client
+from rssbot.command import Commands, command, scanner, table
+from rssbot.methods import parse
+from rssbot.handler import Event
 from rssbot.objects import update
-from rssbot.persist import Workdir, pidname, setwd
-from rssbot.runtime import launch
+from rssbot.package import NAME, Mods
+from rssbot.package import getmod, inits, md5sum, modules, setdirs, sums
+from rssbot.utility import level, spl
+from rssbot.workdir import Workdir, moddir, pidfile, pidname, setwd
 
 
-CHECKSUM = "54a51d599f6c4700b77bb042eaa13f60"
-NAME = Workdir.name
+CHECKSUM = ""
+
+
+"config"
 
 
 class Config:
 
-    debug    = False
-    default  = "irc,mdl,rss"
-    gets     = {}
-    init     = ""
-    level    = "warn"
-    mod      = ""
-    opts     = ""
-    otxt     = ""
-    sets     = {}
-    verbose  = False
-    version  = 171
+    debug = False
+    default = "irc,mdl,rss"
+    gets = {}
+    index = None
+    init  = ""
+    level = "warn"
+    mod = ""
+    opts = ""
+    otxt = ""
+    sets = {}
+    verbose = False
+    version = 653
+    wdr = ""
+
+
+"clients"
 
 
 class CLI(Client):
@@ -52,17 +56,11 @@ class CLI(Client):
         Client.__init__(self)
         self.register("command", command)
 
-    def announce(self, txt):
-        self.raw(txt)
-
     def raw(self, txt):
         out(txt.encode('utf-8', 'replace').decode("utf-8"))
 
 
 class Console(CLI):
-
-    def announce(self, txt):
-        pass
 
     def callback(self, event):
         if not event.txt:
@@ -85,18 +83,18 @@ def background():
     privileges()
     boot(False)
     pidfile(pidname(NAME))
-    inits(Config.init or Config.default)
+    inits(spl(Config.init or Config.default))
     forever()
 
 
 def console():
     import readline # noqa: F401
     boot()
-    for _mod, thr in inits(Config.init):
+    for _mod, thr in inits(spl(Config.init)):
         if "w" in Config.opts:
             thr.join(30.0)
     csl = Console()
-    csl.start(daemon=True)
+    csl.start()
     forever()
 
 
@@ -120,7 +118,8 @@ def service():
     privileges()
     boot(False)
     pidfile(pidname(NAME))
-    inits(Config.init or Config.default)
+    banner()
+    inits(spl(Config.init or Config.default))
     forever()
 
 
@@ -128,73 +127,23 @@ def boot(doparse=True):
     if doparse:
         parse(Config, " ".join(sys.argv[1:]))
         update(Config, Config.sets, empty=False)
-    if "m" in Config.opts:
-        Commands.mod = Config.mod = "mods"
-    if "a" in Config.opts:
-        Config.init = ",".join(modules())
+        Workdir.wdr = Config.wdr
     level(Config.level)
+    setwd(NAME)
+    if "m" in Config.opts:
+        Mods.dir("mods", "mods")
+    if "n" in Config.opts:
+        Mods.dir("network")
+    setdirs("n" in Config.opts, "m" in Config.opts)
     if "v" in Config.opts:
         banner()
-    setwd(NAME)
+    if "a" in Config.opts:
+        Config.init = ",".join(modules())
+    sums(CHECKSUM)
     table(CHECKSUM)
     Commands.add(cmd)
     Commands.add(ver)
-
-
-"daemon"
-
-
-def daemon(verbose=False):
-    pid = os.fork()
-    if pid != 0:
-        os._exit(0)
-    os.setsid()
-    pid2 = os.fork()
-    if pid2 != 0:
-        os._exit(0)
-    if not verbose:
-        with open('/dev/null', 'r', encoding="utf-8") as sis:
-            os.dup2(sis.fileno(), sys.stdin.fileno())
-        with open('/dev/null', 'a+', encoding="utf-8") as sos:
-            os.dup2(sos.fileno(), sys.stdout.fileno())
-        with open('/dev/null', 'a+', encoding="utf-8") as ses:
-            os.dup2(ses.fileno(), sys.stderr.fileno())
-    os.umask(0)
-    os.chdir("/")
-    os.nice(10)
-
-
-def inits(names):
-    modz = []
-    for name in sorted(spl(names)):
-        try:
-            module = getmod(name)
-            if not module:
-                continue
-            if "init" in dir(module):
-                thr = launch(module.init)
-                modz.append((module, thr))
-        except Exception as ex:
-            logging.exception(ex)
-            _thread.interrupt_main()
-    return modz
-
-
-def pidfile(filename):
-    if os.path.exists(filename):
-        os.unlink(filename)
-    path2 = pathlib.Path(filename)
-    path2.parent.mkdir(parents=True, exist_ok=True)
-    with open(filename, "w", encoding="utf-8") as fds:
-        fds.write(str(os.getpid()))
-
-
-def privileges():
-    import getpass
-    import pwd
-    pwnam2 = pwd.getpwnam(getpass.getuser())
-    os.setgid(pwnam2.pw_gid)
-    os.setuid(pwnam2.pw_uid)
+    logging.info("workdir is %s", Workdir.wdr)
 
 
 "commands"
@@ -219,8 +168,7 @@ def srv(event):
 
 
 def tbl(event):
-    if not check("f"):
-        Commands.names = {}
+    Commands.names = {}
     scanner()
     event.reply("# This file is placed in the Public Domain.")
     event.reply("")
@@ -229,6 +177,7 @@ def tbl(event):
     event.reply("")
     event.reply("")
     event.reply(f"NAMES = {json.dumps(Commands.names, indent=4, sort_keys=True)}")
+    event.reply("")
     event.reply("")
     event.reply("MD5 = {")
     for module in scanner():
@@ -245,7 +194,7 @@ def ver(event):
 
 def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
-    out(f"{NAME.upper()} {Config.version} since {tme} ({Config.level.upper()})")
+    out("%s %s since %s (%s)" % (NAME.upper(), Config.version, tme, Config.level.upper()))
 
 
 def check(txt):
@@ -257,6 +206,26 @@ def check(txt):
             if char in arg:
                 return True
     return False
+
+
+def daemon(verbose=False):
+    pid = os.fork()
+    if pid != 0:
+        os._exit(0)
+    os.setsid()
+    pid2 = os.fork()
+    if pid2 != 0:
+        os._exit(0)
+    if not verbose:
+        with open('/dev/null', 'r', encoding="utf-8") as sis:
+            os.dup2(sis.fileno(), sys.stdin.fileno())
+        with open('/dev/null', 'a+', encoding="utf-8") as sos:
+            os.dup2(sos.fileno(), sys.stdout.fileno())
+        with open('/dev/null', 'a+', encoding="utf-8") as ses:
+            os.dup2(ses.fileno(), sys.stderr.fileno())
+    os.umask(0)
+    os.chdir("/")
+    os.nice(10)
 
 
 def forever():
@@ -272,21 +241,12 @@ def out(txt):
     sys.stdout.flush()
 
 
-"data"
-
-
-TXT = """[Unit]
-Description=%s
-After=network-online.target
-
-[Service]
-Type=simple
-User=%s
-Group=%s
-ExecStart=/home/%s/.local/bin/%s -s
-
-[Install]
-WantedBy=multi-user.target"""
+def privileges():
+    import getpass
+    import pwd
+    pwnam2 = pwd.getpwnam(getpass.getuser())
+    os.setgid(pwnam2.pw_gid)
+    os.setuid(pwnam2.pw_uid)
 
 
 "runtime"
@@ -297,7 +257,6 @@ def wrapped(func):
         func()
     except (KeyboardInterrupt, EOFError):
         out("")
-    Fleet.shutdown()
 
 
 def wrap(func):
@@ -323,6 +282,20 @@ def main():
         wrapped(service)
     else:
         wrapped(control)
+
+
+TXT = """[Unit]
+Description=%s
+After=network-online.target
+
+[Service]
+Type=simple
+User=%s
+Group=%s
+ExecStart=/home/%s/.local/bin/%s -s
+
+[Install]
+WantedBy=multi-user.target"""
 
 
 if __name__ == "__main__":
