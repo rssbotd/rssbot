@@ -9,7 +9,7 @@ import threading
 import time
 
 
-sys.path.insert(0, os.getcwd())
+#sys.path.insert(0, os.getcwd())
 
 
 from rssbot.clients import Client, Config
