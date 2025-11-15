@@ -1,10 +1,7 @@
 # This file is been placed in the Public Domain.
 
 
-"available types"
-
-
-from ..workdir import types
+from rssbot.persist import types
 
 
 def lst(event):

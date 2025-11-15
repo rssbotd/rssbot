@@ -1,14 +1,11 @@
 # This file is placed in the Public Domain.
 
 
-"show running threads"
-
-
 import threading
 import time
 
 
-from ..utility import elapsed
+from rssbot.utility import elapsed
 
 
 STARTTIME = time.time()

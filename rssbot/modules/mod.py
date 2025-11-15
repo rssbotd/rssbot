@@ -1,10 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"show modules"
-
-
-from ..package import modules
+from rssbot.package import modules
 
 
 def mod(event):

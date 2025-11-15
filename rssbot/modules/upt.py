@@ -1,13 +1,10 @@
 # This file is placed in the Public Domain.
 
 
-"uptime"
-
-
 import time
 
 
-from ..utility import elapsed
+from rssbot.utility import elapsed
 
 
 STARTTIME = time.time()

@@ -1,9 +1,9 @@
 # This file is placed in the Public Domain.
 
 
-from ..clients import Fleet
-from ..methods import fmt
-from ..threads import name
+from rssbot.clients import Fleet
+from rssbot.methods import fmt
+from rssbot.threads import name
 
 
 def flt(event):

@@ -1,20 +1,15 @@
 # This file is placed in the Public Domain.
 
 
-"find"
-
-
 import time
 
 
-from ..caching import find
-from ..methods import fmt
-from ..utility import elapsed, fntime
-from ..workdir import long, skel, types
+from rssbot.methods import fmt
+from rssbot.persist import find, fntime, types
+from rssbot.utility import elapsed
 
 
 def fnd(event):
-    skel()
     if not event.rest:
         res = sorted([x.split('.')[-1].lower() for x in types()])
         if res:
@@ -23,9 +18,8 @@ def fnd(event):
             event.reply("no data yet.")
         return
     otype = event.args[0]
-    clz = long(otype)
     nmr = 0
-    for fnm, obj in list(find(clz, event.gets)):
+    for fnm, obj in list(find(otype, event.gets)):
         event.reply(f"{nmr} {fmt(obj)} {elapsed(time.time()-fntime(fnm))}")
         nmr += 1
     if not nmr:
