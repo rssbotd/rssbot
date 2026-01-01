@@ -1,20 +1,20 @@
 [build-system]
 requires = [
-    "setuptools>=64.0.0",
-    "wheel"
+    'setuptools>=64.0.0',
+    'wheel'
 ]
-build-backend = "setuptools.build_meta"
+build-backend = 'setuptools.build_meta'
 
 
 [project]
-name = "rssbot"
-description = "24/7 IRC Feed Fetcher, a contribution back to society. Public Domain."
-version = "658"
+name = 'rssbot'
+description = '24/7 IRC Feed Fetcher, a contribution back to society. Public Domain.'
+version = '658'
 authors = [
-    {name = "Bart Thate",email = "rssbotd@gmail.com"},
+    {name = 'Bart Thate',email = 'rssbotd@gmail.com'},
 ]
-readme = "README.rst"
-license = "Unlicense"
+readme = 'README.rst'
+license = 'Unlicense'
 classifiers = [ 
     'Development Status :: 4 - Beta',
     'Operating System :: Unix',
@@ -24,14 +24,15 @@ classifiers = [
 
 
 [project.urls]
-"home"   = "https://pypi.org/project/rssbot"
-"bugs"   = "https://github.com/rssbotd/rssbot/issues"
-"source" = "https://github.com/rssbotd/rssbot"
+'home'   = 'https://pypi.org/project/rssbot'
+'bugs'   = 'https://github.com/rssbotd/rssbot/issues'
+'source' = 'https://github.com/rssbotd/rssbot'
 
 
 [tool.seuptools]
 packages=[
-    "rssbot",
-    "rssbot.modules",
-    "rssbot.network"
+    'rssbot',
+    'rssbot.modules',
+    'rssbot.network',
+    'rssbot.nucleus'
 ]
