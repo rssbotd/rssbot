@@ -23,7 +23,7 @@ from rssbot.defines import moddir, pidname, skel, where, wrapped
 Config.ignore = ""
 Config.level = "info"
 Config.name = "rssbot" 
-Config.version = 656
+Config.version = 658
 
 
 TXT = " ".join(sys.argv[1:])
