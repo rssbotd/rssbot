@@ -22,9 +22,9 @@ import rssbot.handler
 import rssbot.message
 import rssbot.methods
 import rssbot.objects
+import rssbot.package
 import rssbot.persist
 import rssbot.repeats
-import rssbot.timings
 import rssbot.threads
 import rssbot.utility
 import rssbot.workdir
@@ -41,10 +41,10 @@ PACKAGE = [
     'message',
     'methods',
     'objects',
+    'package',
     'persist',
     'repeats',
     'threads',
-    'timings',
     'utility',
     'workdir'
 ]

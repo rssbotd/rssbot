@@ -15,7 +15,7 @@ sys.path.insert(0, os.getcwd())
 
 from rssbot.defines import Config, Message, Output, Workdir
 from rssbot.defines import command, elapsed, fmt, launch, parse, scanner, skel 
-
+from rssbot.defines import addpkg
 
 import rssbot.modules as MODS
 
@@ -148,7 +148,8 @@ def main():
         shutil.rmtree(Workdir.wdr)
     skel()
     parse(Config, " ".join(sys.argv[1:]))
-    scanner(MODS)
+    addpkg(MODS)
+    scanner()
     if "v" in Config.opts:
         banner(Config.name, Config.version)
     if "z" in Config.opts:
