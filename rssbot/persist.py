@@ -12,8 +12,7 @@ import threading
 from .methods import deleted, fqn, search
 from .objects import Object, keys, update
 from .serials import dump, load
-from .timings import fntime
-from .utility import cdir
+from .utility import cdir, fntime
 from .workdir import getpath, long, storage
 
 
