@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+# This file is placed in the Public Domain.
+
+
+import os
+import queue
+import shutil
+import sys
+import threading
+import time
+
+
+sys.path.insert(0, os.getcwd())
+
+
+from rssbot.defines import Config, Message, Output, Workdir
+from rssbot.defines import command, elapsed, fmt, launch, parse, scanner, skel 
+
+
+import rssbot.modules as MODS
+
+
+Config.debug = True
+Config.name = "rssbot"
+Config.version = 658
+Workdir.wdr = ".test"
+
+
+events = queue.Queue()
+
+
+class CLI(Output):
+
+    def __init__(self):
+        Output.__init__(self)
+        self.register("command", command)
+
+    def raw(self, txt):
+        if "v" in Config.opts:
+            print(txt)
+
+
+class Pool:
+
+    clients = []
+    lock = threading.RLock()
+    nrcpu = 1
+    nrlast = 0
+
+    @staticmethod
+    def add(client):
+        Pool.clients.append(client)
+
+    @staticmethod
+    def init(clz, nr):
+        Pool.nrcpu = nr
+        for _x in range(Pool.nrcpu):
+            clt = clz()
+            clt.start()
+            Pool.add(clt)
+
+    @staticmethod
+    def put(event):
+        with Pool.lock:
+            if Pool.nrlast >= Pool.nrcpu-1:
+                Pool.nrlast = 0
+            clt = Pool.clients[Pool.nrlast]
+            clt.put(event)
+            Pool.nrlast += 1
+
+
+def banner(name, version):
+    tme = time.ctime(time.time()).replace("  ", " ")
+    print(f"{name.upper()} {version} since {tme} ({Config.level})")
+    sys.stdout.flush()
+
+
+def check(text):
+    args = sys.argv[1:]
+    for arg in args:
+        if not arg.startswith("-"):
+            continue
+        for char in text:
+            if char in arg:
+                return True
+    return False
+
+
+def consume():
+    while True:
+        try:
+            event = events.get()
+            event.wait()
+            events.task_done()
+        except (KeyboardInterrupt, EOFError):
+            os._exit(0)
+
+
+def payload(todo):
+    for cmd, example in todo.items():
+        for ex in example:
+            evt = Message()
+            evt.text = f"{cmd} {ex}"
+            evt.kind = "command"
+            Pool.put(evt)
+            events.put(evt)
+
+
+examples = {
+    "cmd": [""],
+    "dis": [""],
+    "dne": ["", "bla"],
+    "dpl": ["hnrss title,url", ""],
+    "flt": [""],
+    "fnd": ["", "log", "rss", "config", "todo"],
+    "man": [""],
+    "mod": [""],
+    "mre": [""],
+    "nme": ["", "hnrss hackernews"],
+    "now": [""],
+    "pwd": ["", "bla mekker"],
+    "req": [""],
+    "res": ["", "hnrss"],
+    "srv": [""],
+    "thr": [""],
+    "upt": [""]
+}
+
+pre = {
+    "cfg": ["", "nick=mekker"],
+    "imp": ["", "testing/feeds.opml"],
+    "log": ["", "log add"],
+    "rss": ["", "http://hnrss.org/newest"],
+    "tdo": ["", "todo add"]
+}
+
+post = {
+    "dbg": [""],
+    "dne": ["", "mekker"],
+    "exp": [""],
+    "rem": ["", "hnrss"]
+}
+
+
+
+def main():
+    if os.path.exists(Workdir.wdr):
+        shutil.rmtree(Workdir.wdr)
+    skel()
+    parse(Config, " ".join(sys.argv[1:]))
+    scanner(MODS)
+    if "v" in Config.opts:
+        banner(Config.name, Config.version)
+    if "z" in Config.opts:
+        Pool.init(CLI, os.cpu_count())
+    else:
+        Pool.init(CLI, 1)
+    starttime = time.time()
+    thrs = []
+    nrs = Config.index or 1
+    for _x in range(nrs):
+        thrs.append(launch(payload, pre))
+    for thr in thrs:
+        thr.join()
+    for _x in range(nrs):
+        thrs.append(launch(payload, examples))
+    for thr in thrs:
+        thr.join()
+    for _x in range(nrs):
+        thrs.append(launch(payload, post))
+    for thr in thrs:
+        thr.join()
+    launch(consume)
+    nrevents = events.qsize()
+    try:
+        events.join()
+    except (KeyboardInterrupt, EOFError):
+        os._exit(0)
+    endtime = time.time()
+    lap = elapsed(endtime-starttime)
+    percall = (endtime-starttime)/nrevents
+    nrs = events.qsize()
+    if "v" in Config.opts:
+        print(f"{fmt(Config)}")
+        print(f"{nrs} events left.")
+        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    main()
