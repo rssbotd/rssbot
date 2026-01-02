@@ -8,7 +8,6 @@ import inspect
 
 
 from .methods import parse
-from .utility import spl
 
 
 class Commands:

@@ -15,13 +15,15 @@ sys.path.insert(0, os.getcwd())
 
 from rssbot.defines import Config, Message, Output, Workdir
 from rssbot.defines import command, elapsed, fmt, launch, parse, scanner, skel 
-from rssbot.defines import addpkg
+from rssbot.defines import addpkg, where
+
 
 import rssbot.modules as MODS
 
 
 Config.debug = True
 Config.name = "rssbot"
+Config.path = where(Config)
 Config.version = 658
 Workdir.wdr = ".test"
 
@@ -128,7 +130,7 @@ examples = {
 
 pre = {
     "cfg": ["", "nick=mekker"],
-    "imp": ["", "testing/feeds.opml"],
+    "imp": ["", "tests/feeds.opml"],
     "log": ["", "log add"],
     "rss": ["", "http://hnrss.org/newest"],
     "tdo": ["", "todo add"]

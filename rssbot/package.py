@@ -20,6 +20,7 @@ class Mods:
 
 
 def addpkg(*pkgs):
+    "register package directory."
     for pkg in pkgs:
         dirs(pkg.__name__, pkg.__path__[0])
 
@@ -27,22 +28,6 @@ def addpkg(*pkgs):
 def dirs(name, path):
     "add module directory."
     Mods.dirs[name] = path
-
-
-def importer(name, pth=""):
-    "import module by path."
-    if pth and os.path.exists(pth):
-        spec = importlib.util.spec_from_file_location(name, pth)
-    else:
-        spec = importlib.util.find_spec(name)
-    if not spec or not spec.loader:
-        return None
-    mod = importlib.util.module_from_spec(spec)
-    if not mod:
-        return None
-    Mods.modules[name] = mod
-    spec.loader.exec_module(mod)
-    return mod
 
 
 def getmod(name):
@@ -60,6 +45,22 @@ def getmod(name):
             mname = f"{packname}.{name}"
             break
     return importer(mname, pth)
+
+
+def importer(name, pth=""):
+    "import module by path."
+    if pth and os.path.exists(pth):
+        spec = importlib.util.spec_from_file_location(name, pth)
+    else:
+        spec = importlib.util.find_spec(name)
+    if not spec or not spec.loader:
+        return None
+    mod = importlib.util.module_from_spec(spec)
+    if not mod:
+        return None
+    Mods.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def mods(names):
@@ -104,8 +105,8 @@ def __dir__():
         'Mods',
         'addpkg',
         'dirs',
-        'importer',
         'getmod',
+        'importer',
         'mods',
         'modules',
         'scanner'

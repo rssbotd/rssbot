@@ -2,10 +2,9 @@
 # This file is placed in the Public Domain.
 
 
-"runtime"
+"main program"
 
 
-import importlib.util
 import os
 import pathlib
 import time
@@ -16,8 +15,8 @@ sys.path.insert(0, os.getcwd())
 
 
 from rssbot.defines import SYSTEMD, CLI, Commands, Config, Message, Workdir
-from rssbot.defines import command, enable, parse, launch, level, scan, spl
-from rssbot.defines import moddir, pidname, skel, where, wrapped
+from rssbot.defines import command, enable, parse, launch, level, spl
+from rssbot.defines import pidname, skel, where, wrapped
 from rssbot.defines import addpkg, modules, getmod, scanner
 
 
