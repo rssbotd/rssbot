@@ -1,1 +1,1 @@
-pylint -d C,R,W,E0401,E0402  tob examples bin/tob bin/tinder
+pylint -d C,R,W,E0401,E0402  rssbot rssbot/modules  bin/rssbot bin/tinder

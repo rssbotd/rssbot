@@ -1,6 +1,7 @@
 # This file is placed in the Public Domain.
 # ruff: noqa:F401
 
+
 "definitions"
 
 
@@ -14,7 +15,8 @@ from .message import Message
 from .methods import deleted, edit, fmt, fqn, parse, search
 from .objects import Default, Object
 from .objects import asdict , construct, items, keys, update, values
-from .package import Mods, addpkg, getmod, mods, modules, scanner
+from .package import Mods, addpkg, dirs, getmod, importer, mods
+from .package import modules, scanner
 from .persist import attrs, cache, last, find, put, read, sync, write
 from .runtime import banner, boot, check, daemon, forever, init, pidfile
 from .runtime import privileges, wrap
@@ -48,7 +50,7 @@ def __dir__():
         'addpkg',
         'asdict',
         'banner',
-        'book',
+        'boot',
         'cache',
         'cdir',
         'check',
@@ -73,6 +75,7 @@ def __dir__():
         'getcmd',
         'getmod',
         'getpath',
+        'getstore',
         'hour',
         'ident',
         'importer',
@@ -103,7 +106,6 @@ def __dir__():
         'scanner',
         'search',
         'skel',
-        'storage',
         'sync',
         'spl',
         'time',

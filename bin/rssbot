@@ -13,10 +13,9 @@ sys.path.insert(0, os.getcwd())
 
 
 from rssbot.defines import SYSTEMD, CLI, Commands, Config, Message
-from rssbot.defines import command, enable
-from rssbot.defines import banner, forever, pidname, wrap, wrapped
-from rssbot.defines import boot, check, modules, init, scanner
-from rssbot.defines import daemon, pidfile, privileges
+from rssbot.defines import banner, boot, check, command, daemon, enable
+from rssbot.defines import forever, init, modules, pidfile, pidname
+from rssbot.defines import privileges, scanner, wrap, wrapped
 
 
 import rssbot.modules as MODS
