@@ -72,7 +72,7 @@ class UDP(Object):
 
 
 def toudp(host, port, txt):
-    if Config.debug:
+    if getattr(Config, 'debug', False):
         return
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(bytes(txt.strip(), "utf-8"), (host, port))

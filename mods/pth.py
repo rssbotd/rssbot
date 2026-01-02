@@ -8,5 +8,5 @@ from rssbot.defines import Config, where
 
 
 def pth(event):
-    path = os.path.join(Config.path, "nucleus", "index.html")
+    path = os.path.join(where(Config), "nucleus", "index.html")
     event.reply(f"file://{path}")

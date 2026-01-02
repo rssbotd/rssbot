@@ -78,7 +78,7 @@ class RESTHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if Config.debug:
+        if getattr(Config, 'debug', False):
             return
         if "favicon" in self.path:
             return

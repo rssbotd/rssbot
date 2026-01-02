@@ -15,7 +15,6 @@ from rssbot.defines import Config, Object, launch, where
 
 def init():
     Cfg.path = where(Config)
-    #Cfg.path = os.path.join(Mods.path, "network", "html")
     if not os.path.exists(os.path.join(Cfg.path, 'index.html')):
         logging.warning("no index.html")
         return
@@ -95,7 +94,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if "favicon" in self.path:
             return
-        if Config.debug:
+        if getattr(Config, 'debug', False):
             return
         if self.path == "/":
             self.path = "index.html"

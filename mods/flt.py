@@ -5,11 +5,11 @@ from rssbot.defines import fmt, name, objs
 
 
 def flt(event):
-    clts = objs("announce")
+    clts = list(objs("announce"))
     if event.args:
         index = int(event.args[0])
         if index < len(clts):
-            event.reply(fmt(list(clts)[index]), empty=True)
+            event.reply(fmt(clts[index]))
         else:
             event.reply(f"only {len(clts)} clients in fleet.")
         return
