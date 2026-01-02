@@ -1,12 +1,12 @@
 # This file is placed in the Public Domain.
-# ruff: noqa F401
+# ruff: noqa:F401
 
 "definitions"
 
 
 from .brokers import broker, add, like, objs
 from .clients import Client, CLI, Output
-from .command import Commands, cmds, command, enable, scan
+from .command import Commands, command, enable, getcmd, scan
 from .configs import Config
 from .handler import Handler
 from .loggers import level
@@ -16,14 +16,15 @@ from .objects import Default, Object
 from .objects import asdict , construct, items, keys, update, values
 from .package import Mods, addpkg, getmod, mods, modules, scanner
 from .persist import attrs, cache, last, find, put, read, sync, write
-from .repeats import Repeater, Timed
+from .runtime import banner, boot, check, daemon, forever, init, pidfile
+from .runtime import privileges, wrap
 from .serials import dump, dumps, load, loads
 from .statics import MONTH, SYSTEMD
-from .threads import launch, name
+from .threads import Repeater, Timed, launch, name
 from .utility import NoDate, date, day, elapsed, extract, fntime, hour, time
 from .utility import parsetxt, today
 from .utility import cdir, ident, md5sum, spl, where, wrapped
-from .workdir import Workdir, getpath, long, moddir, pidname, skel, storage, kinds
+from .workdir import Workdir, getpath, getstore, long, moddir, pidname, skel, kinds
 
 
 def __dir__():
@@ -46,11 +47,14 @@ def __dir__():
         'add',
         'addpkg',
         'asdict',
+        'banner',
+        'book',
         'cache',
         'cdir',
-        'cmds',
+        'check',
         'construct',
         'command',
+        'daemon',
         'date',
         'day',
         'deleted',
@@ -61,15 +65,18 @@ def __dir__():
         'elapsed',
         'enable',
         'extract',
-        'fntime',
         'find',
         'fmt',
+        'fntime',
+        'forever',
         'fqn',
+        'getcmd',
         'getmod',
         'getpath',
         'hour',
         'ident',
         'importer',
+        'init',
         'items',
         'keys',
         'kinds',
@@ -87,7 +94,9 @@ def __dir__():
         'objs',
         'parse',
         'parsetxt',
+        'pidfile',
         'pidname',
+        'privileges',
         'put',
         'read',
         'scan',
@@ -103,6 +112,7 @@ def __dir__():
         'values',
         'where',
         'wrapped',
+        'wrap',
         'write'
 )
 

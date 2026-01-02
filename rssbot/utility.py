@@ -16,6 +16,11 @@ from .methods import fqn
 from .statics import MONTH, TIMES
 
 
+class NoDate(Exception):
+
+    pass
+
+
 def cdir(path):
     "create directory."
     pth = pathlib.Path(path)
@@ -57,12 +62,7 @@ def wrapped(func):
         pass
 
 
-"times"
-
-
-class NoDate(Exception):
-
-    pass
+"time"
 
 
 def date(daystr):

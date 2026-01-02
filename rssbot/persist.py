@@ -13,7 +13,7 @@ from .methods import deleted, fqn, search
 from .objects import Object, keys, update
 from .serials import dump, load
 from .utility import cdir, fntime
-from .workdir import getpath, long, storage
+from .workdir import getpath, getstore, long
 
 
 lock = threading.RLock()
@@ -55,7 +55,7 @@ def find(kind, selector={}, removed=False, matching=False):
 
 def fns(kind):
     "return file names by kind of object."
-    path = storage(kind)
+    path = getstore(kind)
     for rootdir, dirs, _files in os.walk(path, topdown=True):
         for dname in dirs:
             if dname.count("-") != 2:

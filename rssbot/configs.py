@@ -9,15 +9,7 @@ from .objects import Default
 
 class Config(Default):
 
-    debug = False
-    gets = Default()
-    ignore = ""
-    init = ""
-    level = "info"
-    name = ""
-    opts = ""
-    sets = Default()
-    version = 0
+    pass
 
 
 def __dir__():

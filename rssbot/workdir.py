@@ -18,7 +18,7 @@ class Workdir:
 
 def getpath(obj):
     "return path for object."
-    return storage(ident(obj))
+    return getstore(ident(obj))
 
 
 def long(name):
@@ -44,27 +44,28 @@ def pidname(name: str):
 
 def skel():
     "create directories."
-    path = storage()
+    path = getstore()
     pth = pathlib.Path(path)
     pth.mkdir(parents=True, exist_ok=True)
     pth = pathlib.Path(moddir())
     pth.mkdir(parents=True, exist_ok=True)
 
 
-def storage(fnm: str = ""):
+def getstore(fnm: str = ""):
     "return path to store."
     return os.path.join(Workdir.wdr, "store", fnm)
 
 
 def kinds():
     "return stored types."
-    return os.listdir(storage())
+    return os.listdir(getstore())
 
 
 def __dir__():
     return (
         'Workdir',
         'getpath',
+        'getstore',
         'long',
         'moddir',
         'pidname',

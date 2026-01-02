@@ -15,7 +15,7 @@ sys.path.insert(0, os.getcwd())
 
 from rssbot.defines import Config, Message, Output, Workdir
 from rssbot.defines import command, elapsed, fmt, launch, parse, scanner, skel 
-from rssbot.defines import addpkg, where
+from rssbot.defines import addpkg
 
 
 import rssbot.modules as MODS
@@ -23,7 +23,6 @@ import rssbot.modules as MODS
 
 Config.debug = True
 Config.name = "rssbot"
-Config.path = where(Config)
 Config.version = 658
 Workdir.wdr = ".test"
 

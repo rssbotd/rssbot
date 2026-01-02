@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"write your own commands."
+"write your own commands"
 
 
 import inspect
@@ -16,7 +16,7 @@ class Commands:
     names = {}
 
 
-def cmds(cmd):
+def getcmd(cmd):
     "return command."
     return Commands.cmds.get(cmd, None)
 
@@ -24,7 +24,7 @@ def cmds(cmd):
 def command(evt):
     "command callback."
     parse(evt, evt.text)
-    func = cmds(evt.cmd)
+    func = getcmd(evt.cmd)
     if func:
         func(evt)
         evt.display()
@@ -50,8 +50,8 @@ def scan(module):
 def __dir__():
     return (
         'Commands',
-        'cmds',
         'command',
         'enable',
+        'getcmd',
         'scan'
     )
