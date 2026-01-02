@@ -19,9 +19,10 @@ from rssbot.defines import addpkg
 
 
 import rssbot.modules as MODS
-
+import mods as MODS2
 
 Config.debug = True
+Config.level = "info"
 Config.name = "rssbot"
 Config.version = 658
 Workdir.wdr = ".test"
@@ -149,7 +150,7 @@ def main():
         shutil.rmtree(Workdir.wdr)
     skel()
     parse(Config, " ".join(sys.argv[1:]))
-    addpkg(MODS)
+    addpkg(MODS, MODS2)
     scanner()
     if "v" in Config.opts:
         banner(Config.name, Config.version)

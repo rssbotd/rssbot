@@ -24,7 +24,7 @@ import rssbot.methods
 import rssbot.objects
 import rssbot.package
 import rssbot.persist
-import rssbot.repeats
+import rssbot.runtime
 import rssbot.threads
 import rssbot.utility
 import rssbot.workdir
@@ -43,7 +43,7 @@ PACKAGE = [
     'objects',
     'package',
     'persist',
-    'repeats',
+    'runtime',
     'threads',
     'utility',
     'workdir'

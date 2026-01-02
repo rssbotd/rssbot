@@ -9,7 +9,7 @@ class Broker:
     objects = {}
 
 
-def add(obj):
+def addobj(obj):
     "add object to the broker, key is repr(obj)."
     Broker.objects[repr(obj)] = obj
 
@@ -35,7 +35,7 @@ def like(txt):
 
 def __dir__():
     return (
-        'add',
+        'addobj',
         'broker',
         'like',
         'objs'

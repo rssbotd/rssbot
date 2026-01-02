@@ -278,7 +278,7 @@ def cdata(line):
 
 def getfeed(url, items):
     result = [Object(), Object()]
-    if Config.debug or url in errors and (time.time() - errors[url]) < 600:
+    if getattr(Config, 'debug', False) or url in errors and (time.time() - errors[url]) < 600:
         return result
     try:
         rest = geturl(url)

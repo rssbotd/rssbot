@@ -7,13 +7,14 @@
 
 import os
 import sys
+import time
 
 
 sys.path.insert(0, os.getcwd())
 
 
 from rssbot.defines import SYSTEMD, CLI, Commands, Config, Message
-from rssbot.defines import banner, boot, check, command, daemon, enable
+from rssbot.defines import adddir, boot, check, command, daemon, enable
 from rssbot.defines import forever, init, modules, pidfile, pidname
 from rssbot.defines import privileges, scanner, wrap, wrapped
 
@@ -21,11 +22,17 @@ from rssbot.defines import privileges, scanner, wrap, wrapped
 import rssbot.modules as MODS
 
 
+"config"
+
+
 Config.ignore = ""
 Config.level = "info"
 Config.name = "rssbot" 
 Config.txt = " ".join(sys.argv[1:])
 Config.version = 658
+
+
+"clients"
 
 
 class Line(CLI):
@@ -52,11 +59,27 @@ class Console(Line):
         return evt
 
 
+def banner():
+    "hello"
+    tme = time.ctime(time.time()).replace("  ", " ")
+    print("%s %s %s since %s (%s)" % (
+        Config.name.upper(),
+        Config.version,
+        Config.opts.strip().upper(),
+        tme,
+        Config.level.upper()
+    ))
+    sys.stdout.flush()
+
+
+"scripts"
+
+
 def background():
     "background script."
     daemon(check("v"), check("m"))
     privileges()
-    boot(Config.txt, MODS)
+    boot(Config, MODS)
     pidfile(pidname(Config.name))
     enable(cmd, mod, ver)
     scanner(modules())
@@ -70,7 +93,7 @@ def console():
     readline.redisplay()
     if check("0"):
         Config.ignore = list()
-    boot(Config.txt, MODS)
+    boot(Config, MODS)
     if "v" in Config.opts:
         banner()
     scanner()
@@ -89,7 +112,7 @@ def control():
     "cli script."
     if len(sys.argv) == 1:
         return
-    boot(Config.txt, MODS)
+    boot(Config, MODS)
     scanner()
     enable(cmd, mod, srv, ver)
     cli = Line()
@@ -104,13 +127,16 @@ def control():
 def service():
     "service script."
     privileges()
-    boot(Config.txt, MODS)
+    boot(Config, MODS)
     banner()
     pidfile(pidname(Config.name))
     enable(cmd, mod, ver)
     scanner()
     init(modules())
     forever()
+
+
+"commands"
 
 
 def cmd(event):
@@ -135,10 +161,15 @@ def ver(event):
     event.reply(f"{Config.name.upper()} {Config.version} {Config.opts}")
 
 
+"runtime"
+
+
 def main():
     "runtime."
     if check('z'):
         Config.debug = True
+    if check('m'):
+        adddir("mods", "mods")
     if check("c"):
         wrap(console)
     elif check("d"):

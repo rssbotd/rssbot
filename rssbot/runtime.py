@@ -20,29 +20,16 @@ from .utility import spl, wrapped
 from .workdir import Workdir, skel
 
 
-def banner():
-    "hello"
-    tme = time.ctime(time.time()).replace("  ", " ")
-    print("%s %s %s since %s (%s)" % (
-        Config.name.upper(),
-        Config.version,
-        Config.opts.strip().upper(),
-        tme,
-        Config.level.upper()
-    ))
-    sys.stdout.flush()
-
-
-def boot(txt, *pkgs):
+def boot(cfg, *pkgs):
     "in the beginning"
-    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{Config.name}")
+    Workdir.wdr = Workdir.wdr or os.path.expanduser(f"~/.{cfg.name}")
     skel()
-    parse(Config, txt)
+    parse(cfg, cfg.txt)
     for pkg in pkgs:
         addpkg(pkg)
-    if "ignore" in Config.sets:
-        Config.ignore = Config.sets.ignore
-    level(Config.sets.level or Config.level or "info")
+    if "ignore" in cfg.sets:
+        cfg.ignore = cfg.sets.ignore
+    level(cfg.sets.level or cfg.level or "info")
 
 
 def check(text):

@@ -5,7 +5,7 @@
 "definitions"
 
 
-from .brokers import broker, add, like, objs
+from .brokers import broker, addobj, like, objs
 from .clients import Client, CLI, Output
 from .command import Commands, command, enable, getcmd, scan
 from .configs import Config
@@ -15,10 +15,10 @@ from .message import Message
 from .methods import deleted, edit, fmt, fqn, parse, search
 from .objects import Default, Object
 from .objects import asdict , construct, items, keys, update, values
-from .package import Mods, addpkg, dirs, getmod, importer, mods
+from .package import Mods, adddir, addpkg, getmod, importer, mods
 from .package import modules, scanner
 from .persist import attrs, cache, last, find, put, read, sync, write
-from .runtime import banner, boot, check, daemon, forever, init, pidfile
+from .runtime import boot, check, daemon, forever, init, pidfile
 from .runtime import privileges, wrap
 from .serials import dump, dumps, load, loads
 from .statics import MONTH, SYSTEMD
@@ -46,10 +46,10 @@ def __dir__():
         'Repeater',
         'Timed',
         'Workdir',
-        'add',
+        'adddir',
+        'addobj',
         'addpkg',
         'asdict',
-        'banner',
         'boot',
         'cache',
         'cdir',
@@ -60,7 +60,6 @@ def __dir__():
         'date',
         'day',
         'deleted',
-        'dirs',
         'dump',
         'dumps',
         'edit',

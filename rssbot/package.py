@@ -9,7 +9,6 @@ import os
 
 
 from .command import scan
-from .configs import Config
 from .utility import spl
 
 
@@ -19,21 +18,19 @@ class Mods:
     modules = {}
 
 
-def addpkg(*pkgs):
-    "register package directory."
-    for pkg in pkgs:
-        dirs(pkg.__name__, pkg.__path__[0])
-
-
-def dirs(name, path):
+def adddir(name, path):
     "add module directory."
     Mods.dirs[name] = path
 
 
+def addpkg(*pkgs):
+    "register package directory."
+    for pkg in pkgs:
+        adddir(pkg.__name__, pkg.__path__[0])
+
+
 def getmod(name):
     "import module by name." 
-    if name in spl(Config.ignore):
-        return None
     if name in Mods.modules:
         return Mods.modules[name]
     mname = ""
@@ -65,24 +62,18 @@ def importer(name, pth=""):
 
 def mods(names):
     "list of named modules."
-    return [
-        getmod(x) for x in sorted(spl(names))
-        if x not in spl(Config.ignore)
-        or x in spl(Config.sets.init)
-    ]
+    return [getmod(x) for x in sorted(spl(names))]
 
 
 def modules():
     "comma seperated list of available modules."
     mods = []
     for name, path in Mods.dirs.items():
-        if name in spl(Config.ignore):
-            continue
         if not os.path.exists(path):
             continue
         mods.extend([
             x[:-3] for x in os.listdir(path)
-            if x.endswith(".py") and not x.startswith("__") and x not in spl(Config.ignore)
+            if x.endswith(".py") and not x.startswith("__")
         ])
     return ",".join(sorted(mods))
 
