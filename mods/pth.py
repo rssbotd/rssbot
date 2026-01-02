@@ -1,0 +1,12 @@
+# This file is placed in the Public Domain.
+
+
+import os
+
+
+from rssbot.defines import Config, where
+
+
+def pth(event):
+    path = os.path.join(Config.path, "nucleus", "index.html")
+    event.reply(f"file://{path}")
