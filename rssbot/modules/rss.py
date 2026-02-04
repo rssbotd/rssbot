@@ -24,7 +24,6 @@ from rssbot.methods import Methods
 from rssbot.modules import Cfg
 from rssbot.objects import Dict, Object
 from rssbot.persist import Disk, Locate
-from rssbot.threads import Thread
 from rssbot.utility import Repeater, Time, Utils
 
 
