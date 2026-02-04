@@ -143,7 +143,8 @@ class Fetcher(Object):
     def run(self, silent=False):
         thrs = []
         for _fn, feed in Locate.find(Methods.fqn(Rss)):
-            thrs.append(Thread.launch(self.fetch, feed, silent))
+            #thrs.append(Thread.launch(self.fetch, feed, silent))
+            self.fetch(feed, silent)
         return thrs
 
     def start(self, repeat=True):

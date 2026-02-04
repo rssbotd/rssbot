@@ -29,10 +29,9 @@ classifiers = [
 'source' = 'https://github.com/rssbotd/rssbot'
 
 
-[tool.seuptools]
+[tool.setuptools]
 packages=[
     'rssbot',
     'rssbot.modules',
-    'rssbot.network',
     'rssbot.nucleus'
 ]

@@ -5,6 +5,7 @@
 "main program"
 
 
+import gc
 import logging
 import os
 import sys
