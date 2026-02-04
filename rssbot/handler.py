@@ -4,17 +4,14 @@
 "a callback engine as handler"
 
 
-import logging
 import queue
 import threading
-import _thread
 
 
-from .brokers import Broker
 from .threads import Thread
 
 
-"hnadler"
+"handler"
 
 
 class Handler:
@@ -59,7 +56,6 @@ class Handler:
         "stop event handler loop."
         self.running.clear()
         self.queue.put(None)
-
 
 
 "interface"

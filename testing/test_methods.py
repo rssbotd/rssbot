@@ -7,8 +7,8 @@
 import unittest
 
 
-from bigtalk.methods import Methods
-from bigtalk.objects import Object
+from rssbot.methods import Methods
+from rssbot.objects import Object
 
 
 class TestMethods(unittest.TestCase):

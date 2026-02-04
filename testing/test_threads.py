@@ -7,7 +7,7 @@
 import unittest
 
 
-from bigtalk.threads import Task
+from rssbot.threads import Task
 
 
 def func():

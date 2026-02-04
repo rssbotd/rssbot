@@ -7,7 +7,7 @@
 import unittest
 
 
-from bigtalk.package import Mods
+from rssbot.package import Mods
 
 
 class TestPackage(unittest.TestCase):

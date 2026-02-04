@@ -7,9 +7,10 @@
 import unittest
 
 
-from bigtalk.handler import Client, Handler
-from bigtalk.message import Message
-from bigtalk.methods import Methods
+from rssbot.clients import Client
+from rssbot.handler import Handler
+from rssbot.message import Message
+from rssbot.methods import Methods
 
 
 buffer = []

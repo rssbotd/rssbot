@@ -4,9 +4,9 @@
 import unittest
 
 
-from bigtalk.brokers import Broker
-from bigtalk.handler import Client
-from bigtalk.objects import Dict, Json, Object
+from rssbot.brokers import Broker
+from rssbot.clients import Client
+from rssbot.objects import Dict, Json, Object
 
 
 class TestBroker(unittest.TestCase):

@@ -335,7 +335,7 @@ def geturl(url):
         with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
             response.data = response.read()
             return response
-    except TimeoutError:
+    except TimeoutError as ex:
         logging.error("%s %s", url, ex)
         errors[url] = time.time()
         return None

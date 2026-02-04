@@ -7,10 +7,10 @@
 import unittest
 
 
-from bigtalk.handler import Client
-from bigtalk.command import Commands
-from bigtalk.objects import Dict, Object
-from bigtalk.message import Message
+from rssbot.clients import Client
+from rssbot.command import Commands
+from rssbot.objects import Dict, Object
+from rssbot.message import Message
 
 
 def cmnd(event):

@@ -4,13 +4,13 @@
 import unittest
 
 
-from bigtalk.objects import *
+from rssbot.objects import *
 
 
-import bigtalk.objects
+import rssbot.objects
 
 
-TARGET = bigtalk.objects
+TARGET = rssbot.objects
 VALIDJSON = '{"test": "bla"}'
 
 
