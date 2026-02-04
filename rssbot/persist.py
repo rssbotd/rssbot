@@ -38,11 +38,11 @@ class Cache:
     @staticmethod
     def sync(path, obj):
         "update cached object."
-        Cache.add(path, obj)
-        #try:
-        #    Dict.update(Cache.paths[path], obj)
-        #except KeyError:
-        #    Cache.add(path, obj)
+        #Cache.add(path, obj)
+        try:
+            Dict.update(Cache.paths[path], obj)
+        except KeyError:
+            Cache.add(path, obj)
 
 
 "workdir"

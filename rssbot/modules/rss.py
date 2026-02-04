@@ -115,6 +115,7 @@ class Fetcher(Object):
                     uurl = f"{url.scheme}://{url.netloc}/{url.path}"
                 else:
                     uurl = fed.link
+                urllib.parse.unquote(uurl, errors='ignore')
                 urls.append(uurl)
                 if uurl in see:
                     continue
@@ -295,8 +296,11 @@ def getfeed(url, items):
         return result
     try:
         rest = geturl(url)
+        if url in errors:
+           del errors[url]
     except (http.client.HTTPException, ValueError, HTTPError, URLError) as ex:
-        logging.error("%s %s", url, ex)
+        if url not in errors:
+            logging.error("%s %s", url, ex)
         errors[url] = time.time()
         return result
     if rest:
