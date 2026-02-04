@@ -13,32 +13,51 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.defines import Config, Message, Output, Workdir
-from rssbot.defines import command, elapsed, fmt, launch, parse, scanner, skel 
-from rssbot.defines import addpkg
+from rssbot.clients import Client
+from rssbot.command import Commands
+from rssbot.modules import Cfg
+from rssbot.message import Message
+from rssbot.methods import Methods
+from rssbot.package import Mods
+from rssbot.persist import Workdir
+from rssbot.threads import Thread
+from rssbot.utility import Time, Utils
 
 
-import rssbot.modules as MODS
-import mods as MODS2
+from rssbot import modules as MODS
 
-Config.debug = True
-Config.level = "info"
-Config.name = "rssbot"
-Config.version = 658
-Workdir.wdr = ".test"
+
+try:
+    import mods as MODS2
+except ModuleNotFoundError:
+    MODS2 = None
 
 
 events = queue.Queue()
 
 
-class CLI(Output):
+"config"
+
+Cfg.debug = True
+Cfg.ignore = ""
+Cfg.level = "info"
+Cfg.name = Mods.pkgname(Commands)
+Cfg.txt = " ".join(sys.argv[1:])
+Cfg.version = 658
+Cfg.wdr = ".test"
+
+
+"clients"
+
+
+class CLI(Client):
 
     def __init__(self):
-        Output.__init__(self)
-        self.register("command", command)
+        Client.__init__(self)
+        self.register("command", Commands.command)
 
     def raw(self, txt):
-        if "v" in Config.opts:
+        if "v" in Cfg.opts:
             print(txt)
 
 
@@ -71,9 +90,12 @@ class Pool:
             Pool.nrlast += 1
 
 
-def banner(name, version):
+"utilities"
+
+
+def banner():
     tme = time.ctime(time.time()).replace("  ", " ")
-    print(f"{name.upper()} {version} since {tme} ({Config.level})")
+    print(f"{Cfg.name.upper()} {Cfg.version} since {tme} ({Cfg.level})")
     sys.stdout.flush()
 
 
@@ -108,6 +130,67 @@ def payload(todo):
             events.put(evt)
 
 
+"runtime"
+
+
+def wrap(func):
+    "restore console."
+    import termios
+    old = None
+    try:
+        old = termios.tcgetattr(sys.stdin.fileno())
+    except termios.error:
+        pass
+    try:
+        Utils.wrapped(func)
+    finally:
+        pass
+    if old:
+        termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+
+
+def main():
+    if "p" not in Cfg.opts and os.path.exists(Cfg.wdr):
+        shutil.rmtree(Cfg.wdr)
+    Methods.parse(Cfg, " ".join(sys.argv[1:]))
+    Workdir.setwd(Cfg.wdr)
+    Mods.init("modules", MODS.__path__[0])
+    if MODS2:
+        Mods.init("mods", MODS2.__path__[0])
+    Mods.scanner(Mods.list())
+    if "v" in Cfg.opts:
+        banner()
+    if "z" in Cfg.opts:
+        Pool.init(CLI, os.cpu_count())
+    else:
+        Pool.init(CLI, 1)
+    starttime = time.time()
+    nrs = Cfg.index or 1
+    for _x in range(nrs):
+        payload(pre)
+    for _x in range(nrs):
+        payload(examples)
+    for _x in range(nrs):
+        payload(post)
+    Thread.launch(consume)
+    nrevents = events.qsize()
+    try:
+        events.join()
+    except (KeyboardInterrupt, EOFError):
+        pass
+    endtime = time.time()
+    lap = Time.elapsed(endtime-starttime)
+    percall = (endtime-starttime)/nrevents
+    nrs = events.qsize()
+    if "v" in Cfg.opts:
+        print(f"{Methods.fmt(Cfg)}")
+        print(f"{nrs} events left.")
+        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
+
+
+"date"
+
+
 examples = {
     "atr": [""],
     "cmd": [""],
@@ -135,13 +218,12 @@ examples = {
     "thr": [""],
     "tmr": ["", "22:00 test"],
     "upt": [""],
-    "ver": [""],
     "wsd": [""]
 }
 
 pre = {
     "cfg": ["", "nick=mekker"],
-    "imp": ["", "tests/feeds.opml"],
+    "imp": ["", "testing/feeds.opml", "testing/karpathy.opml"],
     "log": ["", "log add"],
     "rss": ["", "http://hnrss.org/newest"],
     "tdo": ["", "test"]
@@ -155,51 +237,8 @@ post = {
 }
 
 
-
-def main():
-    if os.path.exists(Workdir.wdr):
-        shutil.rmtree(Workdir.wdr)
-    skel()
-    parse(Config, " ".join(sys.argv[1:]))
-    addpkg(MODS, MODS2)
-    scanner()
-    if "v" in Config.opts:
-        banner(Config.name, Config.version)
-    if "z" in Config.opts:
-        Pool.init(CLI, os.cpu_count())
-    else:
-        Pool.init(CLI, 1)
-    starttime = time.time()
-    thrs = []
-    nrs = Config.index or 1
-    for _x in range(nrs):
-        thrs.append(launch(payload, pre))
-    for thr in thrs:
-        thr.join()
-    for _x in range(nrs):
-        thrs.append(launch(payload, examples))
-    for thr in thrs:
-        thr.join()
-    for _x in range(nrs):
-        thrs.append(launch(payload, post))
-    for thr in thrs:
-        thr.join()
-    launch(consume)
-    nrevents = events.qsize()
-    try:
-        events.join()
-    except (KeyboardInterrupt, EOFError):
-        os._exit(0)
-    endtime = time.time()
-    lap = elapsed(endtime-starttime)
-    percall = (endtime-starttime)/nrevents
-    nrs = events.qsize()
-    if "v" in Config.opts:
-        print(f"{fmt(Config)}")
-        print(f"{nrs} events left.")
-        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
-    os._exit(0)
+"trampoline"
 
 
 if __name__ == "__main__":
-    main()
+    wrap(main)

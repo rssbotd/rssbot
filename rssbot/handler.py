@@ -1,13 +1,20 @@
 # This file is placed in the Public Domain.
 
 
-"handle your own events"
+"a callback engine as handler"
 
 
+import logging
 import queue
+import threading
+import _thread
 
 
-from .threads import launch
+from .brokers import Broker
+from .threads import Thread
+
+
+"hnadler"
 
 
 class Handler:
@@ -15,7 +22,8 @@ class Handler:
     def __init__(self):
         self.cbs = {}
         self.queue = queue.Queue()
-
+        self.running = threading.Event()
+        
     def callback(self, event):
         "run callback function with event."
         func = self.cbs.get(event.kind, None)
@@ -23,21 +31,17 @@ class Handler:
             event.ready()
             return
         name = event.text and event.text.split()[0]
-        event._thr = launch(func, event, name=name)
+        event._thr = Thread.launch(func, event, name=name)
 
     def loop(self):
         "event loop."
-        while True:
-            event = self.poll()
+        while self.running.is_set():
+            event = self.queue.get()
             if not event:
                 break
             event.orig = repr(self)
             self.callback(event)
-
-    def poll(self):
-        "return an event to process."
-        return self.queue.get()
-
+        
     def put(self, event):
         "put event on queue."
         self.queue.put(event)
@@ -46,18 +50,22 @@ class Handler:
         "register callback."
         self.cbs[kind] = callback
 
-    def start(self):
+    def start(self, daemon=True):
         "start event handler loop."
-        launch(self.loop)
+        self.running.set()
+        Thread.launch(self.loop, daemon=daemon)
 
     def stop(self):
         "stop event handler loop."
+        self.running.clear()
         self.queue.put(None)
+
+
+
+"interface"
 
 
 def __dir__():
     return (
-        'CLI',
-        'Client',
-        'Output'
+        'Handler',
     )

@@ -4,69 +4,76 @@
 import unittest
 
 
-from rssbot.objects import Object, items, keys, update, values
+from bigtalk.objects import *
 
 
+import bigtalk.objects
+
+
+TARGET = bigtalk.objects
 VALIDJSON = '{"test": "bla"}'
 
 
-attrs1 = (
-         'Object',
-         'clear',
-         'copy',
-         'fromkeys',
-         'get',
-         'items',
-         'keys',
-         'matchkey',
-         'pop',
-         'popitem',
-         'save',
-         'setdefault',
-         'update',
-         'values',
-        )
+attrs1 = [
+    'Default',
+    'Dict',
+    'Json',
+    'Object',
+]
 
-attrs2 = (
-          '__class__',
-          '__delattr__',
-          '__dict__',
-          '__dir__',
-          '__doc__',
-          '__eq__',
-          '__format__',
-          '__ge__',
-          '__getattribute__',
-          '__gt__',
-          '__hash__',
-          '__init__',
-          '__init_subclass__',
-          '__iter__',
-          '__le__',
-          '__len__',
-          '__lt__',
-          '__module__',
-          '__ne__',
-          '__new__',
-          '__oid__',
-          '__reduce__',
-          '__reduce_ex__',
-          '__repr__',
-          '__setattr__',
-          '__sizeof__',
-          '__slots__',
-          '__str__',
-          '__subclasshook__'
-         )
+
+attrs2 = [
+    '__class__',
+    '__contains__',
+    '__delattr__',
+    '__dict__',
+    '__dir__',
+    '__doc__',
+    '__eq__',
+    '__firstlineno__',
+    '__format__',
+    '__ge__',
+    '__getattribute__',
+    '__getstate__',
+    '__gt__',
+    '__hash__',
+    '__init__',
+    '__init_subclass__',
+    '__iter__',
+    '__le__',
+    '__len__',
+    '__lt__',
+    '__module__',
+    '__ne__',
+    '__new__',
+    '__reduce__',
+    '__reduce_ex__',
+    '__repr__',
+    '__setattr__',
+    '__sizeof__',
+    '__static_attributes__',
+    '__str__',
+    '__subclasshook__',
+    '__weakref__'
+]
 
 
 class TestObject(unittest.TestCase):
 
+    def test_moduleinterface(self):
+        print(dir(TARGET))
+        self.assertTrue(dir(TARGET) == attrs1)
+
+    def test_objectinterface(self):
+        obj = Object()
+        print(dir(obj))
+        self.assertTrue(dir(obj) == attrs2)
+            
     def test_constructor(self):
         obj = Object()
         self.assertTrue(type(obj), Object)
 
-    def test__class(self):
+    def test_class(self):
         obj = Object()
         clz = obj.__class__()
         self.assertTrue("Object" in str(type(clz)))
@@ -122,12 +129,32 @@ class TestObject(unittest.TestCase):
         obj = Object()
         self.assertEqual(len(obj), 0)
 
-    def test_module(self):
-        self.assertTrue(Object().__module__, "rssbot.obejcts")
+    def test_getattr(self):
+        obj = Object()
+        obj.key = "value"
+        self.assertEqual(getattr(obj, "key"), "value")
+
+    def test_keys(self):
+        obj = Object()
+        obj.key = "value"
+        self.assertEqual(list(Dict.keys(obj)), ["key"])
+
+    def test_len(self):
+        obj = Object()
+        self.assertEqual(len(obj), 0)
+
+    def test_items(self):
+        obj = Object()
+        obj.key = "value"
+        self.assertEqual(list(Dict.items(obj)), [("key", "value")])
+
+    def test_register(self):
+        obj = Object()
+        setattr(obj, "key", "value")
+        self.assertEqual(obj.key, "value")
 
     def test_repr(self):
-        self.assertTrue(update(Object(),
-                               {"key": "value"}).__repr__(), {"key": "value"})
+        self.assertTrue(Dict.update(Object(), {"key": "value"}).__repr__(), {"key": "value"})
 
     def test_setattr(self):
         obj = Object()
@@ -138,49 +165,27 @@ class TestObject(unittest.TestCase):
         obj = Object()
         self.assertEqual(str(obj), "{}")
 
-    def test_getattr(self):
+    def test_str(self):
         obj = Object()
-        obj.key = "value"
-        self.assertEqual(getattr(obj, "key"), "value")
-
-    def test_keys(self):
-        obj = Object()
-        obj.key = "value"
-        self.assertEqual(
-            list(keys(obj)),
-            [
-                "key",
-            ],
-        )
-
-    def test_items(self):
-        obj = Object()
-        obj.key = "value"
-        self.assertEqual(
-            list(items(obj)),
-            [
-                ("key", "value"),
-            ],
-        )
-
-    def test_register(self):
-        obj = Object()
-        setattr(obj, "key", "value")
-        self.assertEqual(obj.key, "value")
+        self.assertEqual(str(obj), "{}")
 
     def test_update(self):
         obj = Object()
         obj.key = "value"
         oobj = Object()
-        update(oobj, obj)
+        Dict.update(oobj, obj)
         self.assertTrue(oobj.key, "value")
 
     def test_values(self):
         obj = Object()
         obj.key = "value"
-        self.assertEqual(
-            list(values(obj)),
-            [
-                "value",
-            ],
-        )
+        self.assertEqual(list(Dict.values(obj)), ["value"])
+
+
+class TestComposite(unittest.TestCase):
+
+    def testcomposite(self):
+        obj = Object()
+        obj.obj = Object()
+        obj.obj.a = "test"
+        self.assertEqual(obj.obj.a, "test")
