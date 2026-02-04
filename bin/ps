@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+# This file is placed in the Public Domain.
+
+
+"show ps"
+
+
+import os
+import sys
+
+
+sys.path.insert(0, os.getcwd())
+
+
+NAME = 'rssbot'
+
+
+def main():
+    filename = os.path.expanduser(f"~/.{NAME}/{NAME}.pid")
+    if not os.path.exists(filename):
+        print(f"{NAME} is not running.")
+        return
+    pid = 'none'
+    with open(filename, 'r') as file:
+        pid = int(file.read())
+    txt = f"ps -f -p {pid} -o pid,state,tname,time,vsz,rss,trs"
+    res = ''
+    for line in os.popen(txt):
+        res = line
+    print(res.strip())
+
+
+if __name__ == "__main__":
+    main()
