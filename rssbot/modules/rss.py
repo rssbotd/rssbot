@@ -6,7 +6,9 @@ import html.parser
 import http.client
 import logging
 import os
+import queue
 import re
+import threading
 import time
 import urllib
 import urllib.parse
@@ -24,6 +26,7 @@ from rssbot.methods import Methods
 from rssbot.modules import Cfg
 from rssbot.objects import Dict, Object
 from rssbot.persist import Disk, Locate
+from rssbot.threads import Thread
 from rssbot.utility import Repeater, Time, Utils
 
 
@@ -70,11 +73,19 @@ class Urls(Object):
 seen = Urls()
 
 
+class Errors:
+
+    errors = {}
+    types = {}
+
+
 class Fetcher(Object):
 
-
     def __init__(self):
+        super().__init__()
         self.dosave = False
+        self.stopped = threading.Event()
+        self.todo = queue.Queue()
 
     @staticmethod
     def display(obj):
@@ -105,6 +116,8 @@ class Fetcher(Object):
             urls = []
             counter = 0
             for obj in reversed(getfeed(feed.rss, feed.display_list)):
+                if obj is None:
+                    continue
                 counter += 1
                 fed = Feed()
                 Dict.update(fed, obj)
@@ -133,17 +146,16 @@ class Fetcher(Object):
         if feedname:
             txt = f"[{feedname}] "
         for obj in result:
-            txt2 = txt + self.display(obj)
-            for bot in Broker.objs("announce"):
-                bot.announce(txt2)
-        for obj in result:
-            del obj
+            self.todo.put(txt + self.display(obj))
         return counter
+
+    def output(self):
+        while not self.stopped.is_set():
+            Broker.announce(self.todo.get())
 
     def run(self, silent=False):
         thrs = []
         for _fn, feed in Locate.find(Methods.fqn(Rss)):
-            #thrs.append(Thread.launch(self.fetch, feed, silent))
             self.fetch(feed, silent)
         return thrs
 
@@ -151,8 +163,12 @@ class Fetcher(Object):
         global seenfn
         seenfn = Locate.last(seen) or Methods.ident(seen)
         if repeat:
+            Thread.launch(self.output)
             repeater = Repeater(300.0, self.run)
             repeater.start()
+
+    def stop(self):
+        self.stopped.set()
 
 
 class Parser:
@@ -290,17 +306,21 @@ def cdata(line):
 
 
 def getfeed(url, items):
-    result = [Object(), Object()]
-    if Cfg.debug or url in errors and (time.time() - errors[url]) < 600:
+    result = [None,]
+    if url in Errors.types and '404' in Errors.types[url]:
+        return result
+    if Cfg.debug or url in Errors.errors and (time.time() - Errors.errors[url]) < 600:
         return result
     try:
         rest = geturl(url)
-        if url in errors:
-           del errors[url]
+        if url in Errors.errors:
+           del Errors.errors[url]
+           del Errors.types[url]
     except (http.client.HTTPException, ValueError, HTTPError, URLError) as ex:
-        if url not in errors:
+        if url not in Errors.errors:
             logging.error("%s %s", url, ex)
-        errors[url] = time.time()
+        Errors.errors[url] = time.time()
+        Errors.types[url] = str(ex)
         return result
     if rest:
         if "link" not in items:
@@ -341,7 +361,8 @@ def geturl(url):
             return response
     except TimeoutError as ex:
         logging.error("%s %s", url, ex)
-        errors[url] = time.time()
+        Errors.errors[url] = time.time()
+        Errors.types[url] = str(ex)
         return None
 
 
@@ -500,6 +521,11 @@ def rss(event):
     feed.rss = event.args[0]
     fnm = Disk.write(feed)
     event.reply("ok")
+
+
+def sts(event):
+    for url in Errors.types:
+        event.reply(f"{url} {Errors.types[url]}")
 
 
 def syn(event):

@@ -14,6 +14,12 @@ class Broker:
         Broker.objects[repr(obj)] = obj
 
     @staticmethod
+    def announce(txt):
+        for obj in Broker.objs("announce"):
+            obj.announce(txt)
+        del txt
+
+    @staticmethod
     def get(origin):
         "object by repr(obj)."
         return Broker.objects.get(origin)
