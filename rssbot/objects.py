@@ -31,6 +31,18 @@ class Object:
         return str(self.__dict__)
 
 
+"default"
+
+
+class Default(Object):
+
+    def __getattr__(self, key):
+        return self.__dict__.get(key, "")
+
+
+"dict"
+
+
 class Dict:
 
     @staticmethod
@@ -122,15 +134,6 @@ class Dict:
                 res.append(obj[key])
             return res
         return obj.__dict__.values()
-
-
-"default"
-
-
-class Default(Object):
-
-    def __getattr__(self, key):
-        return self.__dict__.get(key, "")
 
 
 "json"

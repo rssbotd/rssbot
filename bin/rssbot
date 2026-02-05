@@ -21,7 +21,7 @@ from rssbot.methods import Methods
 from rssbot.modules import Cfg
 from rssbot.package import Mods
 from rssbot.utility import Utils
-from rssbot.persist import Workdir
+from rssbot.persist import Disk, Workdir
 from rssbot.utility import Log
 
 
@@ -168,11 +168,13 @@ class Runtime:
     def banner():
         "hello."
         tme = time.ctime(time.time()).replace("  ", " ")
-        print("%s %s since %s (%s)" % (
+        print("%s %s since %s (%s/%s)" % (
             Cfg.name.upper(),
             Cfg.version,
             tme,
             Cfg.level.upper(),
+            (Disk.cached() and 'cached') or (not Disk.cached() and 'direct')
+            
         ))
         sys.stdout.flush()
 
@@ -288,6 +290,8 @@ WantedBy=multi-user.target"""
 def main():
     "main"
     check = Runtime.check
+    if check('b'):
+        Disk.cache()
     if check("d"):
         Scripts.background()
     elif check("c"):

@@ -23,26 +23,29 @@ lock = threading.RLock()
 
 class Cache:
 
+    enable = False
     paths = {}
 
     @staticmethod
     def add(path, obj):
         "put object into cache."
-        Cache.paths[path] = obj
+        if Cache.enable:
+            Cache.paths[path] = obj
 
     @staticmethod
     def get(path):
         "get object from cache."
-        return Cache.paths.get(path, None)
+        if Cache.enable:
+            return Cache.paths.get(path, None)
 
     @staticmethod
     def sync(path, obj):
         "update cached object."
-        #Cache.add(path, obj)
-        try:
-            Dict.update(Cache.paths[path], obj)
-        except KeyError:
-            Cache.add(path, obj)
+        if Cache.enable:
+            try:
+                Dict.update(Cache.paths[path], obj)
+            except KeyError:
+                Cache.add(path, obj)
 
 
 "workdir"
@@ -108,6 +111,14 @@ class Workdir:
 
 
 class Disk:
+
+    @staticmethod
+    def cache():
+        Cache.enable = True
+
+    @staticmethod
+    def cached():
+        return Cache.enable
 
     @staticmethod
     def read(obj, path):
