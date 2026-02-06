@@ -206,7 +206,7 @@ class Fetcher:
         global seenfn
         seenfn = Locate.last(seen) or Methods.ident(seen)
         if repeat:
-            repeater = Repeater(300.0, self.run)
+            repeater = Repeater(600.0, self.run)
             repeater.start()
 
     def stop(self):
