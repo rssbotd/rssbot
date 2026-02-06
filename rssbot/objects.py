@@ -307,7 +307,6 @@ def __dir__():
     return (
         'Default',
         'Dict',
-        'Json'
         'Methods',
         'Object'
     )

@@ -4,6 +4,7 @@
 import unittest
 
 
+from rssbot.encoder import *
 from rssbot.objects import *
 
 

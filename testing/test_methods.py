@@ -7,8 +7,7 @@
 import unittest
 
 
-from rssbot.methods import Methods
-from rssbot.objects import Object
+from rssbot.objects import Methods, Object
 
 
 class TestMethods(unittest.TestCase):

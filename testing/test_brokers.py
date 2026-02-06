@@ -6,7 +6,8 @@ import unittest
 
 from rssbot.brokers import Broker
 from rssbot.clients import Client
-from rssbot.objects import Dict, Json, Object
+from rssbot.encoder import Json
+from rssbot.objects import Dict, Object
 
 
 class TestBroker(unittest.TestCase):

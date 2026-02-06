@@ -10,7 +10,7 @@ import unittest
 from rssbot.clients import Client
 from rssbot.handler import Handler
 from rssbot.message import Message
-from rssbot.methods import Methods
+from rssbot.objects import Methods
 
 
 buffer = []
