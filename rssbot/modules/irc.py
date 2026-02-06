@@ -17,7 +17,7 @@ from rssbot.command import Commands
 from rssbot.message import Message
 from rssbot.modules import Cfg
 from rssbot.objects import Dict, Object, Methods
-from rssbot.persist import Disk, Locate, Util
+from rssbot.persist import Disk, Locate
 from rssbot.threads import Thread
 from rssbot.utility import Utils
 
@@ -606,7 +606,7 @@ def cfg(event):
         )
     else:
         Methods.edit(config, event.sets)
-        Disk.write(config, fnm or Util.ident(config))
+        Disk.write(config, fnm or Methods.ident(config))
         event.reply("ok")
 
 

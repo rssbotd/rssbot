@@ -29,8 +29,11 @@ from rssbot.threads import Thread
 from rssbot.utility import Repeater, Time, Utils
 
 
+"init"
+
+
 def init():
-    Pool.init()
+    #Pool.init()
     fetcher = Fetcher()
     fetcher.start()
     if seenfn:
@@ -38,6 +41,9 @@ def init():
     else:
         logging.warning("%s feeds since %s", Locate.count('rss'), time.ctime(time.time()).replace("  ", " "))
     return fetcher
+
+
+"defines"
 
 
 fetchlock = _thread.allocate_lock()
@@ -50,14 +56,18 @@ seenfn = ""
 skipped = []
 
 
+"classes"
+
+
 class Feed(Default):
 
     pass
     
 
-class Rss(Object):
+class Rss(Default):
 
     def __init__(self):
+        super().__init__()
         self.display_list = "title,link,author"
         self.insertid = None
         self.name = ""
@@ -72,33 +82,39 @@ class Urls(Object):
 seen = Urls()
 
 
-class Pool:
+"fetcher"
 
-    clients = []
-    lock = threading.RLock()
-    #nrcpu = os.cpu_count()
-    nrcpu = 1
-    nrlast = 0
 
-    @staticmethod
-    def add(client):
-        Pool.clients.append(client)
+class Fetcher:
 
-    @staticmethod
-    def init():
-        for _x in range(Pool.nrcpu):
-            clt = Runner()
-            clt.start()
-            Pool.add(clt)
+    def __init__(self):
+        self.dosave = False
+        self.runner = Runner()
+        self.stopped = threading.Event()
+        self.todo = queue.Queue()
 
-    @staticmethod
-    def put(args):
-        with Pool.lock:
-            if Pool.nrlast >= Pool.nrcpu-1:
-                Pool.nrlast = 0
-            clt = Pool.clients[Pool.nrlast]
-            clt.put(args)
-            Pool.nrlast += 1
+    def run(self, silent=False):
+        global seenfn
+        nrs = 0
+        for fnm, feed in Locate.find(Methods.fqn(Rss)):
+            if feed.error:
+                continue
+            self.runner.put((fnm, feed, silent))
+            nrs += 1
+        return nrs
+
+    def start(self, repeat=True):
+        global seenfn
+        seenfn = Locate.last(seen) or Methods.ident(seen)
+        if repeat:
+            repeater = Repeater(Cfg.poll or 600, self.run)
+            repeater.start()
+
+    def stop(self):
+        self.stopped.set()
+
+
+"runner"
 
 
 class Runner:
@@ -123,7 +139,7 @@ class Runner:
             data = getattr(obj, key, None)
             if not data:
                 continue
-            result += unescape(striphtml(data.replace("\n", " ").rstrip()))
+            result += Helpers.unescape(Helpers.striphtml(data.replace("\n", " ").rstrip()))
             result += " - "
         return result[:-2].rstrip()
 
@@ -139,7 +155,7 @@ class Runner:
             see = getattr(seen, feed.rss, [])
             urls = []
             counter = 0
-            for obj in getfeed(fnm, feed, feed.display_list):
+            for obj in Helpers.getfeed(fnm, feed, feed.display_list):
                 if obj is None:
                     continue
                 counter += 1
@@ -182,35 +198,36 @@ class Runner:
         self.stopped.set()
 
 
-'fetcher'
+"'pool of runners"
 
 
-class Fetcher:
+class Pool:
 
-    def __init__(self):
-        self.dosave = False
-        self.stopped = threading.Event()
-        self.todo = queue.Queue()
+    clients = []
+    lock = threading.RLock()
+    #nrcpu = os.cpu_count()
+    nrcpu = 1
+    nrlast = 0
 
-    def run(self, silent=False):
-        global seenfn
-        nrs = 0
-        for fnm, feed in Locate.find(Methods.fqn(Rss)):
-            if feed.error:
-                continue
-            Pool.put((fnm, feed, silent))
-            nrs += 1
-        return nrs
+    @staticmethod
+    def add(client):
+        Pool.clients.append(client)
 
-    def start(self, repeat=True):
-        global seenfn
-        seenfn = Locate.last(seen) or Methods.ident(seen)
-        if repeat:
-            repeater = Repeater(600.0, self.run)
-            repeater.start()
+    @staticmethod
+    def init():
+        for _x in range(Pool.nrcpu):
+            clt = Runner()
+            clt.start()
+            Pool.add(clt)
 
-    def stop(self):
-        self.stopped.set()
+    @staticmethod
+    def put(args):
+        with Pool.lock:
+            if Pool.nrlast >= Pool.nrcpu-1:
+                Pool.nrlast = 0
+            clt = Pool.clients[Pool.nrlast]
+            clt.put(args)
+            Pool.nrlast += 1
 
 
 "parser"
@@ -228,7 +245,7 @@ class Parser:
         index2 = line.find(f"</{item}>", index1)
         if index2 == -1:
             return lne
-        return cdata(line[index1:index2]).strip()
+        return Helpers.cdata(line[index1:index2]).strip()
 
     @staticmethod
     def getitems(text, token):
@@ -255,7 +272,7 @@ class Parser:
             for itm in Utils.spl(items):
                 val = Parser.getitem(line, itm)
                 if val:
-                    obj[itm] = striphtml(unescape(val.strip())).replace("\n", "")
+                    obj[itm] = Helpers.striphtml(Helpers.unescape(val.strip())).replace("\n", "")
             yield obj
 
 
@@ -280,7 +297,7 @@ class OPML:
             index2 = line.find("/>", index1)
         if index2 == -1:
             return lne
-        return cdata(line[index1:index2])
+        return Helpers.cdata(line[index1:index2])
 
     @staticmethod
     def getattrs(line, token):
@@ -317,89 +334,92 @@ class OPML:
 "utilities"
 
 
-def attrs(obj, txt):
-    Dict.update(obj, *list(OPML.parse(txt)))
+class Helpers:
 
+    def attrs(obj, txt):
+        "parse attribute into an object."
+        Dict.update(obj, *list(OPML.parse(txt)))
 
-def cdata(line):
-    if "CDATA" in line:
-        lne = line.replace("![CDATA[", "")
-        lne = lne.replace("]]", "")
-        lne = lne[1:-1]
-        return lne
-    return line
+    def cdata(line):
+        "scrape CDATA block."
+        if "CDATA" in line:
+            lne = line.replace("![CDATA[", "")
+            lne = lne.replace("]]", "")
+            lne = lne[1:-1]
+            return lne
+        return line
 
-
-def getfeed(fnm, feed, items):
-    result = [None,]
-    try:
-        rest = geturl(feed.rss)
-        if not rest:
+    def getfeed(fnm, feed, items):
+        "fetch a feed."
+        result = [None,]
+        try:
+            rest = geturl(feed.rss)
+            if not rest:
+               return result
+            if "link" not in items:
+                items += ",link"
+            if feed.rss.endswith("atom"):
+                yield from Parser.parse(str(rest, "utf-8"), "entry", items) or []
+            else:
+                yield from Parser.parse(str(rest, "utf-8"), "item", items) or []
+        except TimeoutError:
             return result
-        if "link" not in items:
-            items += ",link"
-        if feed.rss.endswith("atom"):
-            yield from Parser.parse(str(rest, "utf-8"), "entry", items) or []
-        else:
-            yield from Parser.parse(str(rest, "utf-8"), "item", items) or []
-    except TimeoutError:
+        except (
+                http.client.HTTPException,
+                ValueError,
+                HTTPError,
+                URLError,
+                UnicodeDecodeError
+        ) as ex:
+            feed.error = str(ex)
+            Disk.write(feed, fnm)
+            logging.error("removed %s %s", feed.rss, ex)
         return result
-    except (
-            http.client.HTTPException,
-            ValueError,
-            HTTPError,
-            URLError,
-            UnicodeDecodeError
-    ) as ex:
-        feed.error = str(ex)
-        Disk.write(feed, fnm)
-        logging.error("disabled %s %s", feed.rss, ex)
-    return result
 
+    def gettinyurl(url):
+        "query tinyurl for a link." 
+        postarray = [
+            ("submit", "submit"),
+            ("url", url),
+        ]
+        postdata = urlencode(postarray, quote_via=quote_plus)
+        req = urllib.request.Request(
+            "http://tinyurl.com/create.php", data=bytes(postdata, "UTF-8")
+        )
+        req.add_header("User-agent", useragent("rss fetcher"))
+        with urllib.request.urlopen(req) as htm:  # nosec
+            for txt in htm.readlines():
+                line = txt.decode("UTF-8").strip()
+                i = re.search('data-clipboard-text="(.*?)"', line, re.M)
+                if i:
+                    return i.groups()
+        return []
 
-def gettinyurl(url):
-    postarray = [
-        ("submit", "submit"),
-        ("url", url),
-    ]
-    postdata = urlencode(postarray, quote_via=quote_plus)
-    req = urllib.request.Request(
-        "http://tinyurl.com/create.php", data=bytes(postdata, "UTF-8")
-    )
-    req.add_header("User-agent", useragent("rss fetcher"))
-    with urllib.request.urlopen(req) as htm:  # nosec
-        for txt in htm.readlines():
-            line = txt.decode("UTF-8").strip()
-            i = re.search('data-clipboard-text="(.*?)"', line, re.M)
-            if i:
-                return i.groups()
-    return []
+    def geturl(url):
+        "fetch an url."
+        url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
+        req = urllib.request.Request(str(url))
+        req.add_header("User-agent", useragent("rss fetcher"))
+        with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
+            return response.read()
 
+    def shortid():
+        "return a shortid."
+        return str(uuid.uuid4())[:8]
 
-def geturl(url):
-    url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
-    req = urllib.request.Request(str(url))
-    req.add_header("User-agent", useragent("rss fetcher"))
-    with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
-        return response.read()
+    def striphtml(text):
+        "strip html."
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text)
 
+    def unescape(text):
+        "unescape html."
+        txt = re.sub(r"\s+", " ", text)
+        return html.unescape(txt)
 
-def shortid():
-    return str(uuid.uuid4())[:8]
-
-
-def striphtml(text):
-    clean = re.compile("<.*?>")
-    return re.sub(clean, "", text)
-
-
-def unescape(text):
-    txt = re.sub(r"\s+", " ", text)
-    return html.unescape(txt)
-
-
-def useragent(txt):
-    return "Mozilla/5.0 (X11; Linux x86_64) " + txt
+    def useragent(txt):
+        "produce useragent string."
+        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
 
 
 "commands"
@@ -415,6 +435,27 @@ def dpl(event):
             Dict.update(feed, setter)
             Disk.write(feed, fnm)
     event.reply("ok")
+
+
+def err(event):
+    nre = 0
+    nrs = 0
+    for fnm, obj in Locate.find(Methods.fqn(Rss)):
+        if not obj.error:
+            continue
+        if event.rest and event.rest in obj.error:
+            nre += 1
+            feed = Rss()
+            Dict.update(feed, obj)
+            feed.__deleted__ = False
+            feed.error = ""
+            Disk.write(feed, fnm)
+            continue
+        if not event.rest:
+            nrs += 1
+            event.reply(f"{nrs} {Methods.fmt(obj)}")
+    if event.rest:
+        event.reply(f'{nre} feeds reset.')
 
 
 def exp(event):
@@ -447,7 +488,7 @@ def imp(event):
         prs = OPML()
         nrs = 0
         nrskip = 0
-        insertid = shortid()
+        insertid = Helpers.shortid()
         for obj in prs.parse(txt, "outline", "name,display_list,xmlUrl"):
             url = obj["xmlUrl"]
             if url in skipped:
@@ -505,21 +546,24 @@ def res(event):
     if len(event.args) != 1:
         event.reply("res <stringinurl>")
         return
+    nrs = 0
     for fnm, fed in Locate.find(Methods.fqn(Rss), removed=True):
         feed = Rss()
         Dict.update(feed, fed)
         if event.args[0] not in feed.rss:
             continue
-        if feed:
-            feed.__deleted__ = False
-            Disk.write(feed, fnm)
-    event.reply("ok")
+        nrs += 1
+        feed.__deleted__ = False
+        Disk.write(feed, fnm)
+    event.reply(f"{nrs} feeds restored.")
 
 
 def rss(event):
     if not event.rest:
         nrs = 0
         for fnm, fed in Locate.find(Methods.fqn(Rss)):
+            if fed.error:
+                continue
             nrs += 1
             elp = Time.elapsed(time.time() - Time.fntime(fnm))
             txt = Methods.fmt(fed)

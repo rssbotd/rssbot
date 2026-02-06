@@ -15,6 +15,7 @@ class Broker:
 
     @staticmethod
     def announce(txt):
+        "announce text on all objects with an announce method."
         for obj in Broker.objs("announce"):
             obj.announce(txt)
         del txt

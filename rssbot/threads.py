@@ -71,9 +71,9 @@ class Thread:
         "run function in a thread."
         with lock:
             try:
-                thread = Task(func, *args, **kwargs)
-                thread.start()
-                return thread
+                task = Task(func, *args, **kwargs)
+                task.start()
+                return task
             except (KeyboardInterrupt, EOFError):
                 _thread.interrupt_main()
 

@@ -35,6 +35,7 @@ Cfg.commands = True
 Cfg.ignore = "rst,udp,web"
 Cfg.level = "info"
 Cfg.name = Utils.pkgname(Commands)
+Cfg.poll = 600
 Cfg.txt = " ".join(sys.argv[1:])
 Cfg.version = 658
 Cfg.wdr = os.path.expanduser(f"~/.{Cfg.name}")
@@ -186,6 +187,11 @@ class Runtime:
         Cfg.ignore = Cfg.sets.ignore or Cfg.ignore or ""
         Cfg.init = Cfg.sets.init or Cfg.init or ""
         Cfg.level = Cfg.sets.level or Cfg.level or "info"
+        try:
+            Cfg.poll = int(Cfg.sets.poll)
+            Cfg.poll > 60
+        except ValueError:
+            pass
         Cfg.wdr = Cfg.sets.wdr or Cfg.wdr or os.path.expanduser(f"~/.{Utils.pkgname(Cfg)}")
         Log.level(Cfg.level)
         Workdir.setwd(Cfg.wdr)
