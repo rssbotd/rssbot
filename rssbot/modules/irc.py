@@ -15,9 +15,8 @@ from rssbot.brokers import Broker
 from rssbot.clients import Output
 from rssbot.command import Commands
 from rssbot.message import Message
-from rssbot.methods import Methods
 from rssbot.modules import Cfg
-from rssbot.objects import Dict, Object
+from rssbot.objects import Dict, Object, Methods
 from rssbot.persist import Disk, Locate, Util
 from rssbot.threads import Thread
 from rssbot.utility import Utils

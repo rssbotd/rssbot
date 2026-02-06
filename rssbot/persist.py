@@ -10,8 +10,8 @@ import pathlib
 import threading
 
 
-from .methods import Methods
-from .objects import Default, Dict, Json, Object
+from .encoder import Json
+from .objects import Default, Dict, Methods, Object
 from .utility import Time
 
 

@@ -17,7 +17,7 @@ from rssbot.clients import Client
 from rssbot.command import Commands
 from rssbot.modules import Cfg
 from rssbot.message import Message
-from rssbot.methods import Methods
+from rssbot.objects import Methods
 from rssbot.package import Mods
 from rssbot.persist import Workdir
 from rssbot.threads import Thread
@@ -225,12 +225,6 @@ pre = {
     "cfg": ["", "nick=mekker"],
     "imp": ["",
          "testing/feeds.opml",
-         "testing/feeds2.opml",
-         'testing/feeds3.opml',
-         'testing/feeds4.opml',
-         'testing/feeds5.opml',
-         'testing/feeds6.opml',
-         'testing/feeds7.opml'
     ],
     "log": ["", "log add"],
     "rss": ["", "http://hnrss.org/newest"],

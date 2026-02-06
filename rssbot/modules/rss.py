@@ -22,9 +22,8 @@ from urllib.parse import quote_plus, urlencode
 
 
 from rssbot.brokers import Broker
-from rssbot.methods import Methods
 from rssbot.modules import Cfg
-from rssbot.objects import Default, Dict, Object
+from rssbot.objects import Default, Dict, Object, Methods
 from rssbot.persist import Disk, Locate
 from rssbot.threads import Thread
 from rssbot.utility import Repeater, Time, Utils

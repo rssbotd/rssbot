@@ -17,8 +17,8 @@ sys.path.insert(0, os.getcwd())
 from rssbot.command import Commands
 from rssbot.clients import Console
 from rssbot.message import Message
-from rssbot.methods import Methods
 from rssbot.modules import Cfg
+from rssbot.objects import Methods
 from rssbot.package import Mods
 from rssbot.utility import Utils
 from rssbot.persist import Disk, Workdir
