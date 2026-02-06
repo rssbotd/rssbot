@@ -21,7 +21,8 @@ class Message:
         self.index = 0
         self.kind = "event"
 
-    def __del__(self):
+    def __del__(self): 
+        # pylint: disable=E4702
         for obj in self.result:
            del obj
         del self.result

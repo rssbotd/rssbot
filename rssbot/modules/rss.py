@@ -194,12 +194,13 @@ class Fetcher:
 
     def run(self, silent=False):
         global seenfn
-        thrs = []
-        nrs = -1
+        nrs = 0
         for fnm, feed in Locate.find(Methods.fqn(Rss)):
             if feed.error:
                 continue
             Pool.put((fnm, feed, silent))
+            nrs += 1
+        return nrs
 
     def start(self, repeat=True):
         global seenfn
@@ -545,11 +546,7 @@ def syn(event):
         return
     fetcher = Fetcher()
     fetcher.start(False)
-    thrs = fetcher.run(True)
-    nrs = 0
-    for thr in thrs:
-        thr.join()
-        nrs += 1
+    nrs = fetcher.run(True)
     event.reply(f"{nrs} feeds synced")
 
 

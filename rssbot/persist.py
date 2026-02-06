@@ -11,7 +11,7 @@ import threading
 
 
 from .encoder import Json
-from .objects import Default, Dict, Methods, Object
+from .objects import Default, Dict, Methods
 from .utility import Time
 
 

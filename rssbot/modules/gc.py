@@ -5,9 +5,6 @@ import gc as garbage
 import sys
 
 
-from rssbot.objects import Methods
-
-
 def gc(event):
     garbage.collect(0)
     garbage.collect(1)
