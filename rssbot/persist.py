@@ -11,7 +11,7 @@ import threading
 
 
 from .methods import Methods
-from .objects import Dict, Json, Object
+from .objects import Default, Dict, Json, Object
 from .utility import Time
 
 
@@ -160,6 +160,10 @@ class Locate:
         return []
 
     @staticmethod
+    def count(kind):
+        return len(Locate.find(kind))
+
+    @staticmethod
     def find(kind, selector={}, removed=False, matching=False, nritems=None):
         "locate objects by matching atributes."
         nrs = 0
@@ -167,7 +171,7 @@ class Locate:
         for pth in Locate.fns(Workdir.long(kind)):
             obj = Cache.get(pth)
             if not obj:
-                obj = Object()
+                obj = Default()
                 Disk.read(obj, pth)
                 Cache.add(pth, obj)
             if not removed and Methods.deleted(obj):

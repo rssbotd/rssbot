@@ -38,10 +38,7 @@ class Client(Handler):
         with self.olock:
             for tme in event.result:
                 self.dosay(event.channel, event.result.get(tme))
-            """for tme in event.result:
-                del event.result[tme]
-            del event.result
-            """
+
     def dosay(self, channel, text):
         "say called by display."
         self.say(channel, text)

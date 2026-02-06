@@ -43,7 +43,7 @@ def init():
 class Config(Object):
 
     channel = f"#{Cfg.name}"
-    commands = False
+    commands = Cfg.commands or False
     control = "!"
     ignore = ["PING", "PONG", "PRIVMSG"] 
     name = Cfg.name

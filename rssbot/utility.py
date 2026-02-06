@@ -97,8 +97,8 @@ class Repeater(Timed):
 
     def run(self):
         "run function and launch timer for next run."
+        Thread.launch(super().run)
         Thread.launch(self.start)
-        super().run()
 
 
 "time"

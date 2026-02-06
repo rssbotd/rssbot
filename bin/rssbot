@@ -31,6 +31,7 @@ from rssbot import modules as MODS
 "config"
 
 
+Cfg.commands = True
 Cfg.ignore = "rst,udp,web"
 Cfg.level = "info"
 Cfg.name = Utils.pkgname(Commands)
@@ -168,13 +169,13 @@ class Runtime:
     def banner():
         "hello."
         tme = time.ctime(time.time()).replace("  ", " ")
-        print("%s %s since %s (%s/%s)" % (
+        print("%s %s since %s (%s/%s/%s)" % (
             Cfg.name.upper(),
             Cfg.version,
             tme,
+            (Cfg.commands and "COMMAND") or (not Cfg.commands and 'NOCOMMAND'),
             Cfg.level.upper(),
-            (Disk.cached() and 'cached') or (not Disk.cached() and 'direct')
-            
+            (Disk.cached() and 'CACHED') or (not Disk.cached() and 'DIRECT')
         ))
         sys.stdout.flush()
 
@@ -198,6 +199,8 @@ class Runtime:
             Runtime.banner()
         if 'a' in Cfg.opts:
             Cfg.init = Mods.list(Cfg.ignore)
+        if 'x' in Cfg.opts:
+            Cfg.commands = True
 
     @staticmethod
     def check(text):
