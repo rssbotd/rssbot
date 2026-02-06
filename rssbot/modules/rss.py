@@ -77,7 +77,8 @@ class Pool:
 
     clients = []
     lock = threading.RLock()
-    nrcpu = os.cpu_count()
+    #nrcpu = os.cpu_count()
+    nrcpu = 1
     nrlast = 0
 
     @staticmethod
@@ -134,8 +135,7 @@ class Runner:
 
     def fetch(self, fnm, feed, silent=False):
         global seenfn
-        #with self.fetchlock:
-        while True:
+        with self.fetchlock:
             result = []
             see = getattr(seen, feed.rss, [])
             urls = []
@@ -162,7 +162,6 @@ class Runner:
             setattr(seen, feed.rss, urls)
             if silent:
                 return counter
-        with seenlock:
             if not seenfn:
                 seenfn = Methods.ident(seen)
             Disk.write(seen, seenfn)
@@ -171,19 +170,14 @@ class Runner:
         if feedname:
             txt = f"[{feedname}] "
         for obj in result:
-            self.todo.put(txt + self.display(obj))
+            Broker.announce(txt + self.display(obj))
         return counter
-
-    def output(self):
-        while not self.stopped.is_set():
-            Broker.announce(self.todo.get())
 
     def put(self, args):
         self.queue.put(args)
 
     def start(self):
         Thread.launch(self.loop)
-        Thread.launch(self.output)
     
     def stop(self):
         self.stopped.set()
@@ -212,7 +206,7 @@ class Fetcher:
         global seenfn
         seenfn = Locate.last(seen) or Methods.ident(seen)
         if repeat:
-            repeater = Repeater(600.0, self.run)
+            repeater = Repeater(300.0, self.run)
             repeater.start()
 
     def stop(self):

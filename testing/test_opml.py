@@ -65,8 +65,8 @@ class TestOPML(unittest.TestCase):
 
     def test_opml(self):
         res = OPML.parse(TXT, "outline", "title,type,text,xmlUrl")
-        self.assertTrue(len(res) == 20)
+        self.assertTrue(len(list(res)) == 20)
 
     def test_import(self):
         res = OPML.parse(TXT2, "outline", "name,display_list,xmlUrl")
-        self.assertTrue(len(res) == 1)
+        self.assertTrue(len(list(res)) == 1)

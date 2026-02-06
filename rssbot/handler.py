@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"a callback engine as handler"
+"callback engine."
 
 
 import queue
