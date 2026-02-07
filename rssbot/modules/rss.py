@@ -22,6 +22,7 @@ from urllib.parse import quote_plus, urlencode
 
 
 from rssbot.brokers import Broker
+from rssbot.clients import ClientPool
 from rssbot.modules import Cfg
 from rssbot.objects import Default, Dict, Object, Methods
 from rssbot.persist import Disk, Locate
@@ -33,7 +34,7 @@ from rssbot.utility import Repeater, Time, Utils
 
 
 def init():
-    #Pool.init()
+    ClientPool.init(1, Runner)
     fetcher = Fetcher()
     fetcher.start()
     if seenfn:
@@ -99,7 +100,7 @@ class Fetcher:
         for fnm, feed in Locate.find(Methods.fqn(Rss)):
             if feed.error:
                 continue
-            self.runner.put((fnm, feed, silent))
+            ClientPool.put((fnm, feed, silent))
             nrs += 1
         return nrs
 
@@ -196,38 +197,6 @@ class Runner:
     
     def stop(self):
         self.stopped.set()
-
-
-"'pool of runners"
-
-
-class Pool:
-
-    clients = []
-    lock = threading.RLock()
-    #nrcpu = os.cpu_count()
-    nrcpu = 1
-    nrlast = 0
-
-    @staticmethod
-    def add(client):
-        Pool.clients.append(client)
-
-    @staticmethod
-    def init():
-        for _x in range(Pool.nrcpu):
-            clt = Runner()
-            clt.start()
-            Pool.add(clt)
-
-    @staticmethod
-    def put(args):
-        with Pool.lock:
-            if Pool.nrlast >= Pool.nrcpu-1:
-                Pool.nrlast = 0
-            clt = Pool.clients[Pool.nrlast]
-            clt.put(args)
-            Pool.nrlast += 1
 
 
 "parser"
@@ -353,7 +322,7 @@ class Helpers:
         "fetch a feed."
         result = [None,]
         try:
-            rest = geturl(feed.rss)
+            rest = Helpers.geturl(feed.rss)
             if not rest:
                return result
             if "link" not in items:
@@ -386,7 +355,7 @@ class Helpers:
         req = urllib.request.Request(
             "http://tinyurl.com/create.php", data=bytes(postdata, "UTF-8")
         )
-        req.add_header("User-agent", useragent("rss fetcher"))
+        req.add_header("User-agent", Helpers.useragent("rss fetcher"))
         with urllib.request.urlopen(req) as htm:  # nosec
             for txt in htm.readlines():
                 line = txt.decode("UTF-8").strip()
@@ -399,7 +368,7 @@ class Helpers:
         "fetch an url."
         url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
         req = urllib.request.Request(str(url))
-        req.add_header("User-agent", useragent("rss fetcher"))
+        req.add_header("User-agent", Helpers.useragent("rss fetcher"))
         with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
             return response.read()
 
