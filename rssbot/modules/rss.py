@@ -305,10 +305,12 @@ class OPML:
 
 class Helpers:
 
+    @staticmethod
     def attrs(obj, txt):
         "parse attribute into an object."
         Dict.update(obj, *list(OPML.parse(txt)))
 
+    @staticmethod
     def cdata(line):
         "scrape CDATA block."
         if "CDATA" in line:
@@ -318,6 +320,7 @@ class Helpers:
             return lne
         return line
 
+    @staticmethod
     def getfeed(fnm, feed, items):
         "fetch a feed."
         result = [None,]
@@ -345,6 +348,7 @@ class Helpers:
             logging.error("removed %s %s", feed.rss, ex)
         return result
 
+    @staticmethod
     def gettinyurl(url):
         "query tinyurl for a link." 
         postarray = [
@@ -364,6 +368,7 @@ class Helpers:
                     return i.groups()
         return []
 
+    @staticmethod
     def geturl(url):
         "fetch an url."
         url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
@@ -372,20 +377,24 @@ class Helpers:
         with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
             return response.read()
 
+    @staticmethod
     def shortid():
         "return a shortid."
         return str(uuid.uuid4())[:8]
 
+    @staticmethod
     def striphtml(text):
         "strip html."
         clean = re.compile("<.*?>")
         return re.sub(clean, "", text)
+    @staticmethod
 
     def unescape(text):
         "unescape html."
         txt = re.sub(r"\s+", " ", text)
         return html.unescape(txt)
 
+    @staticmethod
     def useragent(txt):
         "produce useragent string."
         return "Mozilla/5.0 (X11; Linux x86_64) " + txt
@@ -472,6 +481,8 @@ def imp(event):
             feed = Rss()
             Dict.update(feed, obj)
             feed.rss = obj["xmlUrl"]
+            uri = urllib.parse.urlparse(feed.rss)
+            feed.name = uri.netloc
             feed.insertid = insertid
             Disk.write(feed)
             nrs += 1
@@ -530,7 +541,7 @@ def res(event):
 def rss(event):
     if not event.rest:
         nrs = 0
-        for fnm, fed in Locate.find(Methods.fqn(Rss)):
+        for fnm, fed in Locate.find(Methods.fqn(Rss), event.gets):
             if fed.error:
                 continue
             nrs += 1
