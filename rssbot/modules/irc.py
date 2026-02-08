@@ -15,20 +15,21 @@ from rssbot.brokers import Broker
 from rssbot.clients import Output
 from rssbot.command import Commands
 from rssbot.message import Message
-from rssbot.modules import Cfg
-from rssbot.objects import Dict, Object, Methods
+from rssbot.objects import Default, Dict, Object, Methods
+from rssbot.package import Mods
 from rssbot.persist import Disk, Locate
 from rssbot.threads import Thread
 from rssbot.utility import Utils
 
 
-NAME = Cfg.name or Utils.pkgname(Object)
+NAME = Mods.pkgname(Broker)
 
 
 lock = threading.RLock()
 
 
-def init():
+def init(cfg):
+    Dict.update(Cfg, cfg)
     irc = IRC()
     irc.start()
     irc.events.joined.wait(30.0)
@@ -39,40 +40,35 @@ def init():
     return irc
 
 
-class Config(Object):
+class Config(Default):
 
-    channel = f"#{Cfg.name}"
-    commands = Cfg.commands or False
-    control = "!"
     ignore = ["PING", "PONG", "PRIVMSG"] 
-    name = Cfg.name
-    nick = Cfg.name
-    word = ""
-    port = 6667
-    realname = Cfg.name
-    sasl = False
-    server = "localhost"
-    servermodes = ""
-    sleep = 60
-    username = Cfg.name
-    users = False
-    version = 1
 
-    def __init__(self):
-        super().__init__()
-        self.channel = Config.channel
-        self.commands = Config.commands
-        self.name = Config.name
-        self.nick = Config.nick
-        self.port = Config.port
-        self.realname = Config.realname
-        self.server = Config.server
-        self.username = Config.username
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.channel = f"#{self.name or NAME}"
+        self.commands = self.commands or False
+        self.control = "!"
+        self.name = self.name or NAME
+        self.nick = self.name or NAME
+        self.word = ""
+        self.port = 6667
+        self.realname = self.name or NAME
+        self.sasl = False
+        self.server = "localhost"
+        self.servermodes = ""
+        self.sleep = 60
+        self.username = self.name or NAME
+        self.users = False
+        self.version = 1
 
     def __getattr__(self, name):
         if name not in self:
             return ""
         return self.__getattribute__(name)
+
+
+Cfg = Config()
 
 
 class Event(Message):

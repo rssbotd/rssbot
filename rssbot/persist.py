@@ -10,7 +10,7 @@ import pathlib
 import threading
 
 
-from .encoder import Json
+from .decoder import Json
 from .objects import Default, Dict, Methods
 from .utility import Time
 

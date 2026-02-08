@@ -50,6 +50,7 @@ class Task(threading.Thread):
         "run function."
         func, args = self.queue.get()
         if args and hasattr(args[0], "ready"):
+            print(func, args)
             self.event = args[0]
         try:
             self.result = func(*args)

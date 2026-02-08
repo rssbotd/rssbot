@@ -17,8 +17,7 @@ sys.path.insert(0, os.getcwd())
 from rssbot.command import Commands
 from rssbot.clients import Console
 from rssbot.message import Message
-from rssbot.modules import Cfg
-from rssbot.objects import Methods
+from rssbot.objects import Config, Default, Methods
 from rssbot.package import Mods
 from rssbot.utility import Utils
 from rssbot.persist import Disk, Workdir
@@ -31,13 +30,14 @@ from rssbot import modules as MODS
 "config"
 
 
+Cfg = Config()
 Cfg.commands = True
 Cfg.ignore = "rst,udp,web"
 Cfg.level = "info"
 Cfg.name = Utils.pkgname(Commands)
-Cfg.poll = 600
+Cfg.poll = 300
 Cfg.txt = " ".join(sys.argv[1:])
-Cfg.version = 658
+Cfg.version = 7
 Cfg.wdr = os.path.expanduser(f"~/.{Cfg.name}")
 
 
@@ -87,7 +87,7 @@ class Scripts:
         Workdir.pidfile(Cfg.name)
         Mods.scanner(Mods.list(), Cfg.ignore)
         Commands.add(Cmd.cmd, Cmd.mod, Cmd.ver)
-        Mods.inits(Cfg.default or "irc,mdl,rss,wsd", Cfg.ignore)
+        Mods.inits(Cfg, Cfg.default or "irc,mdl,rss,wsd", Cfg.ignore)
         Runtime.forever()
 
     @staticmethod
@@ -99,7 +99,7 @@ class Scripts:
         Mods.scanner(Mods.list(), Cfg.ignore)
         Commands.add(Cmd.cmd, Cmd.mod, Cmd.ver)
         Commands.cmd(Cfg.txt)
-        Mods.inits(Cfg.init, Cfg.ignore, "w" in Cfg.opts)
+        Mods.inits(Cfg, Cfg.init, Cfg.ignore, "w" in Cfg.opts)
         csl = Term()
         csl.start()
         Runtime.forever()
@@ -125,7 +125,7 @@ class Scripts:
         Workdir.pidfile(Cfg.name)
         Mods.scanner(Mods.list())
         Commands.add(Cmd.cmd, Cmd.mod, Cmd.ver)
-        Mods.inits(Cfg.default or "irc,mdl,rss,wsd", Cfg.ignore)
+        Mods.inits(Cfg, Cfg.default or "irc,mdl,rss,wsd", Cfg.ignore)
         Runtime.forever()
 
 

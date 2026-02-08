@@ -13,11 +13,10 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.clients import Client
+from rssbot.clients import Client, ClientPool
 from rssbot.command import Commands
-from rssbot.modules import Cfg
 from rssbot.message import Message
-from rssbot.objects import Methods
+from rssbot.objects import Config, Methods
 from rssbot.package import Mods
 from rssbot.persist import Workdir
 from rssbot.threads import Thread
@@ -38,12 +37,13 @@ events = queue.Queue()
 
 "config"
 
+Cfg = Config()
 Cfg.debug = True
 Cfg.ignore = ""
 Cfg.level = "info"
 Cfg.name = Mods.pkgname(Commands)
 Cfg.txt = " ".join(sys.argv[1:])
-Cfg.version = 658
+Cfg.version = 7
 Cfg.wdr = ".test"
 
 
@@ -61,7 +61,7 @@ class CLI(Client):
             print(txt)
 
 
-class Pool:
+class ClientPool:
 
     clients = []
     lock = threading.RLock()
@@ -70,24 +70,25 @@ class Pool:
 
     @staticmethod
     def add(client):
-        Pool.clients.append(client)
+        ClientPool.clients.append(client)
 
     @staticmethod
-    def init(clz, nr):
-        Pool.nrcpu = nr
-        for _x in range(Pool.nrcpu):
-            clt = clz()
+    def init(nrcpu, cls):
+        ClientPool.nrcpu = nrcpu
+        for _x in range(ClientPool.nrcpu):
+            clt = cls()
             clt.start()
-            Pool.add(clt)
+            ClientPool.add(clt)
 
     @staticmethod
-    def put(event):
-        with Pool.lock:
-            if Pool.nrlast >= Pool.nrcpu-1:
-                Pool.nrlast = 0
-            clt = Pool.clients[Pool.nrlast]
-            clt.put(event)
-            Pool.nrlast += 1
+    def put(*args):
+        with ClientPool.lock:
+            if ClientPool.nrlast >= ClientPool.nrcpu-1:
+                ClientPool.nrlast = 0
+            clt = ClientPool.clients[ClientPool.nrlast]
+            clt.put(*args)
+            ClientPool.nrlast += 1
+
 
 
 "utilities"
@@ -126,7 +127,7 @@ def payload(todo):
             evt = Message()
             evt.text = f"{cmd} {ex}"
             evt.kind = "command"
-            Pool.put(evt)
+            ClientPool.put(evt)
             events.put(evt)
 
 
@@ -161,9 +162,9 @@ def main():
     if "v" in Cfg.opts:
         banner()
     if "z" in Cfg.opts:
-        Pool.init(CLI, os.cpu_count())
+        ClientPool.init(os.cpu_count(), CLI)
     else:
-        Pool.init(CLI, 1)
+        ClientPool.init(1, CLI)
     starttime = time.time()
     nrs = Cfg.index or 1
     for _x in range(nrs):
@@ -183,7 +184,7 @@ def main():
     percall = (endtime-starttime)/nrevents
     nrs = events.qsize()
     if "v" in Cfg.opts:
-        print(f"{Methods.fmt(Cfg)}")
+        print(f"{Methods.fmt(Cfg, skip='otxt,txt')}")
         print(f"{nrs} events left.")
         print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
 

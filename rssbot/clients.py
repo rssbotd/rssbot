@@ -148,12 +148,13 @@ class ClientPool:
             ClientPool.add(clt)
 
     @staticmethod
-    def put(args):
+    def put(*args):
         with ClientPool.lock:
             if ClientPool.nrlast >= ClientPool.nrcpu-1:
                 ClientPool.nrlast = 0
             clt = ClientPool.clients[ClientPool.nrlast]
-            clt.put(args)
+            print(clt, args)
+            clt.put(*args)
             ClientPool.nrlast += 1
 
 
@@ -162,6 +163,7 @@ class ClientPool:
 
 def __dir__():
     return (
+        'Cfg',
         'Client',
         'ClientPool',
         'Console',

@@ -22,9 +22,7 @@ from urllib.parse import quote_plus, urlencode
 
 
 from rssbot.brokers import Broker
-from rssbot.clients import ClientPool
-from rssbot.modules import Cfg
-from rssbot.objects import Default, Dict, Object, Methods
+from rssbot.objects import Config, Default, Dict, Object, Methods
 from rssbot.persist import Disk, Locate
 from rssbot.threads import Thread
 from rssbot.utility import Repeater, Time, Utils
@@ -33,8 +31,9 @@ from rssbot.utility import Repeater, Time, Utils
 "init"
 
 
-def init():
-    ClientPool.init(1, Runner)
+def init(cfg):
+    Dict.update(Cfg, cfg)
+    RunnerPool.init(1, Runner)
     fetcher = Fetcher()
     fetcher.start()
     if seenfn:
@@ -57,7 +56,41 @@ seenfn = ""
 skipped = []
 
 
+Cfg = Config()
+
+
 "classes"
+
+
+class RunnerPool:
+
+    runners = []
+    lock = threading.RLock()
+    nrcpu = 1
+    nrlast = 0
+
+    @staticmethod
+    def add(client):
+        RunnerPool.runners.append(client)
+
+    @staticmethod
+    def init(nrcpu, cls):
+        RunnerPool.nrcpu = nrcpu
+        for _x in range(RunnerPool.nrcpu):
+            clt = cls()
+            clt.start()
+            RunnerPool.add(clt)
+
+    @staticmethod
+    def put(*args):
+        if not RunnerPool.runners:
+            RunnerPool.init(1, Runner)
+        with RunnerPool.lock:
+            if RunnerPool.nrlast >= RunnerPool.nrcpu-1:
+                RunnerPool.nrlast = 0
+            clt = RunnerPool.runners[RunnerPool.nrlast]
+            clt.put(*args)
+            RunnerPool.nrlast += 1
 
 
 class Feed(Default):
@@ -98,9 +131,9 @@ class Fetcher:
         global seenfn
         nrs = 0
         for fnm, feed in Locate.find(Methods.fqn(Rss)):
-            if feed.error:
+            if feed.skip:
                 continue
-            ClientPool.put((fnm, feed, silent))
+            RunnerPool.put((fnm, feed, silent))
             nrs += 1
         return nrs
 
@@ -175,7 +208,8 @@ class Runner:
                 if self.dosave:
                     Disk.write(fed)
                 result.append(fed)
-            setattr(seen, feed.rss, urls)
+            if urls:
+                setattr(seen, feed.rss, urls)
             if silent:
                 return counter
             if not seenfn:
@@ -305,6 +339,19 @@ class OPML:
 
 class Helpers:
 
+    modified = {}
+    etags = {}
+    skip = [
+        '403',
+        '404',
+        '410',
+        '500',
+        '503',
+        'not valid',
+        'not known',
+        'failed'
+    ]
+
     @staticmethod
     def attrs(obj, txt):
         "parse attribute into an object."
@@ -319,6 +366,13 @@ class Helpers:
             lne = lne[1:-1]
             return lne
         return line
+
+    @staticmethod
+    def doskip(error):
+        for err in Helpers.skip:
+            if err in error:
+                return True
+        return False
 
     @staticmethod
     def getfeed(fnm, feed, items):
@@ -337,15 +391,19 @@ class Helpers:
         except TimeoutError:
             return result
         except (
+                urllib.error.URLError,
                 http.client.HTTPException,
                 ValueError,
                 HTTPError,
                 URLError,
-                UnicodeDecodeError
+                UnicodeDecodeError,
+                ConnectionResetError
         ) as ex:
             feed.error = str(ex)
-            Disk.write(feed, fnm)
-            logging.error("removed %s %s", feed.rss, ex)
+            if Helpers.doskip(feed.error):
+                feed.skip = True
+                Disk.write(feed, fnm)
+                logging.error("removed %s %s", feed.rss, ex)
         return result
 
     @staticmethod
@@ -374,13 +432,21 @@ class Helpers:
         url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
         req = urllib.request.Request(str(url))
         req.add_header("User-agent", Helpers.useragent("rss fetcher"))
+        since = Helpers.modified.get(url, '')
+        if since:
+            req.add_header('If-Modified-Since', since)
         with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
+            if response.status == 304:
+                return ""
+            Helpers.modified[url] = response.headers.get('Last-Modified', "")
+            Helpers.etags[url] = response.headers.get('Etag', '')
             return response.read()
 
     @staticmethod
     def shortid():
         "return a shortid."
         return str(uuid.uuid4())[:8]
+
 
     @staticmethod
     def striphtml(text):
@@ -467,7 +533,7 @@ def imp(event):
         nrs = 0
         nrskip = 0
         insertid = Helpers.shortid()
-        for obj in prs.parse(txt, "outline", "name,display_list,xmlUrl"):
+        for obj in prs.parse(txt, "outline", "name,xmlUrl"):
             url = obj["xmlUrl"]
             if url in skipped:
                 continue
@@ -479,10 +545,14 @@ def imp(event):
                 nrskip += 1
                 continue
             feed = Rss()
-            Dict.update(feed, obj)
             feed.rss = obj["xmlUrl"]
+            del obj["xmlUrl"]
+            Dict.update(feed, obj)
             uri = urllib.parse.urlparse(feed.rss)
-            feed.name = uri.netloc
+            if uri.netloc.count(".") >= 2:
+                feed.name = ".".join(uri.netloc.split('.')[1:-1])
+            else:
+                feed.name = '.'.join(uri.netloc.split('.')[:-1])
             feed.insertid = insertid
             Disk.write(feed)
             nrs += 1

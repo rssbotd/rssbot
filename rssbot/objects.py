@@ -38,6 +38,17 @@ class Default(Object):
         return self.__dict__.get(key, "")
 
 
+class Config(Default):
+
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        if args:
+           Dict.update(self, args[0])
+        if kwargs:
+           Dict.update(self, kwargs)
+
+
 "dict"
 
 
@@ -304,6 +315,7 @@ class Methods:
 
 def __dir__():
     return (
+        'Config',
         'Default',
         'Dict',
         'Methods',
