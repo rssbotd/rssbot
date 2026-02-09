@@ -40,7 +40,6 @@ class Default(Object):
 
 class Config(Default):
 
-
     def __init__(self, *args, **kwargs):
         super().__init__()
         if args:

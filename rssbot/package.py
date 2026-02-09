@@ -45,11 +45,8 @@ class Mods:
                     continue
                 modname = f"{pkgname}.{name}"
                 mod =  Mods.modules.get(modname, None)
-                if mod:
-                    logging.debug(f"cache {mod}")
-                else:
+                if not mod:
                     mod = Mods.importer(modname, os.path.join(path, fnm))
-                    logging.debug(f"import {mod}")
                 if mod:
                     yield name, mod
 

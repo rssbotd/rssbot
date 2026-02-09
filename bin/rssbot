@@ -37,7 +37,7 @@ Cfg.level = "info"
 Cfg.name = Utils.pkgname(Commands)
 Cfg.poll = 300
 Cfg.txt = " ".join(sys.argv[1:])
-Cfg.version = 7
+Cfg.version = 658
 Cfg.wdr = os.path.expanduser(f"~/.{Cfg.name}")
 
 

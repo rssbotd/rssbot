@@ -93,10 +93,20 @@ class RunnerPool:
             RunnerPool.nrlast += 1
 
 
+class Etags(Default):
+
+    pass
+
+
 class Feed(Default):
 
     pass
-    
+
+
+class Modified(Default):
+
+    pass
+
 
 class Rss(Default):
 
@@ -201,7 +211,6 @@ class Runner:
                     uurl = f"{url.scheme}://{url.netloc}/{url.path}"
                 else:
                     uurl = fed.link
-                uurl = urllib.parse.unquote(uurl, errors='ignore')
                 urls.append(uurl)
                 if uurl in see:
                     continue
@@ -233,6 +242,144 @@ class Runner:
         self.stopped.set()
 
 
+"utilities"
+
+
+class Helpers:
+
+    modified = {}
+    skip = [
+        '403',
+        '404',
+        '410',
+        '500',
+        '503',
+        'not valid',
+        'not known',
+        'failed'
+    ]
+
+    @staticmethod
+    def attrs(obj, txt):
+        "parse attribute into an object."
+        Dict.update(obj, *list(OPML.parse(txt)))
+
+    @staticmethod
+    def cdata(line):
+        "scrape CDATA block."
+        if "CDATA" in line:
+            lne = line.replace("![CDATA[", "")
+            lne = lne.replace("]]", "")
+            lne = lne[1:-1]
+            return lne
+        return line
+
+    @staticmethod
+    def doskip(error):
+        for err in Helpers.skip:
+            if err in error:
+                return True
+        return False
+
+    @staticmethod
+    def getfeed(fnm, feed, items):
+        "fetch a feed."
+        result = [None,]
+        try:
+            response = Helpers.geturl(feed.rss)
+            if not response.data:
+               return result
+            if "link" not in items:
+                items += ",link"
+            if feed.rss.endswith("atom"):
+                yield from Parser.parse(str(response.data, "utf-8"), "entry", items) or []
+            else:
+                yield from Parser.parse(str(response.data, "utf-8"), "item", items) or []
+        except TimeoutError:
+            return result
+        except (
+                urllib.error.URLError,
+                http.client.HTTPException,
+                ValueError,
+                HTTPError,
+                URLError,
+                UnicodeDecodeError,
+                ConnectionResetError
+        ) as ex:
+            if '304' in str(ex):
+                return result
+            feed.error = str(ex)
+            logging.debug("%s %s", feed.rss, feed.error)
+            if Helpers.doskip(feed.error):
+                feed.skip = True
+                Disk.write(feed, fnm)
+                logging.error("removed %s %s", feed.rss, ex)
+        return result
+
+    @staticmethod
+    def gettinyurl(url):
+        "query tinyurl for a link." 
+        postarray = [
+            ("submit", "submit"),
+            ("url", url),
+        ]
+        postdata = urlencode(postarray, quote_via=quote_plus)
+        req = urllib.request.Request(
+            "http://tinyurl.com/create.php", data=bytes(postdata, "UTF-8")
+        )
+        req.add_header("User-agent", Helpers.useragent("rss fetcher"))
+        with urllib.request.urlopen(req) as htm:  # nosec
+            for txt in htm.readlines():
+                line = txt.decode("UTF-8").strip()
+                i = re.search('data-clipboard-text="(.*?)"', line, re.M)
+                if i:
+                    return i.groups()
+        return []
+
+    @staticmethod
+    def geturl(url):
+        "fetch an url."
+        url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
+        req = urllib.request.Request(str(url))
+        req.add_header("User-Agent", Helpers.useragent("RSS Fetcher"))
+        since = Helpers.modified.get(url, "")
+        if since:
+            req.add_header('If-Modified-Since', since)
+        logging.debug(f"fetching {url} {req.headers}")
+        with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
+            modified = response.headers.get('Last-Modified', "")
+            if modified:
+                Helpers.modified[url] = modified
+            response.data = response.read()
+            return response
+
+    @staticmethod
+    def shortid():
+        "return a shortid."
+        return str(uuid.uuid4())[:8]
+
+    @staticmethod
+    def striphtml(text):
+        "strip html."
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text)
+
+    @staticmethod
+    def unescape(text):
+        "unescape html."
+        txt = re.sub(r"\s+", " ", text)
+        return html.unescape(txt)
+
+    @staticmethod
+    def unquote(url):
+        return urllib.parse.unquote(url, errors='ignore')
+
+    @staticmethod
+    def useragent(txt):
+        "produce useragent string."
+        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
+
+
 "parser"
 
 
@@ -251,11 +398,13 @@ class Parser:
         return Helpers.cdata(line[index1:index2]).strip()
 
     @staticmethod
-    def getitems(text, token):
+    def getitems(text, token, nrs=None):
         index = 0
         result = []
         stop = False
+        nrx = 0
         while not stop:
+            nrx += 1
             index1 = text.find(f"<{token}", index)
             if index1 == -1:
                 break
@@ -264,6 +413,8 @@ class Parser:
             if index2 == -1:
                 break
             result.append(text[index1:index2])
+            if nrs and nrx >= nrs:
+                break
             index = index2
         return result
 
@@ -334,139 +485,24 @@ class OPML:
             yield obj
 
 
-"utilities"
-
-
-class Helpers:
-
-    modified = {}
-    etags = {}
-    skip = [
-        '403',
-        '404',
-        '410',
-        '500',
-        '503',
-        'not valid',
-        'not known',
-        'failed'
-    ]
-
-    @staticmethod
-    def attrs(obj, txt):
-        "parse attribute into an object."
-        Dict.update(obj, *list(OPML.parse(txt)))
-
-    @staticmethod
-    def cdata(line):
-        "scrape CDATA block."
-        if "CDATA" in line:
-            lne = line.replace("![CDATA[", "")
-            lne = lne.replace("]]", "")
-            lne = lne[1:-1]
-            return lne
-        return line
-
-    @staticmethod
-    def doskip(error):
-        for err in Helpers.skip:
-            if err in error:
-                return True
-        return False
-
-    @staticmethod
-    def getfeed(fnm, feed, items):
-        "fetch a feed."
-        result = [None,]
-        try:
-            rest = Helpers.geturl(feed.rss)
-            if not rest:
-               return result
-            if "link" not in items:
-                items += ",link"
-            if feed.rss.endswith("atom"):
-                yield from Parser.parse(str(rest, "utf-8"), "entry", items) or []
-            else:
-                yield from Parser.parse(str(rest, "utf-8"), "item", items) or []
-        except TimeoutError:
-            return result
-        except (
-                urllib.error.URLError,
-                http.client.HTTPException,
-                ValueError,
-                HTTPError,
-                URLError,
-                UnicodeDecodeError,
-                ConnectionResetError
-        ) as ex:
-            feed.error = str(ex)
-            if Helpers.doskip(feed.error):
-                feed.skip = True
-                Disk.write(feed, fnm)
-                logging.error("removed %s %s", feed.rss, ex)
-        return result
-
-    @staticmethod
-    def gettinyurl(url):
-        "query tinyurl for a link." 
-        postarray = [
-            ("submit", "submit"),
-            ("url", url),
-        ]
-        postdata = urlencode(postarray, quote_via=quote_plus)
-        req = urllib.request.Request(
-            "http://tinyurl.com/create.php", data=bytes(postdata, "UTF-8")
-        )
-        req.add_header("User-agent", Helpers.useragent("rss fetcher"))
-        with urllib.request.urlopen(req) as htm:  # nosec
-            for txt in htm.readlines():
-                line = txt.decode("UTF-8").strip()
-                i = re.search('data-clipboard-text="(.*?)"', line, re.M)
-                if i:
-                    return i.groups()
-        return []
-
-    @staticmethod
-    def geturl(url):
-        "fetch an url."
-        url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
-        req = urllib.request.Request(str(url))
-        req.add_header("User-agent", Helpers.useragent("rss fetcher"))
-        since = Helpers.modified.get(url, '')
-        if since:
-            req.add_header('If-Modified-Since', since)
-        with urllib.request.urlopen(req, timeout=5.0) as response:  # nosec
-            if response.status == 304:
-                return ""
-            Helpers.modified[url] = response.headers.get('Last-Modified', "")
-            Helpers.etags[url] = response.headers.get('Etag', '')
-            return response.read()
-
-    @staticmethod
-    def shortid():
-        "return a shortid."
-        return str(uuid.uuid4())[:8]
-
-
-    @staticmethod
-    def striphtml(text):
-        "strip html."
-        clean = re.compile("<.*?>")
-        return re.sub(clean, "", text)
-    @staticmethod
-
-    def unescape(text):
-        "unescape html."
-        txt = re.sub(r"\s+", " ", text)
-        return html.unescape(txt)
-
-    @staticmethod
-    def useragent(txt):
-        "produce useragent string."
-        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
-
-
 "commands"
+
+
+def atr(event):
+    if not event.rest:
+        event.reply("atr <stringinurl>")
+        return
+    for fnm, obj in Locate.find(Methods.fqn(Rss), {'rss': event.rest}):
+        request = Helpers.geturl(obj.rss)
+        if obj.rss.endswith('atom'):
+            res = list(Parser.getitems(str(request.data, 'utf-8', errors='ignore'), 'entry', 1))
+        else:
+            res = list(Parser.getitems(str(request.data, 'utf-8', errors='ignore'), 'item', 1))
+        result = []
+        for x in re.findall('<.*?>', res[0]):
+           if x[1] == '/' and len(x) > 4:
+              result.append(x[2:-1])
+        event.reply(','.join(result))
 
 
 def dpl(event):
@@ -484,7 +520,7 @@ def dpl(event):
 def err(event):
     nre = 0
     nrs = 0
-    for fnm, obj in Locate.find(Methods.fqn(Rss)):
+    for fnm, obj in Locate.find(Methods.fqn(Rss), event.gets):
         if not obj.error:
             continue
         if event.rest and event.rest in obj.error:
@@ -612,7 +648,7 @@ def rss(event):
     if not event.rest:
         nrs = 0
         for fnm, fed in Locate.find(Methods.fqn(Rss), event.gets):
-            if fed.error:
+            if fed.skip:
                 continue
             nrs += 1
             elp = Time.elapsed(time.time() - Time.fntime(fnm))
