@@ -13,10 +13,10 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.clients import Client, ClientPool
-from rssbot.command import Commands
+from rssbot.clients import Client
+from rssbot.command import Cfg, Commands
 from rssbot.message import Message
-from rssbot.objects import Config, Methods
+from rssbot.objects import Methods
 from rssbot.package import Mods
 from rssbot.persist import Workdir
 from rssbot.threads import Thread
@@ -37,13 +37,13 @@ events = queue.Queue()
 
 "config"
 
-Cfg = Config()
+
 Cfg.debug = True
 Cfg.ignore = ""
 Cfg.level = "info"
 Cfg.name = Mods.pkgname(Commands)
 Cfg.txt = " ".join(sys.argv[1:])
-Cfg.version = 658
+Cfg.version = 455
 Cfg.wdr = ".test"
 
 
