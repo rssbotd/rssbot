@@ -29,8 +29,8 @@ from rssbot import modules as MODS
 Main.default = "irc,rss,thr"
 Main.ignore = "udp"
 Main.level = "info"
-Main.local = True
-Main.version = 455
+Main.local = False
+Main.version = 657
 Main.wdr = os.path.expanduser(f"~/.{Main.name}")
 
 
@@ -283,8 +283,8 @@ class Scripts:
     def service(args):
         "service script."
         Runtime.privileges()
-        Runtime.banner()
         Runtime.boot(args, MODS)
+        Runtime.banner()
         Workdir.pidfile(Main.name)
         Commands.add(Cmd.cmd, Cmd.mod, Cmd.ver)
         Runtime.init(Main)
