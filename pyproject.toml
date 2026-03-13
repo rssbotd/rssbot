@@ -8,7 +8,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'rssbot'
-description = '24/7 IRC Feed Fetcher, a contribution back to society. Public Domain.'
+description = '24/7 IRC Feed Fetcher, a contribution back to society.'
 version = '658'
 authors = [
     {name = 'Bart Thate',email = 'rssbotd@gmail.com'},
@@ -33,5 +33,5 @@ classifiers = [
 packages=[
     'rssbot',
     'rssbot.modules',
-    'rssbot.nucleus'
+    'rssbot.network'
 ]
