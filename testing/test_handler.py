@@ -7,10 +7,7 @@
 import unittest
 
 
-from rssbot.clients import Client
-from rssbot.handler import Handler
-from rssbot.message import Message
-from rssbot.objects import Methods
+from rssbot.handler import Event, Client, Handler
 
 
 buffer = []
@@ -43,7 +40,7 @@ class TestHandler(unittest.TestCase):
         self.hdl.stop()
 
     def test_callback(self):
-        evt = Message()
+        evt = Event()
         evt.kind = "hello"
         evt.text = "hello"
         self.hdl.callback(evt)
@@ -51,7 +48,7 @@ class TestHandler(unittest.TestCase):
         self.assertTrue("hello" in evt.result.values())
 
     def test_loop(self):
-        evt = Message()
+        evt = Event()
         evt.kind = "hello"
         self.hdl.put(evt)
         evt.wait()
@@ -59,21 +56,21 @@ class TestHandler(unittest.TestCase):
 
     def test_put(self):
         hdl = Handler()
-        evt = Message()
+        evt = Event()
         evt.kind = "hello"
         hdl.put(evt)
         event = hdl.queue.get()
         self.assertTrue(event is evt)
-    
+
     def test_register(self):
         self.hdl.register("hlo", hello)
         self.assertTrue(hello in self.hdl.cbs.values())
-    
+
     def test_start(self):
         hdl = Handler()
         hdl.start()
         self.assertTrue(hdl.running.is_set())
-    
+
     def test_stop(self):
         self.hdl.stop()
         self.assertTrue(not self.hdl.running.is_set())
@@ -95,7 +92,7 @@ class TestClient(unittest.TestCase):
         self.assertTrue("hello" in buffer)
 
     def test_display(self):
-        evt = Message()
+        evt = Event()
         evt.reply("test1")
         evt.reply("test2")
         self.clt.display(evt)
@@ -106,25 +103,43 @@ class TestClient(unittest.TestCase):
     def test_dosay(self):
         self.clt.dosay("#channel", "yo!")
         self.assertTrue("yo!" in buffer)
-    
+
     def test_loop(self):
-        evt = Message()
+        evt = Event()
         evt.kind = "hello"
         evt.text = "hello bot"
         self.clt.put(evt)
         evt.wait()
         self.assertTrue("hello bot" in evt.result.values())
-    
+
     def test_poll(self):
         clt = Client()
-        evt = Message()
+        evt = Event()
         evt.text = "okdan"
         clt.iqueue.put(evt)
         event = clt.poll()
         self.assertTrue(event is evt)
-     
+
     def test_put(self):
-        evt = Message()
+        evt = Event()
         evt.type = "hello"
         self.clt.put(evt)
-                      
+
+
+class TestMessage(unittest.TestCase):
+
+    def test_ready(self):
+        msg = Event()
+        msg.ready()
+        self.assertTrue(msg._ready.is_set())
+
+    def test_reply(self):
+        msg = Event()
+        msg.reply("test")
+        self.assertTrue("test" in msg.result.values())
+
+    def test_wait(self):
+        msg = Event()
+        msg.ready()
+        msg.wait()
+        self.assertTrue(msg._ready.is_set())

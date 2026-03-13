@@ -4,13 +4,18 @@
 "utilities"
 
 
+import time
 import unittest
 
-import rssbot.utility as TARGET
+
+from rssbot.utility import Utils
 
 
 class TestUtilities(unittest.TestCase):
 
-    def test_interface(self):
-        print(dir(TARGET))
-        self.assertTrue(True)
+    def test_pkgname(self):
+        self.assertEqual(Utils.pkgname(Utils), "rssbot")
+
+    def test_strptime(self):
+        date = time.strptime("2019-3-4 22:22", "%Y-%m-%d %H:%M")
+        self.assertTrue(date is not None)

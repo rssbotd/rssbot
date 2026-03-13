@@ -9,45 +9,55 @@ import logging
 import os
 
 
-from .command import Commands
-from .objects import Dict
-from .threads import Thread
 from .utility import Utils
-
-
-"mods"
 
 
 class Mods:
 
     dirs = {}
+    md5s = {}
     modules = {}
 
     @staticmethod
-    def init(name, path):
-        "add modules directory." 
-        Mods.dirs[name] = path
+    def add(name, path):
+        "add modules directory."
+        if os.path.exists(path):
+            Mods.dirs[name] = path
 
     @staticmethod
-    def get(modlist, ignore=""):
+    def all():
+        Mods.iter(Mods.list())
+
+    @staticmethod
+    def get(modname):
+        "return module."
+        result = list(Mods.iter(modname))
+        if result:
+            return result[0][-1]
+
+    @staticmethod
+    def has(attr):
+        "return list of modules containing an attribute."
+        result = []
+        for mod in Mods.modules.values():
+            if getattr(mod, attr, False):
+                result.append(mod.__name__.split(".")[-1])
+        return ",".join(result)
+
+    @staticmethod
+    def iter(modlist, ignore=""):
         "loop over modules."
-        for pkgname, path in Mods.dirs.items():
-            if not os.path.exists(path):
+        for name in Utils.spl(modlist):
+            if ignore and name in Utils.spl(ignore):
                 continue
-            for fnm in os.listdir(path):
-                if fnm.startswith("__"):
-                    continue
-                if not fnm.endswith(".py"):
-                    continue
-                name = fnm[:-3]
-                if name not in Utils.spl(modlist):
-                    continue
-                if ignore and name in Utils.spl(ignore):
+            for pkgname, path in Mods.dirs.items():
+                fnm = os.path.join(path, name + ".py")
+                if not os.path.exists(fnm):
                     continue
                 modname = f"{pkgname}.{name}"
-                mod =  Mods.modules.get(modname, None)
+                mod = Mods.modules.get(modname, None)
                 if not mod:
-                    mod = Mods.importer(modname, os.path.join(path, fnm))
+                    mod = Mods.importer(modname, fnm)
                 if mod:
                     yield name, mod
 
@@ -72,54 +82,38 @@ class Mods:
         else:
             spec = importlib.util.find_spec(name)
         if not spec or not spec.loader:
-            logging.debug(f"missing spec or loader for {name}")
+            logging.debug("missing spec or loader for %s", name)
             return None
+        md5 = Mods.md5s.get(name)
+        md5sum = Utils.md5sum(spec.loader.path)
+        if md5 and md5sum != md5:
+            logging.error("md5 mismatch %s", spec.loader.path)
+        else:
+            Mods.md5s[name] = md5sum
         mod = importlib.util.module_from_spec(spec)
         if not mod:
-            logging.debug(f"can't load {name} module from spec")
+            logging.debug("can't load %s module", name)
             return None
         Mods.modules[name] = mod
         spec.loader.exec_module(mod)
         return mod
 
     @staticmethod
-    def pkgname(obj):
-        "package name of an object."
-        return obj.__module__.split(".")[0]
+    def path(name):
+        for pkgname, path in Mods.dirs.items():
+            pth = os.path.join(path, name + ".py")
+            if os.path.exists(pth):
+                return pth
 
     @staticmethod
-    def inits(modlist, ignore="", wait=False):
-        "scan named modules for commands."
-        thrs = []
-        for name, mod in Mods.get(modlist, ignore):
-            if "init" in dir(mod):
-                thrs.append((name, Thread.launch(mod.init)))
-        if wait:
-            for name, thr in thrs:
-                thr.join()
-        
-    @staticmethod
-    def scanner(modlist, ignore=""):
-        "scan named modules for commands."
-        res = []
-        for name, mod in Mods.get(modlist, ignore):
-            Commands.scan(mod)
-            res.append((name, mod))
-        return res
+    def pkg(package):
+        return Mods.add(package.__name__, package.__path__[0])
 
     @staticmethod
-    def shutdown():
-        "call shutdown on modules."
-        logging.debug("shutdown")
-        for mod in Dict.values(Mods.modules):
-            if "shutdown" in dir(mod):
-                try:
-                    mod.shutdown()
-                except Exception as ex:
-                    logging.exception(ex)
-
-
-"interface"
+    def sums():
+        mod = Mods.get("tbl")
+        if mod:
+            Mods.md5s = getattr(mod, "MD5", {})
 
 
 def __dir__():

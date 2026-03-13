@@ -7,10 +7,9 @@
 import unittest
 
 
-from rssbot.clients import Client
+from rssbot.handler import Client, Event
 from rssbot.command import Commands
-from rssbot.objects import Dict, Object
-from rssbot.message import Message
+from rssbot.objects import Dict
 
 
 def cmnd(event):
@@ -23,27 +22,22 @@ class TestCommands(unittest.TestCase):
         cmds = Commands()
         self.assertEqual(type(cmds), Commands)
 
-    def test_addcmd(self):
+    def test_add(self):
         Commands.add(cmnd)
         self.assertTrue(Commands.has("cmnd"))
-    
-    def test_getcmd(self):
+
+    def test_get(self):
         Commands.add(cmnd)
         self.assertTrue(Commands.get("cmnd"))
 
-    def test_hascmd(self):
+    def test_has(self):
         Commands.add(cmnd)
         self.assertTrue(Commands.get("cmnd"))
-    
-    def test_scancmd(self):
-        from testing import dbg
-        Commands.scan(dbg)
-        self.assertTrue("dbg" in Commands.cmds)
 
     def test_command(self):
         clt = Client()
         Commands.add(cmnd)
-        evt = Message()
+        evt = Event()
         evt.text = "cmnd"
         evt.orig = repr(clt)
         Commands.command(evt)

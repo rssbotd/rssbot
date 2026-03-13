@@ -5,25 +5,12 @@
 
 
 import inspect
+import logging
 
 
 from .brokers import Broker
-from .message import Message
-from .objects import Default, Methods
-
-
-"config"
-
-
-class Config(Default):
-
-    pass
-
-
-Cfg = Config()
-
-
-"commands"
+from .objects import Methods
+from .package import Mods
 
 
 class Commands:
@@ -37,24 +24,21 @@ class Commands:
         for func in args:
             name = func.__name__
             Commands.cmds[name] = func
-            Commands.names[name] = func.__module__.split(".")[-1]
-
-    @staticmethod
-    def cmd(text):
-        "parse text for command and run it."
-        for txt in text.split(" ! "):
-            evt = Message()
-            evt.text = txt
-            evt.type = "command"
-            Commands.command(evt)
-            evt.wait()
-        return evt
+            modname = func.__module__.split(".")[-1]
+            if "__" in modname:
+                continue
+            Commands.names[name] = modname
 
     @staticmethod
     def command(evt):
         "command callback."
         Methods.parse(evt, evt.text)
         func = Commands.get(evt.cmd)
+        if not func:
+            name = Commands.names.get(evt.cmd)
+            if name:
+                logging.info("ondemand %s", name)
+                func = getattr(Mods.get(name), evt.cmd)
         if func:
             func(evt)
             bot = Broker.get(evt.orig)
@@ -77,11 +61,17 @@ class Commands:
         "scan a module for functions with event as argument."
         for key, cmdz in inspect.getmembers(module, inspect.isfunction):
             if 'event' not in inspect.signature(cmdz).parameters:
-               continue
+                continue
             Commands.add(cmdz)
 
-
-"interface"
+    @staticmethod
+    def table():
+        mod = Mods.get("tbl")
+        if not mod:
+            return
+        names = getattr(mod, "NAMES", None)
+        if names:
+            Commands.names.update(names)
 
 
 def __dir__():

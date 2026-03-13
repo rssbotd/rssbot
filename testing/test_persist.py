@@ -1,6 +1,9 @@
 # This file is placed in the Public Domain.
 
 
+"persist tests"
+
+
 import os
 import sys
 import unittest
@@ -21,4 +24,8 @@ class TestPersist(unittest.TestCase):
     def test_save(self):
         obj = Object()
         opath = Disk.write(obj)
-        self.assertTrue(os.path.exists(os.path.join(Workdir.wdr, "store", opath)))
+        self.assertTrue(os.path.exists(os.path.join(
+                                                    Workdir.wdr,
+                                                    "store",
+                                                    opath
+                                                   )))

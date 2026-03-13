@@ -1,11 +1,14 @@
 # This file is placed in the Public Domain.
 
 
+"encoder/decoder tests"
+
+
 import unittest
 
 
-from rssbot.encoder import *
-from rssbot.objects import *
+from rssbot.encoder import Json
+from rssbot.objects import Dict, Object
 
 
 VALIDJSON = '{"test": "bla"}'

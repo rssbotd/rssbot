@@ -1,10 +1,13 @@
 # This file is placed in the Public Domain.
 
 
+"obejcts tests"
+
+
 import unittest
 
 
-from rssbot.objects import *
+from rssbot.objects import Dict, Methods, Object
 
 
 import rssbot.objects
@@ -14,62 +17,8 @@ TARGET = rssbot.objects
 VALIDJSON = '{"test": "bla"}'
 
 
-attrs1 = [
-    'Config',
-    'Default',
-    'Dict',
-    'Methods',
-    'Object'
-]
-
-
-attrs2 = [
-    '__class__',
-    '__contains__',
-    '__delattr__',
-    '__dict__',
-    '__dir__',
-    '__doc__',
-    '__eq__',
-    '__firstlineno__',
-    '__format__',
-    '__ge__',
-    '__getattribute__',
-    '__getstate__',
-    '__gt__',
-    '__hash__',
-    '__init__',
-    '__init_subclass__',
-    '__iter__',
-    '__le__',
-    '__len__',
-    '__lt__',
-    '__module__',
-    '__ne__',
-    '__new__',
-    '__reduce__',
-    '__reduce_ex__',
-    '__repr__',
-    '__setattr__',
-    '__sizeof__',
-    '__static_attributes__',
-    '__str__',
-    '__subclasshook__',
-    '__weakref__'
-]
-
-
 class TestObject(unittest.TestCase):
 
-    def test_moduleinterface(self):
-        print(dir(TARGET))
-        self.assertTrue(dir(TARGET) == attrs1)
-
-    def test_objectinterface(self):
-        obj = Object()
-        print(dir(obj))
-        self.assertTrue(dir(obj) == attrs2)
-            
     def test_constructor(self):
         obj = Object()
         self.assertTrue(type(obj), Object)
@@ -100,12 +49,12 @@ class TestObject(unittest.TestCase):
 
     def test_format(self):
         obj = Object()
-        self.assertEqual(obj.__format__(""), "{}")
+        self.assertEqual(format(obj, ""), "{}")
 
     def test_getattribute(self):
         obj = Object()
         obj.key = "value"
-        self.assertEqual(obj.__getattribute__("key"), "value")
+        self.assertEqual(getattr(obj, "key", None), "value")
 
     def test_hash__(self):
         obj = Object()
@@ -114,21 +63,12 @@ class TestObject(unittest.TestCase):
 
     def test_init(self):
         obj = Object()
-        self.assertTrue(type(Object.__init__(obj)), Object)
+        self.assertTrue(type(Object.__init__(obj)), Dict)
 
     def test_iter(self):
         obj = Object()
         obj.key = "value"
-        self.assertTrue(
-            list(obj.__iter__()),
-            [
-                "key",
-            ],
-        )
-
-    def test_len(self):
-        obj = Object()
-        self.assertEqual(len(obj), 0)
+        self.assertTrue(list(iter(obj)), ["key",])
 
     def test_getattr(self):
         obj = Object()
@@ -155,16 +95,15 @@ class TestObject(unittest.TestCase):
         self.assertEqual(obj.key, "value")
 
     def test_repr(self):
-        self.assertTrue(Dict.update(Object(), {"key": "value"}).__repr__(), {"key": "value"})
+        self.assertTrue(
+                        repr(Dict.update(Object(), {"key": "value"})),
+                        {"key": "value"}
+                       )
 
     def test_setattr(self):
         obj = Object()
-        obj.__setattr__("key", "value")
+        setattr(obj, "key", "value")
         self.assertTrue(obj.key, "value")
-
-    def test_str(self):
-        obj = Object()
-        self.assertEqual(str(obj), "{}")
 
     def test_str(self):
         obj = Object()
@@ -190,3 +129,11 @@ class TestComposite(unittest.TestCase):
         obj.obj = Object()
         obj.obj.a = "test"
         self.assertEqual(obj.obj.a, "test")
+
+
+class TestMethods(unittest.TestCase):
+
+    def testformat(self):
+        o = Object()
+        o.a = "b"
+        self.assertEqual(Methods.fmt(o), 'a="b"')

@@ -12,6 +12,6 @@ from rssbot.package import Mods
 
 class TestPackage(unittest.TestCase):
 
-    def test_init(self):
-        Mods.init("mod", "mod")
-        self.assertTrue("mod" in Mods.dirs)
+    def test_add(self):
+        Mods.add("mods", "mods")
+        self.assertTrue("mods" in Mods.dirs)
