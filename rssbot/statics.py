@@ -24,17 +24,40 @@ CORE = {
     "persist": "49e11f383821f99816f40c5bf2e304d6",
     "repeats": "eaec4feccb68aea97288b5729d710454",
     "require": "258d6a2a356c4c23cb5ce6faa40efa86",
-    "runtime": "03c90bb84393b517c4c8058c256a6e1f",
+    "runtime": "48efb67456d45822a47be31cfd8963f0",
     "threads": "2fcb5ceb0fa336dd7208297fc23e17b0",
     "timings": "3779158dd2a2f280d403717c7ea75886",
     "utility": "370494b1ecafd52182d8ad2a1192f866"
 }
 
 
-MODULES = {}
+MODULES = {
+    "cfg": "a47404e23ba563ebc0c3ac7a99fb8b77",
+    "fnd": "d63c3713611b0d9995f536471089695b",
+    "irc": "3b7482f4a34c2ebb3b4179f7c8971977",
+    "rss": "cc9415a8b0ecc3a53824ae8dfdca5616",
+    "tbl": "fea88e7cacbd51ab6977bd4936ff1ee1",
+    "thr": "70f24fd3b5aebbed3685a6a4aeeba0d1",
+    "upt": "4e8110d1b93254cd6555a619b2b78ccc"
+}
 
 
-NAMES = {}
+NAMES = {
+    "atr": "rss",
+    "cfg": "cfg",
+    "dpl": "rss",
+    "exp": "rss",
+    "fnd": "fnd",
+    "imp": "rss",
+    "nme": "rss",
+    "pwd": "irc",
+    "rem": "rss",
+    "res": "rss",
+    "rss": "rss",
+    "syn": "rss",
+    "thr": "thr",
+    "upt": "upt"
+}
 
 
 def __dir__():
