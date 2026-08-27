@@ -1,20 +1,18 @@
 # This file is placed in the Public Domain.
 
 
-"show running threads"
+"locate objects"
 
 
 import threading
 import time
 
 
-from rssbot.utility import Time
-
-
-STARTTIME = time.time()
+from rssbot.defines import Time
 
 
 def thr(event):
+    "list of running threads."
     result = []
     for thread in sorted(threading.enumerate(), key=lambda x: x.name):
         if str(thread).startswith("<_"):
@@ -24,7 +22,7 @@ def thr(event):
         elif getattr(thread, "starttime", None):
             uptime = time.time() - thread.starttime
         else:
-            uptime = time.time() - STARTTIME
+            uptime = time.time() - Time.starttime
         result.append((uptime, thread.name))
     res = []
     for uptime, txt in sorted(result, key=lambda x: x[0]):
