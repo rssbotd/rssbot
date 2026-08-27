@@ -6,7 +6,6 @@
 
 
 import os
-import queue
 import shutil
 import sys
 import threading
@@ -16,38 +15,41 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.command import Commands
-from rssbot.defines import Main
-from rssbot.handler import Client, Event
-from rssbot.loggers import Log
-from rssbot.objects import Data, Methods
-from rssbot.package import Mods
-from rssbot.persist import Workdir
-from rssbot.runtime import Runtime
-from rssbot.threads import Thread
-from rssbot.utility import Time, Utils
+from rssbot.defines import Boot, Client, Commands, Main, Message
+from rssbot.defines import Method, Mods, Parse, Time, Workdir
 
 
-from rssbot import modules as MODS
+Workdir.wdr = ".test"
 
 
-try:
-    import mods as MODS2
-except ModuleNotFoundError:
-    MODS2 = None
+class Kernel(Boot):
 
+    nrevents = 0
+    starttime = 0
 
-events = queue.Queue()
+    @classmethod
+    def boot(cls):
+        Parse.parse(Main, " ".join(sys.argv[1:]))
+        cls.configure(Main)
+        Mods.dir("examples")
+        Mods.dir(Mods.moddir())
+        Commands.scanner()
+        if os.path.exists(Workdir.wdr):
+            shutil.rmtree(Workdir.wdr)
 
-
-Main.debug = True
-Main.ignore = ""
-Main.level = "info"
-Main.mods = ""
-Main.name = Utils.pkgname(Commands)
-Main.opts = Data()
-Main.version = 8
-Main.wdr = ".test"
+    @classmethod
+    def wrap(cls, func, *args, dofinal=None):
+        "restore console."
+        import termios
+        try:
+            old = termios.tcgetattr(sys.stdin.fileno())
+        except termios.error:
+            old = False
+        cls.wrapped(func, *args)
+        if old:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+        if dofinal:
+            dofinal()
 
 
 class CLI(Client):
@@ -57,80 +59,77 @@ class CLI(Client):
         self.register("command", Commands.command)
 
     def raw(self, text):
+        "write to console."
         if "v" in Main.opts:
-            print(text)
+            print(text.encode('utf-8', 'replace').decode("utf-8"))
+            sys.stdout.flush()
 
 
-class Clients:
+class Runners:
 
-    clients = []
+    runners = []
     lock = threading.RLock()
     nrcpu = 1
-    last = 0
+    nrlast = 0
 
     @staticmethod
     def add(client):
-        Clients.clients.append(client)
+        "add a runner."
+        Runners.runners.append(client)
 
     @staticmethod
     def init(nrcpu, cls):
-        Clients.nrcpu = nrcpu
-        for _x in range(Clients.nrcpu):
+        "initialize a runner."
+        Runners.nrcpu = nrcpu
+        for _x in range(Runners.nrcpu):
             clt = cls()
             clt.start()
-            Clients.add(clt)
+            Runners.add(clt)
 
     @staticmethod
     def put(*args):
-        with Clients.lock:
-            if Clients.last >= Clients.nrcpu-1:
-                Clients.last = 0
-            clt = Clients.clients[Clients.last]
+        "push job to a runner."
+        if not Runners.runners:
+            Runners.init(Runners.nrcpu, CLI)
+        with Runners.lock:
+            if Runners.nrlast >= Runners.nrcpu-1:
+                Runners.nrlast = 0
+            clt = Runners.runners[Runners.nrlast]
             clt.put(*args)
-            Clients.last += 1
-
-
-def consume():
-    while True:
-        try:
-            event = events.get()
-            event.wait()
-            events.task_done()
-        except (KeyboardInterrupt, EOFError):
-            os._exit(0)
+            Runners.nrlast += 1
 
 
 def payload(todo):
     for cmd, example in todo.items():
-        if Main.cmd:
-            if cmd not in Utils.spl(Main.cmd):
-                continue
         for ex in example:
-            evt = Event()
-            evt.text = f"{cmd} {ex}"
+            Kernel.nrevents += 1
+            evt = Message()
             evt.kind = "command"
-            Clients.put(evt)
-            events.put(evt)
+            evt.text = f"{cmd} {ex}"
+            Runners.put(evt)
+
+
+def final():
+    if "v" not in Main.opts:
+        return
+    total = Kernel.nrevents
+    endtime = time.time()
+    lap = Time.elapsed(endtime-Kernel.starttime)
+    percall = (endtime-Kernel.starttime)/total
+    print(f"{Method.fmt(Main, skip='otxt,txt')}")
+    print(f"events: {total}")
+    print(f"total: {lap} nrs: {Kernel.nrevents} call: %.6fs" % percall)
+    print(threading.enumerate())
 
 
 def main():
-    if "p" not in Main.opts and os.path.exists(Main.wdr):
-        shutil.rmtree(Main.wdr)
-    Methods.parse(Main, " ".join(sys.argv[1:]))
-    Workdir.setwd(Main.wdr)
-    Log.level(Main.level)
-    Mods.add("modules", MODS.__path__[0])
-    if MODS2:
-        Mods.add("mods", MODS2.__path__[0])
-    Main.mods = Main.mods or Mods.list()
-    Runtime.scanner(Main)
-    if "v" in Main.opts:
-        Runtime.banner()
-    if "z" in Main.opts:
-        Clients.init(os.cpu_count(), CLI)
+    Kernel.boot()
+    if "t" in Main.opts:
+        nrcpu = os.cpu_count()
     else:
-        Clients.init(1, CLI)
-    starttime = time.time()
+        nrcpu = 1
+    Runners.init(nrcpu, CLI)
+    Kernel.starttime = time.time()
     nrs = Main.index or 1
     for _x in range(nrs):
         payload(pre)
@@ -138,38 +137,21 @@ def main():
         payload(examples)
     for _x in range(nrs):
         payload(post)
-    Thread.launch(consume)
-    nrevents = events.qsize()
-    try:
-        events.join()
-    except (KeyboardInterrupt, EOFError):
-        pass
-    endtime = time.time()
-    lap = Time.elapsed(endtime-starttime)
-    percall = (endtime-starttime)/nrevents
-    nrs = events.qsize()
-    Runtime.shutdown()
-    if "v" in Main.opts:
-        print(f"{Methods.fmt(Main, skip='otxt,txt')}")
-        print(f"{nrs} events left.")
-        print(f"total: {lap} nrs: {nrevents} call: %.6fs" % percall)
+    Kernel.shutdown()
 
 
 examples = {
-    "atr": [""],
     "cmd": [""],
     "dis": [""],
-    "dne": ["", "bla"],
-    "dpl": ["hnrss title,url", ""],
+    "dpl": ["", "tittle.link"],
     "eml": ["", "root@localhost"],
     "flt": ["", "0"],
-    "fnd": ["", "log", "rss", "config", "todo"],
+    "fnd": ["", "log", "todo"],
+    "fie": ["", "log", "todo"],
     "lou": [""],
-    "man": ["", "rssbot genocideniet@gmail.com Nixt Niet"],
-    "mbx": [""],
-    "mod": [""],
-    "mre": [""],
-    "nme": ["", "hnrss hackernews"],
+    "mbx": ["", "~/25-1-2013"],
+    "man": ["", "nixbot rssbotniet@gmail.com Nixt Niet"],
+    "nme": ["", "hnrss hn"],
     "now": [""],
     "pth": [""],
     "pwd": ["", "bla mekker"],
@@ -178,31 +160,47 @@ examples = {
     "sil": [""],
     "slg": [""],
     "srv": [""],
-    "syn": [""],
-    "thr": [""],
-    "tmr": ["", "22:00 test"],
-    "upt": [""],
-    "wsd": [""]
+    "tbl": [""],
+    'thr': [""],
+    'upt': [""],
+    'ver': [""],
 }
 
+
 pre = {
-    "cfg": ["", "nick=mekker"],
+    "cfg": [
+        '',
+        'main',
+        'irc',
+        'rss',
+        'rst',
+        'udp',
+        'web',
+        'main nick=mekker',
+        'irc nick=mekker',
+        'rss nick=mekker',
+        'rst nick=mekker',
+        'udp nick=mekker',
+        'web nick=mekker'
+    ],
     "imp": [
         "",
         "testing/opml/feeds.opml",
     ],
-    "log": ["", "log add"],
-    "rss": ["", "http://hnrss.org/newest"],
-    "tdo": ["", "test"]
+    "log": ["", "test"],
+    "rss": ["", "http://hnrss.org/newest", "https://www.icc-cpi.int/rss/records/all"],
+    "tdo": ["", "test2"],
+    "tmr": ["", "22:00 test"]
 }
+
 
 post = {
     "dbg": [""],
     "dne": ["", "mekker"],
     "exp": [""],
-    "rem": ["", "hnrss"]
+    "rem": ["", "rem hnrss"]
 }
 
 
 if __name__ == "__main__":
-    Runtime.wrap(main)
+    Kernel.wrap(main, dofinal=final)

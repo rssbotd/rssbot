@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
+# This file is placed in the Public DOmain.
+
+
+"run linters"
 
 
 import os
 import sys
 
 
-SKIP = ["All",]
+NAME = "rssbot"
+
+
+SKIP = ["--", "Your", "All"]
 
 
 def doskip(line):
@@ -24,4 +31,6 @@ def popen(txt):
         sys.stdout.flush()
 
 
-popen("ruff check rssbot bin/tinder testing")
+popen(f"ruff check {NAME} bin/tinder testing")
+popen(f"pylint {NAME} bin/tinder testing")
+popen(f"flake8 {NAME} bin/tinder testing")

@@ -39,3 +39,11 @@ packages=[
     'rssbot.modules',
     'rssbot.network'
 ]
+
+
+[tool.pylint."messages control"]
+disable = ["C,R,W,E0401,E0402"]
+
+
+[tool.ruff.lint]
+ignore = ["E402", "E501", "E701", "E702"]

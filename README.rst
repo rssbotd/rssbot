@@ -1,215 +1,177 @@
 **NAME**
 
-| ``rssbot`` - 24/7 Feed Fetcher, a contribution back to society.
-|
+::
+
+   rssbot- 24/7 IRC Feed Fetcher
 
 
 **SYNOPSIS**
 
-| ``rssbot [-h] [-a] [-c] [-d] [-l LEVEL] [-m MODS] [-n] [-s] [-t] [-v] [-w] [--local] [--wdr WDR]``
-|
-| ``rssbot <cmd> [key=val] [key==val]``
-| ``rssbot -cvaw [mods=mod1,mod2]``
-|
+::
+
+    rssbot [-h] [-l level] [-m m1,m2] [-n NAME] [-p path] [-v] [--admin] [--docs DOCS] [--scanner] [--wdr WDR]
+    rssbotd
+
+    rssbot <cmd> [key=val] [key==val]
+
 
 **DESCRIPTION**
 
-``rssbot`` is a python3 bot able to display rss feeds in your channel.
+::
 
-``rssbot`` comes with a cli to configure and a daemon to run in the
-background, hooking the daemon in systemd brings a 24/7 available
-rssbot in your channel.
+    RSSBOT is a python3 bot able to display rss feeds in your channel.
 
-``rssbot`` is Public Domain.
+    RSSBOT comes with a cli to configure and a daemon to run in the
+    background, hooking the daemon in systemd brings a 24/7 available
+    rssbot in your channel.
+
+    RSSBOT is Public Domain.
 
 
 **INSTALL**
 
+::
 
-installation is done with pipx
+    due to difficulty accessing my pypi account you can use my git repo
 
-| ``$ pipx install rssbot``
-| ``$ pipx ensurepath``
-|
-| <new terminal>
-|
-| ``$ rssbot srv > rssbot.service``
-| ``$ sudo mv rssbot.service /etc/systemd/system/``
-| ``$ sudo systemctl enable rssbot --now``
-|
-| joins ``#rssbot`` on localhost
-|
+    $ git clone ssh://git@github.com/rssbotd/rssbot
+    $ cd rssbot
+    $ pipx install . --force
+    $ pipx ensurepath
+
+    <new terminal>
+
+    $ rssbot --admin srv > rssbot.service
+    $ sudo mv rssbot.service /etc/systemd/system/
+    $ sudo systemctl enable rssbot --now
+
+    joins ``#rssbot`` on localhost
 
 
 **USAGE**
 
 
-use ``rssbot`` to control the program, default it does nothing
+::
 
-| ``$ rssbot``
-| ``$``
-|
+    the -h option will show you possible options
 
-the -h option will show you possible options
+    usage: rssbot [-h] [-l level] [-m m1,m2] [-n NAME] [-p path] [-v] [--admin] [--docs DOCS] [--scanner] [--wdr WDR]
 
-| ``$ rssbot -h``
-|
-| options:
-|
-| ``-h,--help          show this help message and exit``
-| ``-a,--all           load all modules``
-| ``-c,--console       start console``
-| ``-d,--daemon        start background daemon``
-| ``-l,--level LEVEL   set loglevel``
-| ``-m,--mods MODS     modules to load``
-| ``-n,--noignore      disable ignore```
-| ``-s,--service       start service``
-| ``-t,--threaded      enable multiple workers``
-| ``-v,--verbose       enable verbose``
-| ``-w,--wait          wait for services to start``
-| ``--local            use local mods directory``
-| ``--wdr <WDR>        set working directory``
-|
+    RSSBOT
 
-see list of commands
+    options:
+        -h, --help         show this help message and exit
 
-| ``$ rssbot cmd``
-| ``cfg,cmd,dne,dpl,err,exp,imp,log,mod,mre,nme,``
-| ``pwd,rem,req,res,rss,srv,syn,tdo,thr,upt``
-|
+        -l, --level level  set loglevel.
+        -m, --mods m1,m2   modules to load.
+        -n, --name NAME    name of the program.
+        -p, --path path    path to modules directory.
+        -v, --verbose      enable verbose.
 
-start console
+        --admin            enable admin mode.
+        --docs DOCS        set docs directory.
+        --scanner          do full modules scan on boot.
+        --wdr WDR          set modules directory.
 
-| ``$ rssbot -c``
-|
+    use "rssbot cmd" for a list of commands.
 
-start console and run irc and rss clients
+::
 
-| ``$ rssbot -c init=irc,rss``
-|
+    use rssbot to control the program, default it does nothing
 
-list available modules
+    $ rssbot
+    $
 
-| ``$ rssbot mod``
-| ``err,flt,fnd,irc,llm,log,mbx,mdl,mod,req,rss,``
-| ``rst,slg,tdo,thr,tmr,udp,upt``
-|
+    see list of commands
 
-start daemon
+    $ rssbot cmd
+    cfg,cmd,dne,dpl,err,exp,imp,log,mod,mre,nme,
+    pwd,rem,req,res,rss,srv,syn,tdo,thr,upt
 
-| ``$ rssbot -d``
-| ``$``
-|
 
-start service
+    start daemon
 
-| ``$ rssbot -s``
-| ``<runs until ctrl-c>``
-|
+    $ rssbotd --daemon
+    $
+
+
+    start service
+
+    $ rssbotd --service
+    <runs until ctrl-c>
 
 
 **COMMANDS**
 
+::
 
-here is a list of available commands
+    here is a list of available commands
 
-| ``cfg`` - irc configuration
-| ``cmd`` - commands
-| ``dpl`` - sets display items
-| ``err`` - show errors
-| ``exp`` - export opml (stdout)
-| ``imp`` - import opml
-| ``log`` - log text
-| ``mre`` - display cached output
-| ``pwd`` - sasl nickserv name/pass
-| ``rem`` - removes a rss feed
-| ``res`` - restore deleted feeds
-| ``req`` - reconsider
-| ``rss`` - add a feed
-| ``syn`` - sync rss feeds
-| ``tdo`` - add todo item
-| ``thr`` - show running threads
-| ``upt`` - show uptime
-|
+
+    cfg - irc configuration
+    cmd - commands
+    dpl - sets display items
+    err - show errors
+    exp - export opml (stdout)
+    imp - import opml
+    log - log text
+    mre - display cached output
+    pwd - sasl nickserv name/pass
+    rem - removes a rss feed
+    res - restore deleted feeds
+    rss - add a feed
+    syn - sync rss feeds
+    tdo - add todo item
+    thr - show running threads
+    upt - show uptime
+
 
 **CONFIGURATION**
 
-
-irc
-
-| ``$ rssbot cfg irc server=<server>``
-| ``$ rssbot cfg irc channel=<channel>``
-| ``$ rssbot cfg irc nick=<nick>``
-|
-
-sasl
-
-| ``$ rssbot pwd <nsnick> <nspass>``
-| ``$ rssbot cfg irc password=<frompwd>``
-|
-
-rss
-
-| ``$ rssbot rss <url>``
-| ``$ rssbot dpl <url> <item1,item2>``
-| ``$ rssbot rem <url>``
-| ``$ rssbot nme <url> <name>``
-|
-
-opml
-
-| ``$ rssbot exp``
-| ``$ rssbot imp <filename>``
-|
-
-
-**PROGRAMMING**
-
-| rssbot has it's user modules in the ~/.rssbot/mods directory so for a
-| hello world command you would  edit a file in ~/.rssbot/mods/hello.py
-| and add the following
-|
-
 ::
 
-    def hello(event):
-        event.reply("hello world !!")
+    irc
 
+    $ rssbot cfg irc server=<server>
+    $ rssbot cfg irc channel=<channel>
+    $ rssbot cfg irc nick=<nick>
 
-|
-| typing the hello command would result into a nice hello world !!
-|
+    sasl
 
-::
+    $ rssbot pwd <nsnick> <nspass>
+    $ rssbot cfg irc password=<frompwd>
 
-    $ rssbot hello
-    hello world !!
+    rss
 
+    $ rssbot rss <url>
+    $ rssbot dpl <url> <item1,item2>
+    $ rssbot rem <url>
+    $ rssbot nme <url> <name>
 
-|
-| commands run in their own thread and the program borks on exit to enable a
-| short debug cycle, output gets flushed on print so exceptions appear in the
-| systemd logs. modules can contain your own written python3 code.
-|
+    opml
+
+    $ rssbot exp
+    $ rssbot imp <filename>
 
 
 **FILES**
 
-|
-| ``~/.rssbot``
-| ``~/.local/bin/rssbot``
-| ``~/.local/share/pipx/venvs/rssbot/*``
-|
+::
+
+    ~/.rssbot
+    ~/.local/bin/rssbot
+    ~/.local/share/pipx/venvs/rssbot/*
+
 
 **AUTHOR**
 
-|
-| ``Bart Thate`` <``rssbotd@gmail.com``>
-|
+::
+
+    Bart Thate`` <``rssbotd@gmail.com``>
+
 
 **COPYRIGHT**
 
-|
-| ``rssbot`` is Public Domain.
-|
+::
 
+   RSSBOT is Public Domain.
