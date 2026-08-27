@@ -73,6 +73,7 @@ class Disk:
             if path == "":
                 path = cls.ident(obj)
             pth = os.path.join(Workdir.wdr, base, path)
+            print(pth)
             Utils.cdir(pth)
             with open(pth, "w", encoding="utf-8") as fpt:
                 Json.dump(obj, fpt, indent=4)

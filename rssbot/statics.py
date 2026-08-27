@@ -10,7 +10,7 @@ CORE = {
     "clients": "9bd824df44ceeeaf73134e38f8177669",
     "command": "f32195caf74094d583d25393c09a8954",
     "configs": "55373ef42c73f1df77f0a29755fe6027",
-    "daemons": "0242599fa838682206c2d07878854a18",
+    "daemons": "dba694227f9216b84d104e83f053e1e1",
     "defines": "01e3c2c92e91f3c02428ef5a03d87fcd",
     "encoder": "7c7f68bbcdc0bd9955c0acf70a9b4d7c",
     "engines": "767e741a9e84f56cdb1b68c979a6b584",

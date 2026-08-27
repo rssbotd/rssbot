@@ -24,7 +24,7 @@ classifiers = [
 
 
 [project.scripts]
-"rssbot" = "rssbot.runtime:main"
+"rssbot" = "rssbot.daemons:main"
 
 
 [project.urls]

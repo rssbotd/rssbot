@@ -11,7 +11,7 @@ import time
 
 
 from .defines import Boot, Client, Cmd, Commands, Data, Main, Md5
-from .defines import Mods, Method, Workdir
+from .defines import Message, Mods, Method, Workdir
 
 
 class Arguments:
@@ -71,6 +71,7 @@ class Kernel(Boot):
         Arguments.getargs()
         cls.configure(Main)
         Mods.dir(Workdir.moddir())
+        Mods.dir(Mods.moddir())
         Commands.add(Cmd.cmd)
         if Main.sets.all:
             Main.sets.mods = ",".join(Mods.list())
@@ -161,6 +162,16 @@ class Scripts:
         Kernel.forever()
 
     @staticmethod
+    def control():
+        "cli script."
+        cli = CLI()
+        evt = Message()
+        evt.orig = repr(cli)
+        evt.text = Main.otxt
+        Commands.command(evt)
+        evt.wait()
+
+    @staticmethod
     def service():
         "service script."
         Kernel.privileges()
@@ -178,8 +189,10 @@ def main():
     sys.argv[0] = Main.name
     if Main.sets.service:
         Kernel.wrap(Scripts.service)
-    else:
+    elif Main.sets.daemon:
         Kernel.wrap(Scripts.background)
+    else:
+        Kernel.wrap(Scripts.control)
 
 
 def __dir__():
