@@ -74,6 +74,8 @@ class Kernel(Boot, Daemon):
         Mods.dir(Workdir.moddir())
         Mods.dir(Mods.moddir())
         Commands.add(Cmd.cmd)
+        if Main.sets.admin:
+            Commands.add(Cmd.tbl)
         if Main.sets.all:
             Main.sets.mods = ",".join(Mods.list())
         if Main.sets.scanner or Main.sets.all:
