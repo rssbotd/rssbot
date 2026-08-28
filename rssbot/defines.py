@@ -10,10 +10,10 @@ from .brokers import Broker, Clients
 from .clients import Buffered, Client
 from .command import Commands
 from .configs import Main
-from .daemons import Daemon
 from .encoder import Json
 from .engines import Engine
 from .hashing import Md5
+from .loggers import Logging
 from .message import Message
 from .methods import Method
 from .objects import Data, Object
@@ -25,7 +25,7 @@ from .repeats import Repeater
 from .require import Cmd
 from .threads import Task, Thread
 from .timings import Time
-from .utility import Logging, Utils
+from .utility import Utils
 
 
 def __dir__():
@@ -38,7 +38,6 @@ def __dir__():
        'Clients',
        'Cmd',
        'Commands',
-       'Daemon',
        'Data',
        'Disk',
        'Engine',
