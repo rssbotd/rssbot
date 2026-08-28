@@ -163,6 +163,8 @@ class Runner:
             for obj in Helpers.getfeed(fnm, feed, feed.display_list):
                 if obj is None:
                     continue
+                if Method.isempty(obj):
+                    continue
                 counter += 1
                 fed = Feed()
                 Method.update(fed, obj)

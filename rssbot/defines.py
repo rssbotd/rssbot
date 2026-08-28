@@ -6,8 +6,8 @@
 
 
 from .booting import Boot
-from .brokers import Broker, Clients
-from .clients import Buffered, Client
+from .brokers import Broker
+from .clients import Buffer, Client, Clients
 from .command import Commands
 from .configs import Main
 from .encoder import Json
@@ -17,7 +17,7 @@ from .loggers import Logging
 from .message import Message
 from .methods import Method
 from .objects import Data, Object
-from .outputs import Buffer, Output
+from .outputs import Output
 from .package import Mods
 from .parsers import Parse
 from .persist import Disk, Locate, Workdir
@@ -33,7 +33,6 @@ def __dir__():
        'Boot',
        'Broker',
        'Buffer',
-       'Buffered',
        'Client',
        'Clients',
        'Cmd',

@@ -105,6 +105,14 @@ class Method:
         return obj.__dict__.get(key, default)
 
     @classmethod
+    def isempty(cls, obj):
+        "check if all keys heve empty value."
+        for key in cls.keys(obj):
+            if getattr(obj, key, False):
+                return False
+        return True
+
+    @classmethod
     def items(cls, obj):
         "object's key,value pairs."
         if isinstance(obj, type):
