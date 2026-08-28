@@ -190,7 +190,7 @@ class Scripts:
         readline.redisplay()
         if Main.sets.verbose:
             Kernel.banner()
-        Kernel.init(Main.sets.mods)
+        Kernel.init(Main.sets.mods, Main.sets.wait)
         csl = Console()
         csl.start()
         Kernel.forever()

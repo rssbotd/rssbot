@@ -4,6 +4,7 @@
 "rich site syndicate"
 
 
+import gc
 import html
 import html.parser
 import http.client
@@ -184,6 +185,7 @@ class Runner:
             if not State.seenfn:
                 State.seenfn = Disk.ident(State.seen)
             Disk.write(State.seen, State.seenfn)
+        gc.collect()
         txt = ""
         feedname = getattr(feed, "name", None)
         if feedname:

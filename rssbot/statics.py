@@ -5,29 +5,29 @@
 
 
 CORE = {
-    "booting": "2edf1cefde5ab25d23687d22459016cd",
+    "booting": "4465f93752a9a1e8e31f7c9d8140bebe",
     "brokers": "bf614fd92d3268216c853bbb08a57b03",
     "clients": "9bd824df44ceeeaf73134e38f8177669",
     "command": "f32195caf74094d583d25393c09a8954",
     "configs": "55373ef42c73f1df77f0a29755fe6027",
-    "daemons": "68d9b032e3434d919b70e289ae891fa6",
-    "defines": "b27aa7012826885991f41c85c7113d37",
+    "defines": "36401acdf41a9fde255e2b9d3afbe078",
     "encoder": "7c7f68bbcdc0bd9955c0acf70a9b4d7c",
     "engines": "767e741a9e84f56cdb1b68c979a6b584",
     "hashing": "1b7cb34eaff614661f28ad870299ba98",
+    "loggers": "575e865d11c848de2a53c185a3fb0afc",
     "message": "6c2322224bbca893fd5899bda65df43e",
     "methods": "dc4c2e41f7a6cf82584e8119ee6725fa",
     "objects": "529a55e137b6f5bd5908fdcdd1049d86",
     "outputs": "b7edddf1249f1be8b9e568379479948f",
     "package": "1317c1bad74b244a6b82d562dc4a1eb9",
     "parsers": "cc9923d5e2e0aab885247a530ac0970c",
-    "persist": "bd58a3b920122a2159ae73db4232c2f7",
+    "persist": "49e11f383821f99816f40c5bf2e304d6",
     "repeats": "eaec4feccb68aea97288b5729d710454",
     "require": "258d6a2a356c4c23cb5ce6faa40efa86",
-    "runtime": "cffae54d78670ddaae9215e7ef32e6ea",
+    "runtime": "480cd39a86a5edd94214fbf9a0ac5251",
     "threads": "2fcb5ceb0fa336dd7208297fc23e17b0",
     "timings": "3779158dd2a2f280d403717c7ea75886",
-    "utility": "370494b1ecafd52182d8ad2a1192f866"
+    "utility": "973787cf63dccce61d10b16722c08355"
 }
 
 
@@ -35,7 +35,7 @@ MODULES = {
     "cfg": "a47404e23ba563ebc0c3ac7a99fb8b77",
     "fnd": "d63c3713611b0d9995f536471089695b",
     "irc": "3b7482f4a34c2ebb3b4179f7c8971977",
-    "rss": "cc9415a8b0ecc3a53824ae8dfdca5616",
+    "rss": "e9f9dd2fab72610152834801bceedcfa",
     "tbl": "fea88e7cacbd51ab6977bd4936ff1ee1",
     "thr": "70f24fd3b5aebbed3685a6a4aeeba0d1",
     "upt": "4e8110d1b93254cd6555a619b2b78ccc"
