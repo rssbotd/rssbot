@@ -1,1 +1,1 @@
-python3 -c "from rssbot.daemons import main; main()" $* ;
+python3 -c "from rssbot.runtime import main; main()" $* ;

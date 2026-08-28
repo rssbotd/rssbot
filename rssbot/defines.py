@@ -10,6 +10,7 @@ from .brokers import Broker, Clients
 from .clients import Buffered, Client
 from .command import Commands
 from .configs import Main
+from .daemons import Daemon
 from .encoder import Json
 from .engines import Engine
 from .hashing import Md5
@@ -37,6 +38,7 @@ def __dir__():
        'Clients',
        'Cmd',
        'Commands',
+       'Daemon',
        'Data',
        'Disk',
        'Engine',
