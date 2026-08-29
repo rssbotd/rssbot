@@ -24,8 +24,7 @@ from .persist import Disk, Workdir
 from .repeats import Repeater
 from .require import Cmd
 from .threads import Task, Thread
-from .timings import Time
-from .utility import Logging, Utils
+from .utility import Format, Logging, Time, Utils
 
 
 def __dir__():
@@ -41,6 +40,7 @@ def __dir__():
        'Disk',
        'Display',
        'Engine',
+       'Format',
        'JSON',
        'JSONL',
        'Locate',

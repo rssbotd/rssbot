@@ -111,7 +111,7 @@ class Workdir:
         return os.listdir(path)
 
     @classmethod
-    def logpath(cls, path=""):
+    def logdir(cls, path=""):
         "return directory to logs."
         assert cls.wdr
         return os.path.join(cls.wdr, "logs", path)

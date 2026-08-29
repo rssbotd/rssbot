@@ -24,13 +24,26 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, urlencode
 
 
-from rssbot.defines import Object, Clients, Disk, JSONL, Locate, Main, Method
-from rssbot.defines import Repeater, Thread, Utils, Workdir
+from rssbot.defines import Object, Clients, Disk, Format, JSONL, Locate
+from rssbot.defines import Logging, Main, Method, Repeater, Thread, Utils, Workdir
+
+
+j = os.path.join
+logger = logging.getLogger("rss")
 
 
 def init():
     "initialize rss module."
-    Runners.init(1, Runner)
+    logdir = Workdir.logdir("rss")
+    path = j(logdir, "rss.log")
+    if not os.path.exists(path):
+        Utils.cdir(path)
+    formatter = Format(Logging.format, Logging.datefmt)
+    logger.setLevel(Main.sets.level.upper() or "INFO")
+    filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
+    filehandler.setFormatter(formatter)
+    logger.addHandler(filehandler)
+    Runners.init(6, Runner)
     Run.fetcher.start()
     nrs = Locate.count("rss")
     txt = f"{nrs} feeds"
@@ -120,9 +133,8 @@ class Fetcher:
 class Runner:
 
     def __init__(self):
-        self.dosave = False
+        self.dosave = True
         self.fetchlock = threading.RLock()
-        self.logpath = ""
         self.queue = queue.Queue()
         self.running = threading.Event()
         self.todo = queue.Queue()
@@ -178,10 +190,9 @@ class Runner:
                 urls.append(uurl)
                 if uurl in see:
                     continue
-                if self.dosave:
-                    Disk.write(fed)
-                JSONL.dump(fed, Workdir.logpath("rss"))
                 result.append(fed)
+                if self.dosave:
+                    logger.info(JSONL.logtxt(fed))
             if urls:
                 setattr(State.seen, feed.rss, urls)
             if silent:
@@ -214,7 +225,7 @@ class Runners:
 
     runners = []
     lock = threading.RLock()
-    nrcpu = 1
+    nrcpu = 6
     nrlast = 0
 
     @staticmethod

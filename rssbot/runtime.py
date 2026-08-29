@@ -109,7 +109,6 @@ class Kernel(Boot, Daemon):
 
     @classmethod
     def boot(cls):
-        Arguments.getargs()
         cls.configure(Main)
         Mods.dir(Workdir.moddir())
         Mods.dir(Mods.moddir())
@@ -179,6 +178,7 @@ class Scripts:
     @staticmethod
     def background():
         "background script."
+        Kernel.boot()
         Kernel.daemon()
         Kernel.privileges()
         Kernel.pid()
@@ -191,6 +191,7 @@ class Scripts:
         "console script."
         import readline
         readline.redisplay()
+        Kernel.boot()
         if Main.sets.verbose:
             Kernel.banner()
         Kernel.init(Main.sets.mods, Main.sets.wait)
@@ -201,6 +202,7 @@ class Scripts:
     @staticmethod
     def control():
         "cli script."
+        Kernel.boot()
         cli = CLI()
         evt = Message()
         evt.orig = repr(cli)
@@ -211,6 +213,7 @@ class Scripts:
     @staticmethod
     def service():
         "service script."
+        Kernel.boot()
         Kernel.privileges()
         Kernel.pid()
         if not Main.sets.verbose:
@@ -222,7 +225,7 @@ class Scripts:
 
 def main():
     "main"
-    Kernel.boot()
+    Arguments.getargs()
     if Main.sets.console:
         Kernel.wrap(Scripts.console)
     elif Main.sets.service:
