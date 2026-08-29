@@ -14,7 +14,7 @@ import time
 import _thread
 
 
-from rssbot.defines import Broker, Buffer, Commands, Disk, Main, Object
+from rssbot.defines import Broker, Buffered, Commands, Disk, Main, Object
 from rssbot.defines import Message, Mods, Method, Thread
 
 
@@ -98,10 +98,10 @@ class TextWrap(textwrap.TextWrapper):
 wrapper = TextWrap()
 
 
-class IRC(Buffer):
+class IRC(Buffered):
 
     def __init__(self):
-        Buffer.__init__(self)
+        Buffered.__init__(self)
         self.buffer = []
         self.cfg = Config()
         self.channels = []
@@ -490,7 +490,7 @@ class IRC(Buffer):
         self.events.ready.clear()
         self.events.connected.clear()
         self.events.joined.clear()
-        Buffer.start(self)
+        Buffered.start(self)
         if not self.state.keeprunning:
             Thread.launch(self.keep, daemon=daemon)
         Thread.launch(
@@ -504,7 +504,7 @@ class IRC(Buffer):
     def stop(self):
         "stop client."
         self.state.stopkeep = True
-        Buffer.stop(self)
+        Buffered.stop(self)
 
     def wait(self):
         "wait for client to join."

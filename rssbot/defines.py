@@ -7,38 +7,39 @@
 
 from .booting import Boot
 from .brokers import Broker, Clients
-from .clients import Buffer, Client
+from .clients import Buffered, Client
 from .command import Commands
 from .configs import Main
 from .encoder import Json
 from .engines import Engine
 from .hashing import Md5
-from .loggers import Logging
+from .locater import Locate
 from .message import Message
 from .methods import Method
 from .objects import Data, Object
-from .outputs import Output
+from .outputs import Display, Output
 from .package import Mods
 from .parsers import Parse
-from .persist import Disk, Locate, Workdir
+from .persist import Disk, Workdir
 from .repeats import Repeater
 from .require import Cmd
 from .threads import Task, Thread
 from .timings import Time
-from .utility import Utils
+from .utility import Logging, Utils
 
 
 def __dir__():
     return (
        'Boot',
        'Broker',
-       'Buffer',
+       'Buffered',
        'Client',
        'Clients',
        'Cmd',
        'Commands',
        'Data',
        'Disk',
+       'Display',
        'Engine',
        'Json',
        'Locate',

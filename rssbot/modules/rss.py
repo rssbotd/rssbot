@@ -126,10 +126,10 @@ class Runner:
         self.running = threading.Event()
         self.todo = queue.Queue()
 
-    def display(self, obj):
+    def display(self, obj, name=None):
         "display feed."
         displaylist = ""
-        result = ""
+        result = (name and f"[{name}] ") or ""
         try:
             displaylist = obj.display_list or "title,link"
         except AttributeError:
@@ -187,15 +187,10 @@ class Runner:
             if not State.seenfn:
                 State.seenfn = Disk.ident(State.seen)
             Disk.write(State.seen, State.seenfn)
-        txt = ""
-        feedname = getattr(feed, "name", None)
-        if feedname:
-            txt = f"[{feedname}] "
         for obj in result:
-            Clients.announce(txt + self.display(obj))
-        for obj in result:
-            Method.delete(obj)
-        gc.collect(0)
+            Clients.announce(self.display(obj, getattr(feed, "name", None)))
+        del result
+        gc.collect()
         return counter
 
     def put(self, args):
@@ -602,10 +597,7 @@ def imp(event):
             del obj["xmlUrl"]
             Method.update(feed, obj)
             uri = urllib.parse.urlparse(feed.rss)
-            if uri.netloc.count(".") >= 2:
-                feed.name = ".".join(uri.netloc.split('.')[1:-1])
-            else:
-                feed.name = '.'.join(uri.netloc.split('.')[:-1])
+            feed.name = max(uri.netloc.split("."), key=len)
             feed.insertid = insertid
             Disk.write(feed)
             nrs += 1
