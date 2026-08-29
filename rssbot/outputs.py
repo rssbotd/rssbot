@@ -19,7 +19,6 @@ class Output:
     def __init__(self):
         self.oqueue = queue.Queue()
         self.ostopped = threading.Event()
-        Broker.__init__(self)
 
     def display(self, event):
         "do actual display."

@@ -13,32 +13,6 @@ from .engines import Engine
 from .outputs import Output
 
 
-class Clients:
-
-    @staticmethod
-    def announce(txt):
-        "announce text on all clients."
-        for obj in Broker.objs("announce"):
-            obj.announce(txt)
-
-    @staticmethod
-    def display(evt):
-        "display results."
-        bot = Broker.get(evt.orig)
-        if bot:
-            bot.display(evt)
-
-    @staticmethod
-    def shutdown():
-        "call stop on clients."
-        for client in Broker.objs("wait"):
-            client.wait()
-        time.sleep(0.01)
-        for client in Broker.objs("stop"):
-            client.stop()
-        time.sleep(0.01)
-
-
 class Display:
 
     block = threading.Event()
@@ -86,12 +60,12 @@ class Client(Engine, Display):
         raise NotImplementedError
 
 
-class Buffer(Engine, Output):
+class Buffer(Engine, Display, Output):
 
     def __init__(self):
         Engine.__init__(self)
+        Display.__init__(self)
         Output.__init__(self)
-        Broker.add(self)
 
     def raw(self, text):
         "raw output."
@@ -108,10 +82,10 @@ class Buffer(Engine, Output):
         Output.stop(self)
 
 
+
 def __dir__():
     return (
         'Buffer',
         'Client',
-        'Clients',
         'Display'
     )

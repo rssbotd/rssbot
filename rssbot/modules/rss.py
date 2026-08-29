@@ -187,13 +187,15 @@ class Runner:
             if not State.seenfn:
                 State.seenfn = Disk.ident(State.seen)
             Disk.write(State.seen, State.seenfn)
-        gc.collect()
         txt = ""
         feedname = getattr(feed, "name", None)
         if feedname:
             txt = f"[{feedname}] "
         for obj in result:
             Clients.announce(txt + self.display(obj))
+        for obj in result:
+            Method.delete(obj)
+        gc.collect(0)
         return counter
 
     def put(self, args):

@@ -44,6 +44,12 @@ class Method:
         return oobj
 
     @classmethod
+    def delete(cls, obj):
+        keys = cls.keys(obj):
+        for key in keys:
+            cls.remove(obj, key)
+
+    @classmethod
     def deleted(cls, obj):
         "check whether obj had deleted flag set."
         return "__deleted__" in dir(obj) and obj.__deleted__
@@ -102,13 +108,16 @@ class Method:
     @classmethod
     def get(cls, obj, key, default=None):
         "return value for key if key is in the object, otherwise return default."
-        return obj.__dict__.get(key, default)
+        try:
+            return obj.__dict__.get(key, default)
+        except AttributeError:
+            return obj.get(key, default)
 
     @classmethod
     def isempty(cls, obj):
         "check if all keys heve empty value."
         for key in cls.keys(obj):
-            if getattr(obj, key, False):
+            if cls.get(obj, key):
                 return False
         return True
 
@@ -177,6 +186,13 @@ class Method:
             if value:
                 result[key] = value
         return result
+
+    @classmethod
+    def remove(cls, obj, key):
+        try:
+            del obj.__dict__[key]
+        except AttributeError:
+            del obj[key]
 
     @classmethod
     def search(cls, obj, selector={}, matching=False):
