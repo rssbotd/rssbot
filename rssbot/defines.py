@@ -10,7 +10,7 @@ from .brokers import Broker, Clients
 from .clients import Buffered, Client
 from .command import Commands
 from .configs import Main
-from .encoder import Json
+from .encoder import JSON, JSONL
 from .engines import Engine
 from .hashing import Md5
 from .locater import Locate
@@ -41,7 +41,8 @@ def __dir__():
        'Disk',
        'Display',
        'Engine',
-       'Json',
+       'JSON',
+       'JSONL',
        'Locate',
        'Logging',
        'Main',

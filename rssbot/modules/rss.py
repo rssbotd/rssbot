@@ -24,8 +24,8 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, urlencode
 
 
-from rssbot.defines import Object, Clients, Disk, Locate, Main, Method
-from rssbot.defines import Repeater, Thread, Utils
+from rssbot.defines import Object, Clients, Disk, JSONL, Locate, Main, Method
+from rssbot.defines import Repeater, Thread, Utils, Workdir
 
 
 def init():
@@ -122,6 +122,7 @@ class Runner:
     def __init__(self):
         self.dosave = False
         self.fetchlock = threading.RLock()
+        self.logpath = ""
         self.queue = queue.Queue()
         self.running = threading.Event()
         self.todo = queue.Queue()
@@ -179,6 +180,7 @@ class Runner:
                     continue
                 if self.dosave:
                     Disk.write(fed)
+                JSONL.dump(fed, Workdir.logpath("rss"))
                 result.append(fed)
             if urls:
                 setattr(State.seen, feed.rss, urls)

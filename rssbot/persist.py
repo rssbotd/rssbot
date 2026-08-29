@@ -10,10 +10,9 @@ import logging
 import os
 import pathlib
 import threading
-import time
 
 
-from .encoder import Json
+from .encoder import JSON
 from .methods import Method
 from .objects import Data
 from .utility import Utils
@@ -72,7 +71,7 @@ class Disk:
                 return False
             with open(pth, "r", encoding="utf-8") as fpt:
                 try:
-                    Method.update(obj, Json.load(fpt))
+                    Method.update(obj, JSON.load(fpt))
                 except json.decoder.JSONDecodeError as ex:
                     logging.error("failed read at %s: %s", pth, str(ex))
                     raise
@@ -88,7 +87,7 @@ class Disk:
             pth = os.path.join(Workdir.wdr, base, path)
             Utils.cdir(pth)
             with open(pth, "w", encoding="utf-8") as fpt:
-                Json.dump(obj, fpt, indent=4)
+                JSON.dump(obj, fpt, indent=4)
             Cache.sync(path, obj)
             return path
 
@@ -110,6 +109,12 @@ class Workdir:
         if not os.path.exists(path):
             cls.skel()
         return os.listdir(path)
+
+    @classmethod
+    def logpath(cls, path=""):
+        "return directory to logs."
+        assert cls.wdr
+        return os.path.join(cls.wdr, "logs", path)
 
     @classmethod
     def long(cls, name):

@@ -42,7 +42,7 @@ class Encoder(json.JSONEncoder):
         return o
 
 
-class Json:
+class JSON:
 
     @staticmethod
     def dump(*args, **kw):
@@ -67,7 +67,23 @@ class Json:
         return json.loads(s, *args, **kw)
 
 
+class JSONL(JSON):
+
+    @classmethod
+    def dump(*args, **kw):
+        "dump object to disk."
+        kw["indent"] = None
+        return JSON.dump(*args, **kw)
+
+    @classmethod
+    def dumps(*args, **kw):
+        "dump object to string."
+        kw["indent"] = None
+        return JSON.dumps(*args, **kw)
+
+
 def __dir__():
     return (
-        'Json',
+        'JSOM',
+        'JSONL'
     )

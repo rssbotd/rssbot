@@ -56,7 +56,7 @@ class Boot:
                 try:
                     thr.join()
                 except (KeyboardInterrupt, EOFError):
-                    return False
+                    _thread.interrupt_main()
         return True
 
     @classmethod
@@ -80,6 +80,7 @@ class Boot:
         except Exception as ex:
             logging.exception(ex)
             _thread.interrupt_main()
+        cls.shutdown()
 
 
 def __dir__():
