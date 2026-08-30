@@ -36,6 +36,7 @@ MODULES = {
     "fnd": "d63c3713611b0d9995f536471089695b",
     "irc": "4a36f98431cfb26ed676d5a82487da57",
     "rss": "2a8dce9789870102e7c403a0bc3efa64",
+    "srv": "b404e752dcde737f7be8be795ccd5bda",
     "thr": "aa9d092137049239127bbf5b85599018",
     "upt": "4e8110d1b93254cd6555a619b2b78ccc"
 }
@@ -53,6 +54,7 @@ NAMES = {
     "rem": "rss",
     "res": "rss",
     "rss": "rss",
+    "srv": "srv",
     "syn": "rss",
     "thr": "thr",
     "upt": "upt"
