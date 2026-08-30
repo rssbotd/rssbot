@@ -133,7 +133,7 @@ class Fetcher:
 class Runner:
 
     def __init__(self):
-        self.dosave = True
+        self.dosave = False
         self.fetchlock = threading.RLock()
         self.queue = queue.Queue()
         self.running = threading.Event()
