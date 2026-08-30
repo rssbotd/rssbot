@@ -34,16 +34,8 @@ logger = logging.getLogger("rss")
 
 def init():
     "initialize rss module."
-    logdir = Workdir.logdir("rss")
-    path = j(logdir, "rss.log")
-    if not os.path.exists(path):
-        Utils.cdir(path)
-    formatter = Format(Logging.format, Logging.datefmt)
-    logger.setLevel(Main.sets.level.upper() or "INFO")
-    filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
-    filehandler.setFormatter(formatter)
-    logger.addHandler(filehandler)
     Runners.init(6, Runner)
+    Run.logon()
     Run.fetcher.start()
     nrs = Locate.count("rss")
     txt = f"{nrs} feeds"
@@ -225,7 +217,7 @@ class Runners:
 
     runners = []
     lock = threading.RLock()
-    nrcpu = 6
+    nrcpu = 1
     nrlast = 0
 
     @staticmethod
@@ -500,6 +492,19 @@ class Run:
     fetcher = Fetcher()
     fetchlock = _thread.allocate_lock()
     importlock = _thread.allocate_lock()
+
+
+    @staticmethod
+    def logon():
+        logdir = Workdir.logdir("rss")
+        path = j(logdir, "rss.log")
+        if not os.path.exists(path):
+            Utils.cdir(path)
+        formatter = Format(Logging.formats, Logging.datefmt)
+        logger.setLevel(Main.sets.level.upper() or "INFO")
+        filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
+        filehandler.setFormatter(formatter)
+        logger.addHandler(filehandler)
 
 
 def atr(event):
