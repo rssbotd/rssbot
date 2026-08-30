@@ -2,9 +2,3 @@
 
 
 "watcher"
-
-
-import select
-
-
-class Watcher
