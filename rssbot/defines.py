@@ -19,10 +19,11 @@ from .methods import Method
 from .objects import Data, Object
 from .outputs import Display, Output
 from .package import Mods
-from .parsers import Parse
+from .parsers import Parser, OPML, RSS
 from .persist import Disk, Workdir
 from .repeats import Repeater
 from .require import Cmd
+from .runners import Runners
 from .threads import Task, Thread
 from .utility import Format, Logging, Time, Utils
 from .watcher import Watcher
@@ -51,9 +52,12 @@ def __dir__():
        'Message',
        'Method',
        'Mods',
+       'OPML',
        'Output',
-       'Parse',
+       'Parser',
        'Repeater',
+       'RSS',
+       'Runners',
        'Task',
        'Thread',
        'Time',

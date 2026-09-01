@@ -10,7 +10,7 @@ import logging
 
 from .brokers import Clients
 from .package import Mods
-from .parsers import Parse
+from .parsers import Parser
 
 
 class Commands:
@@ -27,7 +27,7 @@ class Commands:
     @classmethod
     def command(cls, evt):
         "command callback."
-        Parse.parse(evt, evt.text)
+        Parser.parse(evt, evt.text)
         func = cls.cmds.get(evt.cmd, cls.ondemand(evt.cmd))
         if func:
             func(evt)

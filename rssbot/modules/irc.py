@@ -42,7 +42,7 @@ def shutdown():
 class Config(Object):
 
     name = Main.name or Method.pkgname(Mods)
-    channel = f"#{name}"
+    channel = Main.sets.channel or f"#{name}"
     commands = True
     control = "!"
     ignore = ["PING", "PONG", "PRIVMSG"]

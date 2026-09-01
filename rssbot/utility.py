@@ -8,9 +8,13 @@ import datetime
 import inspect
 import logging
 import logging.handlers
+import html
 import os
 import pathlib
+import re
 import time
+import urllib
+import uuid
 
 
 j = os.path.join
@@ -163,6 +167,16 @@ class Time:
 
 class Utils:
 
+    @staticmethod
+    def cdata(line):
+        "scrape CDATA block."
+        if "CDATA" in line:
+            lne = line.replace("![CDATA[", "")
+            lne = lne.replace("]]", "")
+            lne = lne[1:-1]
+            return lne
+        return line
+
     @classmethod
     def cdir(cls, path):
         "create directory."
@@ -191,6 +205,11 @@ class Utils:
                 not x.startswith("__") and
                 x[:-3] not in Utils.spl(ignore)
                ]
+
+    @staticmethod
+    def shortid():
+        "return a shortid."
+        return str(uuid.uuid4())[:8]
 
     @staticmethod
     def skip(obj):
@@ -229,6 +248,28 @@ class Utils:
     def strip(path, nr=3):
         "strip filename from path."
         return os.path.join(*path.split(os.sep)[-nr:])
+
+    @staticmethod
+    def striphtml(text):
+        "strip html."
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text)
+
+    @staticmethod
+    def unescape(text):
+        "unescape html."
+        txt = re.sub(r"\s+", " ", text)
+        return html.unescape(txt)
+
+    @staticmethod
+    def unquote(url):
+        "unquote an url."
+        return urllib.parse.unquote(url, errors='ignore')
+
+    @staticmethod
+    def useragent(txt):
+        "produce useragent string."
+        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
 
     @staticmethod
     def where(obj):

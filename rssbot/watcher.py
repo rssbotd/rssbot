@@ -4,6 +4,7 @@
 "watching files"
 
 
+import errno
 import io
 import logging
 import os
@@ -16,20 +17,26 @@ from .encoder import JSONL
 from .threads import Thread
 
 
+e = os.path.exists
+
+
 class Watcher:
 
     cbs = {}
     fds = {}
+    paths = {}
     running = threading.Event()
 
     @classmethod
     def add(cls, path, callback):
         "add callback"
-        logging.warn("add %s", path)
-        file = open(path, "r", encoding="utf-8")
-        file.seek(0, 2)
-        cls.fds[file.fileno()] = file
-        cls.cbs[file.fileno()] = callback        
+        if not e(path):
+            return
+        file = open(path, "r+", encoding="utf-8")
+        fno = file.fileno()
+        cls.paths[fno] = path
+        cls.fds[fno] = file
+        cls.cbs[fno] = callback
         
     @classmethod
     def callback(cls, fd):
@@ -47,11 +54,13 @@ class Watcher:
             try:
                 (inp, _out, err) = select.select(list(cls.fds.keys()), [], [])
             except OSError as ex:
-                if "Bad file" in str(ex):
-                    time.sleep(60.0)
+                if ex.errno == errno.EBADF:
+                    time.sleep(0.1)
                 else:
                     logging.exception(ex)
-                continue
+            except Exception as ex:
+                logging.exception(ex)
+            time.sleep(1.0)
             if err:
                 logging.error(err)
             elif inp:
@@ -61,7 +70,15 @@ class Watcher:
     def input(cls, fds):
         "reads changed file descriptors."
         for fd in fds:
-            cls.callback(fd)
+            try:
+                cls.callback(fd)
+            except OSError as ex:
+                if ex.errno == errno.EBADF:
+                    time.sleep(0.1)
+                else:
+                    logging.exception(ex)
+            except Exception as ex:
+                logging.exception(ex)
 
     @classmethod
     def start(cls):
@@ -69,7 +86,7 @@ class Watcher:
         if cls.running.isSet():
             return
         cls.running.set()
-        logging.warn("starting watcher")
+        logging.warn("watching %s", ".".join([os.path.basename(x) for x in cls.paths.values()]))
         Thread.launch(cls.loop, name="Watcher.loop")
 
     @classmethod

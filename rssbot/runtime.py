@@ -40,6 +40,7 @@ class Arguments:
         optionparser.add_argument("-p", "--path", default='', help='path to modules directory.', metavar="path")
         optparser = theparser.add_argument_group()
         optparser.add_argument("--admin", action="store_true", help="enable admin mode.")
+        optparser.add_argument("--channel", default="", help="channel to join")
         optparser.add_argument("--default", default="irc,mdl,rss,wsd", help=argparse.SUPPRESS)
         optparser.add_argument("--nochdir", action="store_true", help=argparse.SUPPRESS)
         optparser.add_argument("--scanner", action="store_true", help="do full modules scan on boot.")
