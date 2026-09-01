@@ -24,8 +24,9 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, urlencode
 
 
-from rssbot.defines import Object, Clients, Disk, Format, JSONL, Locate
-from rssbot.defines import Logging, Main, Method, Repeater, Thread, Utils, Workdir
+from rssbot.defines import Clients, Data, Disk, Format, JSONL, Locate
+from rssbot.defines import Logging, Main, Method, Object, Repeater, Thread
+from rssbot.defines import Utils, Watcher, Workdir
 
 
 j = os.path.join
@@ -34,9 +35,10 @@ logger = logging.getLogger("rss")
 
 def init():
     "initialize rss module."
-    Runners.init(6, Runner)
+    Runners.init(1, Runner)
     Run.logon()
     Run.fetcher.start()
+    Watcher.start()
     nrs = Locate.count("rss")
     txt = f"{nrs} feeds"
     if nrs == 1:
@@ -49,26 +51,6 @@ def shutdown():
     Run.fetcher.stop()
 
 
-class Config(Object):
-
-    polltime = 300
-
-
-class Feed(Object):
-
-    link = ""
-
-
-class Modified(Object):
-
-    pass
-
-
-class Urls(Object):
-
-    pass
-
-
 class Rss(Object):
 
     def __init__(self):
@@ -79,14 +61,77 @@ class Rss(Object):
         self.rss = ""
 
 
-class State:
+class Runner:
 
-    configfn = ""
-    modified = Modified()
-    modifiedfn = ""
-    seenfn = ""
-    seen = Urls()
-    skipped = []
+    def __init__(self):
+        self.dosave = True
+        self.fetchlock = threading.RLock()
+        self.queue = queue.Queue()
+        self.running = threading.Event()
+        self.todo = queue.Queue()
+
+    def loop(self):
+        "loop to handle fetch jobs."
+        while self.running.is_set():
+            job = self.queue.get()
+            if job is None:
+                break
+            self.fetch(*job)
+
+    def fetch(self, fnm, feed, silent=False):
+        "fetch a feed."
+        with Run.fetchlock:
+            result = []
+            see = getattr(State.seen, feed.rss, [])
+            urls = []
+            counter = 0
+            for obj in Helpers.getfeed(fnm, feed, feed.display_list):
+                if obj is None:
+                    continue
+                if Method.isempty(obj):
+                    continue
+                counter += 1
+                fed = Feed()
+                Method.update(fed, obj)
+                Method.update(fed, feed)
+                url = urllib.parse.urlparse(fed.link)
+                if url.path and not url.path == "/":
+                    uurl = f"{url.scheme}://{url.netloc}/{url.path}"
+                else:
+                    uurl = fed.link
+                urls.append(uurl)
+                if uurl in see:
+                    continue
+                fed.name = feed.name
+                result.append(fed)
+                if self.dosave:
+                    logger.info(JSONL.logtxt(fed))
+            if urls:
+                setattr(State.seen, feed.rss, urls)
+            if silent:
+                return counter
+            if not State.seenfn:
+                State.seenfn = Disk.ident(State.seen)
+            Disk.write(State.seen, State.seenfn)
+        # for obj in result:
+        #     Clients.announce(self.display(obj, getattr(feed, "name", None)))
+        #del result
+        #gc.collect()
+        return counter
+
+    def put(self, args):
+        "put jobs on queue."
+        self.queue.put(args)
+
+    def start(self, daemon=True):
+        "start runner."
+        self.running.set()
+        Thread.launch(self.loop, daemon=daemon)
+
+    def stop(self):
+        "stop runner."
+        self.running.clear()
+        self.queue.put(None)
 
 
 class Fetcher:
@@ -122,19 +167,31 @@ class Fetcher:
         self.stopped.set()
 
 
-class Runner:
+class Run:
 
-    def __init__(self):
-        self.dosave = False
-        self.fetchlock = threading.RLock()
-        self.queue = queue.Queue()
-        self.running = threading.Event()
-        self.todo = queue.Queue()
+    buffer = []
+    fetcher = Fetcher()
+    fetchlock = _thread.allocate_lock()
+    importlock = _thread.allocate_lock()
+    lastline = ""
 
-    def display(self, obj, name=None):
+    @classmethod
+    def callback(cls, fd):
+        for line in os.fdopen(fd, "r", encoding="utf-8").readlines():
+            if not line:
+                continue
+            obj = Feed()
+            Method.construct(obj, JSONL.loads(line.strip()))
+            Clients.announce(cls.display(obj))
+
+    @classmethod
+    def display(cls, obj, name=None):
         "display feed."
         displaylist = ""
-        result = (name and f"[{name}] ") or ""
+        if name in obj:
+            result = f"[{obj,name}] "
+        else:
+            result = ""
         try:
             displaylist = obj.display_list or "title,link"
         except AttributeError:
@@ -150,68 +207,18 @@ class Runner:
             result += " - "
         return result[:-2].rstrip()
 
-    def loop(self):
-        "loop to handle fetch jobs."
-        while self.running.is_set():
-            job = self.queue.get()
-            if job is None:
-                break
-            self.fetch(*job)
-
-    def fetch(self, fnm, feed, silent=False):
-        "fetch a feed."
-        with Run.fetchlock:
-            result = []
-            see = getattr(State.seen, feed.rss, [])
-            urls = []
-            counter = 0
-            for obj in Helpers.getfeed(fnm, feed, feed.display_list):
-                if obj is None:
-                    continue
-                if Method.isempty(obj):
-                    continue
-                counter += 1
-                fed = Feed()
-                Method.update(fed, obj)
-                Method.update(fed, feed)
-                url = urllib.parse.urlparse(fed.link)
-                if url.path and not url.path == "/":
-                    uurl = f"{url.scheme}://{url.netloc}/{url.path}"
-                else:
-                    uurl = fed.link
-                urls.append(uurl)
-                if uurl in see:
-                    continue
-                result.append(fed)
-                if self.dosave:
-                    logger.info(JSONL.logtxt(fed))
-            if urls:
-                setattr(State.seen, feed.rss, urls)
-            if silent:
-                return counter
-            if not State.seenfn:
-                State.seenfn = Disk.ident(State.seen)
-            Disk.write(State.seen, State.seenfn)
-        for obj in result:
-            Clients.announce(self.display(obj, getattr(feed, "name", None)))
-        del result
-        gc.collect()
-        return counter
-
-    def put(self, args):
-        "put jobs on queue."
-        self.queue.put(args)
-
-    def start(self, daemon=True):
-        "start runner."
-        self.running.set()
-        Thread.launch(self.loop, daemon=daemon)
-
-    def stop(self):
-        "stop runner."
-        self.running.clear()
-        self.queue.put(None)
-
+    @classmethod
+    def logon(cls):
+        path = j(Workdir.logdir("rss"), 'rss.log')
+        if not os.path.exists(path):
+            Utils.cdir(path)
+        formatter = Format(Logging.formats, Logging.datefmt)
+        logger.setLevel(Main.sets.level.upper() or "INFO")
+        filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
+        filehandler.setFormatter(formatter)
+        logger.addHandler(filehandler)
+        Watcher.add(path, cls.callback)
+        
 
 class Runners:
 
@@ -487,24 +494,34 @@ class Helpers:
         return "Mozilla/5.0 (X11; Linux x86_64) " + txt
 
 
-class Run:
+class Config(Object):
 
-    fetcher = Fetcher()
-    fetchlock = _thread.allocate_lock()
-    importlock = _thread.allocate_lock()
+    polltime = 300
 
 
-    @staticmethod
-    def logon():
-        logdir = Workdir.logdir("rss")
-        path = j(logdir, "rss.log")
-        if not os.path.exists(path):
-            Utils.cdir(path)
-        formatter = Format(Logging.formats, Logging.datefmt)
-        logger.setLevel(Main.sets.level.upper() or "INFO")
-        filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
-        filehandler.setFormatter(formatter)
-        logger.addHandler(filehandler)
+class Feed(Object):
+
+    link = ""
+
+
+class Modified(Object):
+
+    pass
+
+
+class Urls(Object):
+
+    pass
+
+
+class State:
+
+    configfn = ""
+    modified = Modified()
+    modifiedfn = ""
+    seenfn = ""
+    seen = Urls()
+    skipped = []
 
 
 def atr(event):

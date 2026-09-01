@@ -27,14 +27,7 @@ def init():
     except (KeyboardInterrupt, EOFError):
         _thread.interrupt_main()
     if irc.events.joined.is_set():
-        logging.warning("%s", Method.fmt(irc.cfg, skip=[
-            "ignore",
-            "name",
-            "realname",
-            "username",
-            "word"
-            ]
-        ))
+        logging.warning("%s", Method.fmt(irc.cfg, ["nick", "channel", "server", "port"]))
     else:
         irc.stop()
     return irc
