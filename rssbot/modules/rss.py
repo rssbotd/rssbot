@@ -5,9 +5,6 @@
 
 
 import errno
-import gc
-import html
-import html.parser
 import http.client
 import logging
 import os
@@ -17,7 +14,6 @@ import threading
 import urllib
 import urllib.parse
 import urllib.request
-import uuid
 import _thread
 
 
@@ -25,13 +21,9 @@ from urllib.error import HTTPError
 from urllib.parse import quote_plus, urlencode
 
 
-from rssbot.defines import Clients, Data, Disk, Format, JSONL, Locate
-from rssbot.defines import OPML, Logging, Main, Method, Object
-from rssbot.defines import Repeater, RSS, Runners, Thread, Utils
-from rssbot.defines import Watcher, Workdir
-
-
-"defines"
+from rssbot.defines import Clients, Disk, Format, JSONL, Locate, Logging, Main
+from rssbot.defines import Method, Object, Repeater, Thread, Utils, Watcher
+from rssbot.defines import Workdir
 
 
 j = os.path.join
@@ -50,9 +42,6 @@ def init():
 def shutdown():
     "shutdown rss module."
     Run.stop()
-
-
-"data"
 
 
 class Config(Object):
@@ -89,14 +78,17 @@ class Rss(Object):
 class State(Object):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(self)
         self.configfn = ""
         self.index = 0
         self.modifiedfn = ""
         self.seenfn = ""
 
 
-"classes"
+class Locks:
+
+    fetchlock = _thread.allocate_lock()
+    importlock = _thread.allocate_lock()
 
 
 class Runner:
@@ -167,6 +159,40 @@ class Runner:
         self.queue.put(None)
 
 
+class Runners:
+
+    runners = []
+    lock = threading.RLock()
+    nrcpu = 1
+    nrlast = 0
+
+    @classmethod
+    def add(cls, client):
+        "add a runner."
+        cls.runners.append(client)
+
+    @classmethod
+    def init(cls, nrcpu, clazz):
+        "initialize a runner."
+        cls.nrcpu = nrcpu
+        for _x in range(cls.nrcpu):
+            clt = clazz()
+            clt.start()
+            Runners.add(clt)
+
+    @classmethod
+    def put(cls, *args):
+        "push job to a runner."
+        if not cls.runners:
+            cls.init(Runners.nrcpu, Runner)
+        with cls.lock:
+            if cls.nrlast >= cls.nrcpu-1:
+                cls.nrlast = 0
+            clt = cls.runners[cls.nrlast]
+            clt.put(*args)
+            cls.nrlast += 1
+
+
 class Fetcher:
 
     def __init__(self):
@@ -195,14 +221,58 @@ class Fetcher:
         "sto prss fetcher."
         logging.debug("stopped fetcher")
         if Run.modified:
-            Disk.write(Run.modified, Run.modifiedfn)
+            Disk.write(Run.modified, Run.state.modifiedfn)
         self.stopped.set()
 
 
-class Locks:
+class RSS:
 
-    fetchlock = _thread.allocate_lock()
-    importlock = _thread.allocate_lock()
+    @classmethod
+    def getitem(cls, line, item):
+        "return item from line."
+        lne = ""
+        index1 = line.find(f"<{item}>")
+        if index1 == -1:
+            return lne
+        index1 += len(item) + 2
+        index2 = line.find(f"</{item}>", index1)
+        if index2 == -1:
+            return lne
+        return Utils.cdata(line[index1:index2]).strip()
+
+    @classmethod
+    def getitems(cls, text, token, nrs=None):
+        "get items from text."
+        index = 0
+        end = len(text)
+        stop = False
+        nrx = -1
+        while not stop:
+            nrx += 1
+            if nrs and nrx >= nrs:
+                break
+            index1 = text.rfind(f"<{token}", index, end)
+            if index1 == -1:
+                break
+            end = index1
+            index1 += len(token) + 2
+            index2 = text.rfind(f"</{token}>", index1)
+            if index2 == -1:
+                break
+            yield text[index1:index2]
+
+    @classmethod
+    def parse(cls, txt, toke="item", items="title,link"):
+        "parse feed."
+        for line in cls.getitems(txt, toke):
+            line = line.strip()
+            obj = {}
+            for itm in Utils.spl(items):
+                val = cls.getitem(line, itm)
+                if val:
+                    escaped = Utils.unescape(val.strip())
+                    obj[itm] = Utils.striphtml(escaped).replace("\n", "")
+            yield obj
 
 
 class Run:
@@ -235,7 +305,7 @@ class Run:
         "display feed."
         displaylist = ""
         if name in obj:
-            result = f"[{obj,name}] "
+            result = f"[{obj.name}] "
         else:
             result = ""
         try:
@@ -282,17 +352,11 @@ class Run:
     @classmethod
     def stop(cls):
         "shutdown."
-        self.fetcher.stop()
-        self.watcher.stop()
-        Disk.write(cls.state)
+        cls.fetcher.stop()
+        cls.watcher.stop()
 
 
 class Helpers:
-
-    @staticmethod
-    def attrs(obj, txt):
-        "parse attribute into an object."
-        Method.update(obj, *list(OPML.parse(txt)))
 
     @staticmethod
     def getfeed(fnm, feed, items):
@@ -305,33 +369,18 @@ class Helpers:
             if "link" not in items:
                 items += ",link"
             if feed.rss.endswith("atom"):
-                yield from RSS.parse(
-                                     str(
-                                         response.data,
-                                         "utf-8",
-                                         errors='ignore'
-                                        ),
+                yield from RSS.parse(str(response.data, "utf-8", errors='ignore'),
                                      "entry",
-                                     items
-                                    ) or []
+                                     items) or []
             else:
-                yield from RSS.parse(
-                                     str(
-                                         response.data,
-                                         "utf-8",
-                                          errors='ignore'
-                                        ),
+                yield from RSS.parse(str(response.data, "utf-8", errors='ignore'),
                                      "item",
-                                     items
-                                    ) or []
+                                     items) or []
             if "error" in feed and feed.error:
                 feed.error = ""
                 Disk.write(feed, fnm)
         except TimeoutError:
             return result
-        except OSError as ex:
-            if ex.errno == errno.EBADFD:
-                return result
         except (
                 urllib.error.URLError,
                 http.client.HTTPException,
@@ -344,6 +393,9 @@ class Helpers:
                 return result
             feed.error = str(ex)
             logging.debug("%s %s", feed.rss, feed.error)
+        except OSError as ex:
+            if ex.errno == errno.EBADFD:
+                return result
         return result
 
     @staticmethod
@@ -387,9 +439,6 @@ class Helpers:
             return response
 
 
-"commands"
-
-
 def atr(event):
     "show attributes of a feed."
     if not event.rest:
@@ -406,23 +455,13 @@ def atr(event):
             continue
         if obj.rss.endswith('atom'):
             result = list(RSS.getitems(
-                                       str(
-                                           request.data,
-                                          'utf-8',
-                                           errors='ignore'
-                                          ),
+                                       str(request.data, 'utf-8', errors='ignore'),
                                        'entry',
-                                       1
-                                      ))
+                                       1))
         else:
-            result = list(RSS.getitems(
-                                       str(
-                                           request.data,
-                                           'utf-8',
-                                           errors='ignore'),
+            result = list(RSS.getitems(str(request.data, 'utf-8', errors='ignore'),
                                        'item',
-                                       1
-                                      ))
+                                       1))
         resulting = []
         for x in re.findall('<.*?>', result[0]):
             if x[1] == '/' and len(x) > 4:
@@ -441,72 +480,6 @@ def dpl(event):
             Method.update(feed, setter)
             Disk.write(feed, fnm)
     event.ok()
-
-
-def exp(event):
-    "export opml."
-    with Locks.importlock:
-        event.reply(TEMPLATE)
-        nrs = 0
-        for _fn, ooo in Locate.find(Method.fqn(Rss)):
-            nrs += 1
-            obj = Rss()
-            Method.update(obj, ooo)
-            name = f"url{nrs}"
-            dipl = obj.display_list
-            url = obj.rss
-            txt = f'<outline name="{name}" display_list="{dipl}" xmlUrl="{url}"/>'
-            event.reply(" " * 12 + txt)
-        event.reply(" " * 8 + "</outline>")
-        event.reply("    <body>")
-        event.reply("</opml>")
-
-
-def imp(event):
-    "import opml."
-    if not event.args:
-        event.iface("<filename>")
-        return
-    fnm = event.args[0]
-    if not os.path.isfile(fnm):
-        event.reply(f"no {fnm} file found.")
-        return
-    with Locks.importlock:
-        with open(fnm, "r", encoding="utf-8") as file:
-            txt = file.read()
-        prs = OPMLParser()
-        nrs = 0
-        nrskip = 0
-        insertid = Utils.shortid()
-        skipped = []
-        for obj in prs.parse(txt, "outline", "name,xmlUrl"):
-            url = obj["xmlUrl"]
-            if url in skipped:
-                continue
-            if not url.startswith("http"):
-                continue
-            has = list(Locate.find(
-                                   Method.fqn(Rss),
-                                   {"rss": url},
-                                   matching=True
-                                  ))
-            if has:
-                skipped.append(url)
-                nrskip += 1
-                continue
-            feed = Rss()
-            feed.rss = obj["xmlUrl"]
-            del obj["xmlUrl"]
-            Method.update(feed, obj)
-            uri = urllib.parse.urlparse(feed.rss)
-            feed.name = max(uri.netloc.split("."), key=len)
-            feed.insertid = insertid
-            Disk.write(feed)
-            nrs += 1
-    if nrskip:
-        event.reply(f"skipped {nrskip} urls.")
-    if nrs:
-        event.reply(f"added {nrs} urls.")
 
 
 def nme(event):
@@ -598,14 +571,3 @@ def syn(event):
     fetcher.start(False)
     nrs = fetcher.run(True)
     event.reply(f"{nrs} feeds synced")
-
-
-"data"
-
-
-TEMPLATE = """<opml version="1.0">
-    <head>
-        <title>OPML</title>
-    </head>
-    <body>
-        <outline title="opml" text="rss feeds">"""

@@ -5,7 +5,6 @@
 
 
 import errno
-import io
 import logging
 import os
 import select
@@ -13,7 +12,6 @@ import threading
 import time
 
 
-from .encoder import JSONL
 from .threads import Thread
 
 

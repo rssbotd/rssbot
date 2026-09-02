@@ -16,7 +16,7 @@ sys.path.insert(0, os.getcwd())
 
 
 from rssbot.defines import Boot, Client, Commands, Main, Message
-from rssbot.defines import Method, Mods, Parse, Time, Workdir
+from rssbot.defines import Method, Mods, Parser, Time, Workdir
 
 
 Workdir.wdr = ".test"
@@ -29,7 +29,7 @@ class Kernel(Boot):
 
     @classmethod
     def boot(cls):
-        Parse.parse(Main, " ".join(sys.argv[1:]))
+        Parser.parse(Main, " ".join(sys.argv[1:]))
         cls.configure(Main)
         Mods.dir("examples")
         Mods.dir(Mods.moddir())
@@ -159,7 +159,7 @@ examples = {
     "res": ["", "hnrss"],
     "sil": [""],
     "slg": [""],
-    "srv": [""],
+    "srv": ["--admin"],
     "tbl": [""],
     'thr': [""],
     'upt': [""],
@@ -173,15 +173,9 @@ pre = {
         'main',
         'irc',
         'rss',
-        'rst',
-        'udp',
-        'web',
         'main nick=mekker',
         'irc nick=mekker',
         'rss nick=mekker',
-        'rst nick=mekker',
-        'udp nick=mekker',
-        'web nick=mekker'
     ],
     "imp": [
         "",
