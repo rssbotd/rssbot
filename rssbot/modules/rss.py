@@ -218,7 +218,8 @@ class Run:
 
     @classmethod
     def callback(cls, file):
-        #file = os.fdopen(fd, "r+", encoding="utf-8")
+        if os.fstat(file.fileno()).st_size < cls.state.index:
+            cls.state.index = 0
         file.seek(cls.state.index, 0)
         for line in file.readlines():
             if not line:
