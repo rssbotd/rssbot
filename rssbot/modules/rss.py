@@ -78,7 +78,7 @@ class Rss(Object):
 class State(Object):
 
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.configfn = ""
         self.index = 0
         self.modifiedfn = ""
