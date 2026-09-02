@@ -32,7 +32,8 @@ class Watcher:
         "add callback"
         if not e(path):
             return
-        file = open(path, "r+", encoding="utf-8")
+        file = open(path, "a+", encoding="utf-8")
+        file.seek(0)
         fno = file.fileno()
         cls.paths[fno] = path
         cls.fds[fno] = file
@@ -41,10 +42,10 @@ class Watcher:
     @classmethod
     def callback(cls, fd):
         "run cacllback passing the filedescriptor."
-        cls.cbs[fd](fd)
+        cls.cbs[fd](cls.fds[fd])
 
     @classmethod
-    def err(cls, fds):
+    def error(cls, fds):
         "handle errors"
 
     @classmethod
@@ -62,7 +63,7 @@ class Watcher:
                 logging.exception(ex)
             time.sleep(1.0)
             if err:
-                logging.error(err)
+                cls.error(err)
             elif inp:
                 cls.input(inp)
 
@@ -92,7 +93,7 @@ class Watcher:
     @classmethod
     def stop(cls):
         "stop watcher."
-        self.running.clear()
+        cls.running.clear()
 
 
 def __dir__():

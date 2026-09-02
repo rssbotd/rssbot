@@ -142,7 +142,7 @@ class Runner:
                 fed.name = feed.name
                 result.append(fed)
                 if self.dosave:
-                    Run.logger.error(JSONL.logtxt(fed))
+                    Run.logger.debug(JSONL.logtxt(fed))
             if urls:
                 setattr(Run.seen, feed.rss, urls)
             if silent:
@@ -217,8 +217,8 @@ class Run:
     watcher = Watcher()
 
     @classmethod
-    def callback(cls, fd):
-        file = os.fdopen(fd, "r+", encoding="utf-8")
+    def callback(cls, file):
+        #file = os.fdopen(fd, "r+", encoding="utf-8")
         file.seek(cls.state.index, 0)
         for line in file.readlines():
             if not line:
@@ -227,7 +227,8 @@ class Run:
             Method.construct(obj, JSONL.loads(line.strip()))
             Clients.announce(cls.display(obj))
         cls.state.index = file.tell()
-
+        Disk.write(cls.state, cls.statefn)
+        
     @classmethod
     def display(cls, obj, name=None):
         "display feed."
@@ -255,10 +256,14 @@ class Run:
     def enablelog(cls, path):
         "enabke module logger."
         formatter = Format(Logging.formats, Logging.datefmt)
-        cls.logger.setLevel(Main.sets.level.upper() or "INFO")
         filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
         filehandler.setFormatter(formatter)
+        if cls.logger.handlers:
+            for handler in cls.logger.handlers:
+                cls.logger.removeHandler(handler)
         cls.logger.addHandler(filehandler)
+        cls.logger.propagate = False
+        cls.logger.setLevel("DEBUG")
 
     @classmethod
     def init(cls):
@@ -268,7 +273,7 @@ class Run:
             Utils.cdir(path)
         cls.enablelog(path)
         Watcher.add(path, cls.callback)
-        Locate.last(cls.state)
+        cls.statefn = Locate.last(cls.state)
         cls.fetcher.start()
         cls.watcher.start()
         Runners.init(1, Runner)
