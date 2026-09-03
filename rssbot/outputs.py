@@ -4,13 +4,15 @@
 "output"
 
 
+import gc
 import logging
 import queue
 import threading
 import _thread
 
 
-from .brokers import Broker
+from .clients import Clients
+from .engines import Engine
 from .threads import Thread
 
 
@@ -22,7 +24,7 @@ class Display:
         super().__init__()
         self.olock = threading.RLock()
         self.silent = False
-        Broker.add(self)
+        Clients.add(self)
 
     def announce(self, text):
         "announce text to all channels."
@@ -37,6 +39,7 @@ class Display:
                     return
                 self.dosay(event.channel, txt)
             del event
+            gc.collect()
 
     def dosay(self, channel, text):
         "say called by display."
@@ -96,8 +99,42 @@ class Output:
             _thread.interrupt_main()
 
 
+class Client(Engine, Display):
+
+    def __init__(self):
+        Engine.__init__(self)
+        Display.__init__(self)
+
+    def raw(self, text):
+        "raw output."
+        raise NotImplementedError
+
+
+class Buffered(Client, Output):
+
+    def __init__(self):
+        Client.__init__(self)
+        Output.__init__(self)
+
+    def raw(self, text):
+        "raw output."
+        raise NotImplementedError
+
+    def start(self, daemon=True):
+        "start output loop."
+        Client.start(self)
+        Output.start(self, daemon=daemon)
+
+    def stop(self):
+        "stop output loop."
+        Client.stop(self)
+        Output.stop(self)
+
+
 def __dir__():
     return (
+        'Buffered',
+        'Client',
         'Display',
         'Output'
     )

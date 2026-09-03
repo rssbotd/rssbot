@@ -6,21 +6,21 @@
 
 
 from .booting import Boot
-from .brokers import Broker, Clients
-from .clients import Buffered, Client
+from .brokers import Broker
+from .clients import Clients
 from .command import Commands
 from .configs import Main
 from .encoder import JSON, JSONL
 from .engines import Engine
+from .fetcher import Fetcher
 from .hashing import Md5
-from .locater import Locate
 from .message import Message
 from .methods import Method
 from .objects import Data, Object
-from .outputs import Display, Output
+from .outputs import Buffered, Client, Display, Output
 from .package import Mods
 from .parsers import Parser
-from .persist import Disk, Workdir
+from .persist import Disk, Locate, Workdir
 from .repeats import Repeater
 from .require import Cmd
 from .threads import Task, Thread
@@ -41,6 +41,7 @@ def __dir__():
        'Disk',
        'Display',
        'Engine',
+       'Fetcher',
        'Format',
        'JSON',
        'JSONL',

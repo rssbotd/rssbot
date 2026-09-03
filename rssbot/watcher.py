@@ -4,7 +4,6 @@
 "watching files"
 
 
-import errno
 import logging
 import os
 import select
@@ -52,11 +51,6 @@ class Watcher:
         while cls.running.isSet():
             try:
                 (inp, _out, err) = select.select(list(cls.fds.keys()), [], [])
-            except OSError as ex:
-                if ex.errno == errno.EBADF:
-                    time.sleep(0.1)
-                else:
-                    logging.exception(ex)
             except Exception as ex:
                 logging.exception(ex)
             time.sleep(1.0)
@@ -72,10 +66,7 @@ class Watcher:
             try:
                 cls.callback(fd)
             except OSError as ex:
-                if ex.errno == errno.EBADF:
-                    time.sleep(0.1)
-                else:
-                    logging.exception(ex)
+                logging.exception(ex)
             except Exception as ex:
                 logging.exception(ex)
 

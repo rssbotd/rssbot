@@ -14,7 +14,7 @@ import time
 import _thread
 
 
-from rssbot.defines import Broker, Buffered, Commands, Disk, Main, Object
+from rssbot.defines import Buffered, Clients, Commands, Disk, Main, Object
 from rssbot.defines import Message, Mods, Method, Thread
 
 
@@ -31,12 +31,6 @@ def init():
     else:
         irc.stop()
     return irc
-
-
-def shutdown():
-    "shutdown irc module."
-    for name, bot in Broker.like("irc"):
-        bot.stop()
 
 
 class Config(Object):
@@ -509,13 +503,13 @@ class IRC(Buffered):
 
 def cb_auth(evt):
     "authorisation callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     bot.docommand(f"AUTHENTICATE {bot.cfg.word}")
 
 
 def cb_cap(evt):
     "capabilities callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     if (bot.cfg.word or bot.cfg.word and "ACK" in evt.arguments):
         bot.direct("AUTHENTICATE PLAIN")
     else:
@@ -524,7 +518,7 @@ def cb_cap(evt):
 
 def cb_error(evt):
     "error callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     bot.state.nrerror += 1
     bot.state.error = evt.text
     logging.debug(Method.fmt(evt))
@@ -532,14 +526,14 @@ def cb_error(evt):
 
 def cb_h903(evt):
     "end capabilities callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
 
 def cb_h904(evt):
     "end capabilities callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
@@ -554,19 +548,19 @@ def cb_log(evt):
 
 def cb_ready(evt):
     "ready callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     bot.events.ready.set()
 
 
 def cb_001(evt):
     "greeting callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     bot.events.logon.set()
 
 
 def cb_notice(evt):
     "notice callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     if evt.text.startswith("VERSION"):
         name = Config.name.upper()
         ver = Config.version
@@ -577,7 +571,7 @@ def cb_notice(evt):
 
 def cb_privmsg(evt):
     "privmsg callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     if not bot.cfg.commands:
         return
     if evt.text:
@@ -596,7 +590,7 @@ def cb_privmsg(evt):
 
 def cb_quit(evt):
     "qiot callback."
-    bot = Broker.get(evt.orig)
+    bot = Clients.get(evt.orig)
     logging.debug("quit from %s", bot.cfg.server)
     bot.state.nrerror += 1
     bot.state.error = evt.text
