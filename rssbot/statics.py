@@ -27,16 +27,16 @@ CORE = {
     "runtime": "8146da7afa08cc6376f8c98203ce83f9",
     "threads": "2fcb5ceb0fa336dd7208297fc23e17b0",
     "utility": "7bfc5e8741007048fac03878ee0b2181",
-    "watcher": "a4094956ca214cf25c9a31296ce49b6c"
+    "watcher": "bc1f50786775de68bc07d2fedcd96908"
 }
 
 
 MODULES = {
     "cfg": "a47404e23ba563ebc0c3ac7a99fb8b77",
     "fnd": "d63c3713611b0d9995f536471089695b",
-    "irc": "1b3699cb2c4ed8506ca3f5fcb8431259",
+    "irc": "21afb18b8db1dcf325bfbf95fd8989eb",
     "opm": "315fc36048012dfa55980735c5e6eeca",
-    "rss": "e8c866d4b209036c731451a83a0d035f",
+    "rss": "ab0f7005f2e4b550b8d641800b417b1d",
     "srv": "928c1092265eb21e38d985ad06625ece",
     "thr": "aa9d092137049239127bbf5b85599018",
     "upt": "4e8110d1b93254cd6555a619b2b78ccc"

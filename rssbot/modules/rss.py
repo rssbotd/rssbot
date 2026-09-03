@@ -8,6 +8,7 @@ import gc
 import itertools
 import logging
 import os
+import pathlib
 import queue
 import re
 import threading
@@ -73,9 +74,9 @@ class Locks:
 
 class Run:
 
+    path = ""
+    file = None
     lock = threading.RLock()
-    path = os.path.join(Workdir.logdir("rss"), 'rss.log')
-    file = open(path, "a+", encoding="utf-8")
     configfn = ""
     modifiedfn = ""
     statefn = ""
@@ -121,6 +122,7 @@ class Run:
     @classmethod
     def enable(cls, path):
         "enabke module logger."
+        pathlib.Path(path).touch()
         formatter = Format(Logging.formats, Logging.datefmt)
         filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
         filehandler.setFormatter(formatter)
@@ -145,15 +147,16 @@ class Run:
     @classmethod
     def start(cls, once=False):
         "initialise module."
-        path = Run.path
-        if not os.path.exists(path):
-            Utils.cdir(path)
+        cls.path = os.path.join(Workdir.logdir("rss"), 'rss.log')
+        Utils.cdir(cls.path)
+        pathlib.Path(cls.path).touch()
+        cls.file = open(cls.path, "a+", encoding="utf-8")
         cls.timesfn = Locate.last(Watcher.times) or Disk.ident(Watcher.times)
         cls.statefn = Locate.last(State) or Disk.ident(State)
         if not once:
             Repeater.add(Config.polltime, cls.run)
-        cls.enable(path)
-        watcher.add(path, cls.callback)
+        cls.enable(cls.path)
+        watcher.add(cls.path, cls.callback)
         watcher.start()
         
     @classmethod
