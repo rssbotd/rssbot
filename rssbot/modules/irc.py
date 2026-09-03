@@ -503,13 +503,13 @@ class IRC(Buffered):
 
 def cb_auth(evt):
     "authorisation callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.docommand(f"AUTHENTICATE {bot.cfg.word}")
 
 
 def cb_cap(evt):
     "capabilities callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     if (bot.cfg.word or bot.cfg.word and "ACK" in evt.arguments):
         bot.direct("AUTHENTICATE PLAIN")
     else:
@@ -518,7 +518,7 @@ def cb_cap(evt):
 
 def cb_error(evt):
     "error callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.state.nrerror += 1
     bot.state.error = evt.text
     logging.debug(Method.fmt(evt))
@@ -526,14 +526,14 @@ def cb_error(evt):
 
 def cb_h903(evt):
     "end capabilities callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 
 
 def cb_h904(evt):
     "end capabilities callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.direct("CAP END")
     bot.events.authed.set()
 

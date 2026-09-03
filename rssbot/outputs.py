@@ -12,7 +12,6 @@ import _thread
 
 
 from .brokers import Broker
-from .engines import Engine
 from .threads import Thread
 
 

@@ -6,7 +6,6 @@
 
 import logging
 import os
-import select
 import threading
 import time
 

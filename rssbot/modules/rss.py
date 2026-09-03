@@ -5,19 +5,17 @@
 
 
 import gc
-import itertools
 import logging
 import os
 import pathlib
 import queue
 import re
 import threading
-import urllib
 import _thread
 
 
-from rssbot.defines import Clients, Disk, Engine, Fetcher, Format, JSONL
-from rssbot.defines import Locate, Logging, Main, Method, Object, Repeater
+from rssbot.defines import Clients, Disk, Fetcher, Format, JSONL, Locate
+from rssbot.defines import Logging, Main, Method, Object, Repeater
 from rssbot.defines import Thread, Utils, Watcher, Workdir
 
 
@@ -87,8 +85,10 @@ class Run:
     def callback(cls):
         logging.info("callback on %s %s", Run.path, State.index)
         with cls.lock:
+            print(cls.file)
             cls.file.seek(State.index, 0)
-            for line in cls.file:
+            while True:
+                line = cls.file.readline()
                 if not line:
                     break
                 Clients.announce(cls.display(JSONL.loads(line.strip())))
@@ -132,6 +132,17 @@ class Run:
         logger.addHandler(filehandler)
         logger.propagate = False
         logger.setLevel("DEBUG")
+
+    @classmethod
+    def log(cls, txt):
+        go = True
+        while True:
+            line = cls.file.readline()
+            if txt in line:
+                go = False
+                break
+        if go:
+            logger.debug(txt)
 
     @classmethod
     def run(cls, silent=False):
@@ -191,7 +202,7 @@ class Runner:
             fed = Object()
             Method.update(fed, obj)
             Method.update(fed, feed)
-            self.log(JSONL.logtxt(fed))
+            Run.log(JSONL.logtxt(fed))
             counter += 1
         Run.sync()
         return counter
@@ -210,11 +221,6 @@ class Runner:
                              (feed.rss.endswith("atom") and "entry") or "item",
                              items
                             ) or []
-
-    def log(self, txt):
-        with open(Run.path, "a+", encoding="utf-8") as file:
-           if txt not in file:
-               logger.debug(txt)
 
     def loop(self):
         "loop to handle fetch jobs."
