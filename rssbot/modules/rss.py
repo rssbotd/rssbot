@@ -5,6 +5,7 @@
 
 
 import gc
+import itertools
 import logging
 import os
 import queue
@@ -19,12 +20,13 @@ from rssbot.defines import Locate, Logging, Main, Method, Object, Repeater
 from rssbot.defines import Thread, Utils, Watcher, Workdir
 
 
-j = os.path.join
+logger = logging.getLogger("rss")
+watcher = Watcher()
 
 
 class Config(Object):
 
-    polltime = 10
+    polltime = 300
 
 
 def init():
@@ -32,7 +34,7 @@ def init():
     Disk.read(Config, "rss", "config")
     Run.start()
     nrs = Locate.count("rss")
-    txt = f"{nrs} feeds index {Run.state.index}"
+    txt = f"{nrs} feeds index {State.index}"
     if nrs == 1:
         txt = txt[:-1]
     logging.warning(txt)
@@ -55,12 +57,12 @@ class Rss(Object):
 
 class State(Object):
 
-    def __init__(self):
-        super().__init__()
-        self.configfn = ""
-        self.index = 0
-        self.modifiedfn = ""
-        self.statefn = ""
+    index = 0
+
+
+class Times(Object):
+
+    times = {}
 
 
 class Locks:
@@ -69,33 +71,29 @@ class Locks:
     importlock = _thread.allocate_lock()
 
 
-
-
 class Run:
 
-    logger = logging.getLogger("rss")
-    state = State()
-    watcher = Watcher()
+    lock = threading.RLock()
+    path = os.path.join(Workdir.logdir("rss"), 'rss.log')
+    file = open(path, "a+", encoding="utf-8")
+    configfn = ""
+    modifiedfn = ""
+    statefn = ""
+    timesfn = ""
+    index = 0
 
     @classmethod
-    def callback(cls, file):
-        size = os.fstat(file.fileno()).st_size
-        if size == cls.state.index:
-            return
-        if size < cls.state.index:
-            cls.state.index = 0
-        file.seek(cls.state.index, 0)
-        while True:
-            line = file.readline()
-            if not line:
-                break
-            obj = Object()
-            Method.construct(obj, JSONL.loads(line.strip()))
-            Clients.announce(cls.display(obj))
-            del obj
-        cls.state.index = file.tell()
-        Disk.write(cls.state, cls.state.statefn)
-        gc.collect()
+    def callback(cls):
+        logging.info("callback on %s %s", Run.path, State.index)
+        with cls.lock:
+            cls.file.seek(State.index, 0)
+            for line in cls.file:
+                if not line:
+                    break
+                Clients.announce(cls.display(JSONL.loads(line.strip())))
+            State.index = cls.file.tell()
+        Disk.write(State, cls.statefn)
+        gc.collect(0)
 
     @classmethod
     def display(cls, obj, name=None):
@@ -106,13 +104,13 @@ class Run:
         else:
             result = ""
         try:
-            displaylist = obj.display_list or "title,link"
+            displaylist = obj.get("display_list") or "title,link"
         except AttributeError:
             displaylist = "title,link,author"
         for key in displaylist.split(","):
             if not key:
                 continue
-            data = getattr(obj, key, None)
+            data = obj.get(key, None)
             if not data:
                 continue
             stripped = Utils.striphtml(data.replace("\n", " ").rstrip())
@@ -121,17 +119,17 @@ class Run:
         return result[:-2].rstrip()
 
     @classmethod
-    def enablelog(cls, path):
+    def enable(cls, path):
         "enabke module logger."
         formatter = Format(Logging.formats, Logging.datefmt)
         filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
         filehandler.setFormatter(formatter)
-        if cls.logger.handlers:
-            for handler in cls.logger.handlers:
-                cls.logger.removeHandler(handler)
-        cls.logger.addHandler(filehandler)
-        cls.logger.propagate = False
-        cls.logger.setLevel("DEBUG")
+        if logger.handlers:
+            for handler in logger.handlers:
+                logger.removeHandler(handler)
+        logger.addHandler(filehandler)
+        logger.propagate = False
+        logger.setLevel("DEBUG")
 
     @classmethod
     def run(cls, silent=False):
@@ -147,20 +145,28 @@ class Run:
     @classmethod
     def start(cls, once=False):
         "initialise module."
-        path = j(Workdir.logdir("rss"), 'rss.log')
+        path = Run.path
         if not os.path.exists(path):
             Utils.cdir(path)
-        Run.state.statefn = Locate.last(Run.state) or Disk.ident(Run.state)
+        cls.timesfn = Locate.last(Watcher.times) or Disk.ident(Watcher.times)
+        cls.statefn = Locate.last(State) or Disk.ident(State)
         if not once:
             Repeater.add(Config.polltime, cls.run)
-        cls.enablelog(path)
-        Watcher.add(path, cls.callback)
-        cls.watcher.start()
+        cls.enable(path)
+        watcher.add(path, cls.callback)
+        watcher.start()
         
     @classmethod
     def stop(cls):
         "shutdown."
-        cls.watcher.stop()
+        watcher.stop()
+
+    @classmethod
+    def sync(cls):
+        if cls.index > State.index:
+            State.index = cls.index
+            Disk.write(State, cls.statefn)
+        Disk.write(Watcher.times, cls.timesfn)
 
 
 class Runner:
@@ -170,14 +176,6 @@ class Runner:
         self.queue = queue.Queue()
         self.running = threading.Event()
         self.todo = queue.Queue()
-
-    def loop(self):
-        "loop to handle fetch jobs."
-        while self.running.is_set():
-            job = self.queue.get()
-            if job is None:
-                break
-            self.fetch(*job)
 
     def fetch(self, fnm, feed, silent=False):
         "fetch a feed."
@@ -190,16 +188,17 @@ class Runner:
             fed = Object()
             Method.update(fed, obj)
             Method.update(fed, feed)
-            Run.logger.debug(JSONL.logtxt(fed))
+            self.log(JSONL.logtxt(fed))
             counter += 1
+        Run.sync()
         return counter
 
-    @classmethod
     def getfeed(self, fnm, feed, items):
         "fetch a feed."
         result = [None,]
         response = Fetcher.geturl(feed.rss)
         if response.error or not response.data:
+            logging.debug("skip %s", feed.rss)
             return result
         if "link" not in items:
             items += ",link"
@@ -208,6 +207,19 @@ class Runner:
                              (feed.rss.endswith("atom") and "entry") or "item",
                              items
                             ) or []
+
+    def log(self, txt):
+        with open(Run.path, "a+", encoding="utf-8") as file:
+           if txt not in file:
+               logger.debug(txt)
+
+    def loop(self):
+        "loop to handle fetch jobs."
+        while self.running.is_set():
+            job = self.queue.get()
+            if job is None:
+                break
+            self.fetch(*job)
 
     def put(self, *args):
         "put jobs on queue."
@@ -242,16 +254,22 @@ class Runners:
         return cls.runners.get(orig)
 
     @classmethod
+    def init(cls, nr):
+        for x in range(nr):
+            runner = Runner()
+            runner.start()
+            cls.add(runner)
+
+    @classmethod
     def put(cls, *args):
         "push job to a runner."
         if not cls.runners:
-            cls.add(Runner())
+            cls.init(8)
         if cls.nrlast > cls.nrcpu-1:
             cls.nrlast = 0
         clt = list(cls.runners.values())[cls.nrlast]
         clt.put(*args)
         cls.nrlast += 1
-
 
 
 class RSS:

@@ -10,8 +10,8 @@ import time
 import _thread
 
 
-from .clients import Clients
-from .outputs import Client
+from .brokers import Broker
+from .clients import Client
 from .package import Mods
 from .persist import Workdir
 from .threads import Task, Thread
@@ -62,7 +62,7 @@ class Boot:
     @classmethod
     def shutdown(cls):
         "call stop on clients."
-        Clients.shutdown()
+        Broker.stop()
         while True:
             if len(threading.enumerate()) == 1:
                 break

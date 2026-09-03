@@ -14,7 +14,7 @@ import time
 import _thread
 
 
-from rssbot.defines import Buffered, Clients, Commands, Disk, Main, Object
+from rssbot.defines import Broker, Buffered, Commands, Disk, Main, Object
 from rssbot.defines import Message, Mods, Method, Thread
 
 
@@ -548,19 +548,19 @@ def cb_log(evt):
 
 def cb_ready(evt):
     "ready callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.events.ready.set()
 
 
 def cb_001(evt):
     "greeting callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     bot.events.logon.set()
 
 
 def cb_notice(evt):
     "notice callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     if evt.text.startswith("VERSION"):
         name = Config.name.upper()
         ver = Config.version
@@ -571,7 +571,7 @@ def cb_notice(evt):
 
 def cb_privmsg(evt):
     "privmsg callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     if not bot.cfg.commands:
         return
     if evt.text:
@@ -590,7 +590,7 @@ def cb_privmsg(evt):
 
 def cb_quit(evt):
     "qiot callback."
-    bot = Clients.get(evt.orig)
+    bot = Broker.get(evt.orig)
     logging.debug("quit from %s", bot.cfg.server)
     bot.state.nrerror += 1
     bot.state.error = evt.text

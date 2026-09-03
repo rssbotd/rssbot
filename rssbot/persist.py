@@ -70,7 +70,6 @@ class Disk:
             pth = os.path.join(Workdir.wdr, base, path)
             if not os.path.exists(pth):
                 return False
-            logging.debug("read %s", pth)
             with open(pth, "r", encoding="utf-8") as fpt:
                 try:
                     Method.update(obj, JSON.load(fpt))
@@ -83,7 +82,6 @@ class Disk:
     @classmethod
     def write(cls, obj, path="", base="store", skip=False):
         "write object to disk."
-        logging.debug("write %s", path)
         with cls.lock:
             if path == "":
                 path = cls.ident(obj)
@@ -167,7 +165,10 @@ class Locate:
             rest = ""
         timd = time.mktime(time.strptime(datestr, "%Y-%m-%d %H:%M:%S"))
         if rest:
-            timd += float("." + rest)
+            try:
+                timd += float("." + rest)
+            except ValueError:
+                pass
         return float(timd)
 
     @classmethod
@@ -260,6 +261,6 @@ class Workdir:
 def __dir__():
     return (
         'Disk',
-        'Locate',
+        'Locatel',
         'Workdir'
     )

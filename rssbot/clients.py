@@ -4,70 +4,44 @@
 "clients"
 
 
-import os
-import threading
-import time
+from .engines import Engine
+from .outputs import Display, Output
 
 
-class Clients:
+class Client(Engine, Display):
 
-    clients = {}
-    max = os.cpu_count()
-    nrcpu = 1
-    nrlast = 0
+    def __init__(self):
+        Engine.__init__(self)
+        Display.__init__(self)
 
-    @classmethod
-    def add(cls, client):
-        "add a runner."
-        cls.clients[repr(client)] = client
+    def raw(self, text):
+        "raw output."
+        raise NotImplementedError
 
-    @classmethod
-    def announce(cls, txt):
-        "announce text on all clients."
-        for obj in cls.clients.values():
-            obj.announce(txt)
 
-    @classmethod
-    def display(cls, evt):
-        "display results."
-        bot = cls.clients.get(evt.orig, None)
-        if bot:
-            bot.display(evt)
+class Buffered(Client, Output):
 
-    @classmethod
-    def get(cls, orig):
-        "return client by origin."
-        return cls.clients.get(orig)
+    def __init__(self):
+        Client.__init__(self)
+        Output.__init__(self)
 
-    @classmethod
-    def put(cls, *args):
-        "push job to a runner."
-        if not cls.clients:
-            return
-        if cls.nrlast > cls.nrcpu-1:
-            cls.nrlast = 0
-        print(len(cls.clients))
-        clt = list(cls.clients.values())[cls.nrlast]
-        clt.put(*args)
-        cls.nrlast += 1
+    def raw(self, text):
+        "raw output."
+        raise NotImplementedError
 
-    @classmethod
-    def shutdown(cls):
-        "call stop on clients."
-        for client in cls.clients.values():
-            try:
-                client.wait()
-            except (KeyboardInterrupt, EOFError):
-                pass
-            time.sleep(0.01)
-            try:
-                client.stop()
-            except (KeyboardInterrupt, EOFError):
-                pass
-            time.sleep(0.01)
+    def start(self, daemon=True):
+        "start output loop."
+        Client.start(self)
+        Output.start(self, daemon=daemon)
+
+    def stop(self):
+        "stop output loop."
+        Client.stop(self)
+        Output.stop(self)
 
 
 def __dir__():
     return (
-        'Clients',
+        'Client',
+        'Buffered'
     )

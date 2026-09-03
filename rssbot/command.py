@@ -8,7 +8,7 @@ import inspect
 import logging
 
 
-from .clients import Clients
+from .brokers import Clients
 from .package import Mods
 from .parsers import Parser
 
