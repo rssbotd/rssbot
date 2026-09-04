@@ -86,8 +86,7 @@ class Disk:
                 try:
                     Method.update(obj, JSON.load(fpt))
                 except json.decoder.JSONDecodeError as ex:
-                    raise DecodeError(Utils.strip(pth))
-                    raise
+                    raise DecodeError(Utils.strip(pth)) from ex
             Cache.add(pth, obj)
             return True
 

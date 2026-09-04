@@ -10,7 +10,7 @@ import sys
 import time
 
 
-from .defines import Boot, Client, Cmd, Commands, Data, Main, MD5
+from .defines import Boot, Client, Cmd, Commands, Main, MD5
 from .defines import Message, Mods, Method, Workdir
 
 
@@ -226,7 +226,7 @@ class Scripts:
             csl = Console()
             csl.start()
         Kernel.init(Main.mods)
-        Kernel.forever()        
+        Kernel.forever()
 
     @staticmethod
     def service():
