@@ -10,7 +10,6 @@ import time
 import _thread
 
 
-from .brokers import Broker
 from .clients import Client, Clients
 from .package import Mods
 from .persist import Workdir
