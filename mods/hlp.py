@@ -4,7 +4,7 @@
 "help"
 
 
-from nixt.defines import Main
+from rssbot.defines import Main
 
 
 TXT = """usage: %s <cmd> [name=value] [name==value]
