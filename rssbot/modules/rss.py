@@ -112,13 +112,13 @@ class Run:
         else:
             result = ""
         try:
-            displaylist = obj.get("display_list") or "title,link"
+            displaylist = Method.get(obj, "display_list") or "title,link"
         except AttributeError:
             displaylist = "title,link,author"
         for key in displaylist.split(","):
             if not key:
                 continue
-            data = obj.get(key, None)
+            data = Method.get(obj, key, None)
             if not data:
                 continue
             stripped = Utils.striphtml(data.replace("\n", " ").rstrip())
@@ -211,7 +211,7 @@ class Runner:
             if Config.save:
                 Run.log(JSONL.logtxt(fed))
             else:
-                Clients.announce(Run.display(JSONL.logtxt(fed)))
+                Clients.announce(Run.display(fed))
             counter += 1
         Run.sync()
         return counter
