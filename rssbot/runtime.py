@@ -10,7 +10,7 @@ import sys
 import time
 
 
-from .defines import Boot, Client, Cmd, Commands, Data, Main, Md5
+from .defines import Boot, Client, Cmd, Commands, Data, Main, MD5
 from .defines import Message, Mods, Method, Workdir
 
 
@@ -103,7 +103,7 @@ class Kernel(Boot, Daemon):
             Main.name.upper(),
             tmr,
             Main.sets.level.upper() or "WARNING",
-            Md5.core()
+            MD5.core()
         )
         print(txt.replace("  ", " "))
         sys.stdout.flush()

@@ -8,7 +8,7 @@ import logging
 import os
 
 
-from .hashing import Md5
+from .hashing import MD5
 from .utility import Utils
 
 
@@ -42,7 +42,7 @@ class Mods:
             if not os.path.exists(fnm):
                 continue
             if cls.md5s:
-                md5 = Md5.md5(fnm)
+                md5 = MD5.md5(fnm)
                 md5s = cls.md5s.get(name)
                 if not md5s:
                     logging.info("missing %s md5sum", modname)
@@ -111,7 +111,7 @@ class Mods:
         "read static tables."
         cls.statics()
         if cls.core:
-            Md5.check(cls.core)
+            MD5.check(cls.core)
 
 
 def __dir__():

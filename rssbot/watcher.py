@@ -64,7 +64,7 @@ class Watcher:
             return
         cls.running.set()
         cls.init(times)
-        logging.warn("watch %s", ".".join([b(x) for x in cls.cbs]))
+        logging.warn(".".join([b(x) for x in cls.cbs]))
         Thread.launch(cls.loop, name="Watcher.loop")
 
     @classmethod

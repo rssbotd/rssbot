@@ -13,7 +13,7 @@ from .configs import Main
 from .encoder import JSON, JSONL
 from .engines import Engine
 from .fetcher import Fetcher
-from .hashing import Md5
+from .hashing import MD5
 from .message import Message
 from .methods import Method
 from .objects import Data, Object
@@ -48,7 +48,7 @@ def __dir__():
        'Locate',
        'Logging',
        'Main',
-       'Md5',
+       'MD5',
        'Message',
        'Method',
        'Mods',

@@ -58,7 +58,7 @@ class Fetcher:
 
     @classmethod
     def request(cls, req):
-        with urllib.request.urlopen(req, timeout=2) as response:  # nosec
+        with urllib.request.urlopen(req, timeout=3) as response:  # nosec
             modi = response.headers.get('Last-Modified', "")
             if modi:
                 cls.modified[req.get_full_url()] = modi

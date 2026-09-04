@@ -15,12 +15,15 @@ import _thread
 
 
 from rssbot.defines import Clients, Disk, Fetcher, Format, JSONL, Locate
-from rssbot.defines import Logging, Main, Method, Object, Repeater
+from rssbot.defines import Logging, Main, MD5, Method, Object, Repeater
 from rssbot.defines import Thread, Utils, Watcher, Workdir
 
 
 logger = logging.getLogger("rss")
 watcher = Watcher()
+
+
+j = os.path.join
 
 
 class Config(Object):
@@ -75,6 +78,7 @@ class Run:
     path = ""
     file = None
     lock = threading.RLock()
+    matching = []
     configfn = ""
     modifiedfn = ""
     statefn = ""
@@ -85,7 +89,6 @@ class Run:
     def callback(cls):
         logging.info("callback on %s %s", Run.path, State.index)
         with cls.lock:
-            print(cls.file)
             cls.file.seek(State.index, 0)
             while True:
                 line = cls.file.readline()
@@ -135,14 +138,11 @@ class Run:
 
     @classmethod
     def log(cls, txt):
-        go = True
-        while True:
-            line = cls.file.readline()
-            if txt in line:
-                go = False
-                break
-        if go:
-            logger.debug(txt)
+        md5 = MD5.source(txt)
+        if md5 in cls.matching:
+            return
+        cls.matching.append(md5)    
+        logger.debug(txt)
 
     @classmethod
     def run(cls, silent=False):
@@ -158,7 +158,7 @@ class Run:
     @classmethod
     def start(cls, once=False):
         "initialise module."
-        cls.path = os.path.join(Workdir.logdir("rss"), 'rss.log')
+        cls.path = j(Workdir.logdir("rss"), 'rss.log')
         Utils.cdir(cls.path)
         pathlib.Path(cls.path).touch()
         cls.file = open(cls.path, "a+", encoding="utf-8")
@@ -273,7 +273,7 @@ class Runners:
     def put(cls, *args):
         "push job to a runner."
         if not cls.runners:
-            cls.init(8)
+            cls.init(1)
         if cls.nrlast > cls.nrcpu-1:
             cls.nrlast = 0
         clt = list(cls.runners.values())[cls.nrlast]
