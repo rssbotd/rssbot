@@ -48,12 +48,6 @@ class Mods:
             fnm = os.path.join(path, name + ".py")
             if not os.path.exists(fnm):
                 continue
-            if cls.md5s:
-                md5 = MD5.md5(fnm)
-                md5s = cls.md5s.get(name)
-                if md5s and md5 != md5s:
-                    if not force:
-                        raise MisMatch(name)
             return cls.importer(modname, fnm)
 
     @classmethod
