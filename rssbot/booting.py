@@ -28,11 +28,12 @@ class Boot:
     @classmethod
     def configure(cls, cfg):
         "setup basic variables"
-        Workdir.wdr = cfg.sets.wdr or Workdir.wdr or Workdir.home(cfg.name)
-        Workdir.skel()
+        Workdir.wdr = cfg.wdr or Workdir.wdr or Workdir.home(cfg.name)
+        if not cfg.nodisk:
+            Workdir.skel()
         Logging.size(len(cfg.name))
-        Logging.level(cfg.sets.level or "warning")
-        Mods.dir(cfg.sets.path)
+        Logging.level(cfg.level or "warning")
+        Mods.dir(cfg.path)
 
     @classmethod
     def forever(cls):

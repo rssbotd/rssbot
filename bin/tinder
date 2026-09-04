@@ -125,6 +125,8 @@ def final():
 
 def main():
     Kernel.boot()
+    if "nodisk" in Main.opts:
+        Main.nodisk = True
     if "t" in Main.opts:
         nrcpu = os.cpu_count()
     else:

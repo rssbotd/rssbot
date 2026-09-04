@@ -6,7 +6,6 @@
 
 import datetime
 import json
-import logging
 import os
 import pathlib
 import threading
@@ -17,6 +16,16 @@ from .encoder import JSON
 from .methods import Method
 from .objects import Data
 from .utility import Utils
+
+
+class NoDisk(Exception):
+
+    "disk is disabled."
+
+
+class DecodeError(Exception):
+
+    "could not parse input."
 
 
 class Cache:
@@ -44,6 +53,7 @@ class Cache:
 
 class Disk:
 
+    disable = False
     lock = threading.RLock()
 
     @classmethod
@@ -66,6 +76,8 @@ class Disk:
     @classmethod
     def read(cls, obj, path, base="store"):
         "read object from path."
+        if cls.disable:
+            raise NoDisk
         with cls.lock:
             pth = os.path.join(Workdir.wdr, base, path)
             if not os.path.exists(pth):
@@ -74,7 +86,7 @@ class Disk:
                 try:
                     Method.update(obj, JSON.load(fpt))
                 except json.decoder.JSONDecodeError as ex:
-                    logging.error("failed read at %s: %s", pth, str(ex))
+                    raise DecodeError(Utils.strip(pth))
                     raise
             Cache.add(pth, obj)
             return True
@@ -82,6 +94,8 @@ class Disk:
     @classmethod
     def write(cls, obj, path="", base="store", skip=False):
         "write object to disk."
+        if cls.disable:
+            raise NoDisk
         with cls.lock:
             if path == "":
                 path = cls.ident(obj)

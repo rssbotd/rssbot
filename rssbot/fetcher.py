@@ -4,7 +4,6 @@
 "fectch feeds"
 
 
-import logging
 import urllib
 import urllib.parse
 import urllib.request
@@ -53,7 +52,6 @@ class Fetcher:
             response.data = []
             response.error = str(ex)
             response.headers = req.headers
-        logging.debug("fetch %s %s", url, response.error)
         return response
 
     @classmethod

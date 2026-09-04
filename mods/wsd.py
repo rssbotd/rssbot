@@ -20,7 +20,7 @@ def init():
     state.load()
     event = Message()
     Repeater.add(3600,  wsd, event)
-    logging.warning("%s wise", len(TXTLIST))
+    logging.info("%s wise", len(TXTLIST))
 
 
 class State:

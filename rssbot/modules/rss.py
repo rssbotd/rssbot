@@ -42,7 +42,7 @@ def init():
     txt = f"{nrs} feeds index {State.index}"
     if nrs == 1:
         txt = txt[:-1]
-    logging.warning(txt)
+    logging.info(txt)
 
 
 def shutdown():

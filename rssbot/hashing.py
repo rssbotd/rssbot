@@ -4,7 +4,6 @@
 "integrity"
 
 
-import logging
 import os
 
 
@@ -26,7 +25,6 @@ class MD5:
             name = pth[:-3]
             modpath = os.path.join(path, pth)
             if md5s and cls.md5(modpath) != md5s.get(name):
-                logging.warning("mismatch %s", name)
                 ok = False
         return ok
 

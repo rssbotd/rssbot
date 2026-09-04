@@ -19,7 +19,7 @@ rand = random.SystemRandom()
 def init():
     "intialize the timer module."
     TimerLoop.start()
-    logging.warning("%s timers" , len(TimerLoop.timers))
+    logging.info("%s timers" , len(TimerLoop.timers))
 
 
 def shutdown():

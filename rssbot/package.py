@@ -12,6 +12,11 @@ from .hashing import MD5
 from .utility import Utils
 
 
+class MisMatch(Exception):
+
+    "md5 sums don't match."
+
+
 class Mods:
 
     core = {}
@@ -31,11 +36,14 @@ class Mods:
         cls.dirs[pkgn] = path
 
     @classmethod
-    def get(cls, name):
+    def get(cls, name, force=False):
         "return module from cache or import module."
         for pkgname, path in cls.dirs.items():
             modname = f"{pkgname}.{name}"
-            mod = cls.mods.get(modname, None)
+            try:
+                mod = cls.mods.get(modname, None)
+            except MisMatch:
+                continue
             if mod:
                 return mod
             fnm = os.path.join(path, name + ".py")
@@ -44,10 +52,9 @@ class Mods:
             if cls.md5s:
                 md5 = MD5.md5(fnm)
                 md5s = cls.md5s.get(name)
-                if not md5s:
-                    logging.warn("missing %s md5sum", modname)
-                elif md5 != md5s:
-                    logging.warn("mismatch %s", modname)
+                if md5s and md5 != md5s:
+                    if not force:
+                        raise MisMatch(name)
             return cls.importer(modname, fnm)
 
     @classmethod

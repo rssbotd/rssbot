@@ -5,11 +5,10 @@
 
 
 import inspect
-import logging
 
 
 from .clients import Clients
-from .package import Mods
+from .package import MisMatch, Mods
 from .parsers import Parser
 
 
@@ -49,10 +48,12 @@ class Commands:
         modname = cls.names.get(name, None)
         if not modname:
             return
-        mod = Mods.get(modname)
+        try:
+            mod = Mods.get(modname)
+        except MisMatch:
+            return
         if not mod:
             return
-        logging.debug(f"load {modname}")
         cls.scan(mod)
         return cls.cmds.get(name, None)
 
@@ -71,7 +72,10 @@ class Commands:
     def scanner(cls):
         "scan all modules."
         for name in Mods.list():
-            cls.scan(Mods.get(name))
+            try:
+                cls.scan(Mods.get(name))
+            except MisMatch:
+                pass
 
     @classmethod
     def statics(cls):

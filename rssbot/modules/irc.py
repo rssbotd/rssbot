@@ -27,7 +27,7 @@ def init():
     except (KeyboardInterrupt, EOFError):
         _thread.interrupt_main()
     if irc.events.joined.is_set():
-        logging.warning("%s", Method.fmt(irc.cfg, ["nick", "channel", "server", "port"]))
+        logging.info("%s", Method.fmt(irc.cfg, ["nick", "channel", "server", "port"]))
     else:
         irc.stop()
     return irc
@@ -36,7 +36,7 @@ def init():
 class Config(Object):
 
     name = Main.name or Method.pkgname(Mods)
-    channel = Main.sets.channel or f"#{name}"
+    channel = Main.channel or f"#{name}"
     commands = True
     control = "!"
     ignore = ["PING", "PONG", "PRIVMSG"]

@@ -20,7 +20,8 @@ class Cmd:
     @staticmethod
     def cmd(event):
         "show commands."
-        event.reply(",".join(sorted(Commands.names or Commands.cmds)))
+        check = len(Commands.cmds) > len(Commands.names)
+        event.reply(",".join(sorted((check and Commands.cmds) or Commands.names)))
 
     @staticmethod
     def tbl(event):
@@ -29,7 +30,7 @@ class Cmd:
         md5s = {}
         Commands.names = {}
         for name in Mods.list():
-            module = Mods.get(name)
+            module = Mods.get(name, True)
             md5s[name] = MD5.md5(module.__file__)
             for cmd in Commands.scan(module):
                 Commands.names[cmd.__name__] = cmd.__module__.split(".")[-1]
