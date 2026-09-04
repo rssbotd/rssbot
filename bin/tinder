@@ -33,6 +33,7 @@ class Kernel(Boot):
         cls.configure(Main)
         Mods.dir("examples")
         Mods.dir(Mods.moddir())
+        Mods.dir("mods")
         Commands.scanner()
         if os.path.exists(Workdir.wdr):
             shutil.rmtree(Workdir.wdr)

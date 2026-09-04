@@ -33,7 +33,7 @@ class Watcher:
         
     @classmethod
     def callback(cls, path):
-        "run cacllback passing the filedescriptor."
+        "run callback."
         cls.cbs[path]()
 
     @classmethod

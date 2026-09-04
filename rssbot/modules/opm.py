@@ -9,7 +9,7 @@ import urllib
 import _thread
 
 
-from rssbot.defines import Disk, Locate, Method, Utils
+from rssbot.defines import Disk, Locater, Method, Utils
 
 
 from .rss import Rss
@@ -81,7 +81,7 @@ def exp(event):
     with Locks.importlock:
         event.reply(TEMPLATE)
         nrs = 0
-        for _fn, ooo in Locate.find(Method.fqn(OPML)):
+        for _fn, ooo in Locater.find(Method.fqn(OPML)):
             nrs += 1
             obj = Rss()
             Method.update(obj, ooo)
@@ -118,7 +118,7 @@ def imp(event):
                 continue
             if not url.startswith("http"):
                 continue
-            has = list(Locate.find(
+            has = list(Locater.find(
                                    Method.fqn(OPML),
                                    {"rss": url},
                                    matching=True

@@ -6,8 +6,8 @@
 
 
 from .booting import Boot
-from .brokers import Broker, Clients
-from .clients import Buffered, Client
+from .brokers import Broker
+from .clients import Buffered, Client, Clients
 from .command import Commands
 from .configs import Main
 from .encoder import JSON, JSONL
@@ -20,7 +20,7 @@ from .objects import Data, Object
 from .outputs import Display, Output
 from .package import Mods
 from .parsers import Parser
-from .persist import Disk, Locate, Workdir
+from .persist import Disk, Locater, Workdir
 from .repeats import Repeater
 from .require import Cmd
 from .threads import Task, Thread
@@ -45,7 +45,7 @@ def __dir__():
        'Format',
        'JSON',
        'JSONL',
-       'Locate',
+       'Locater',
        'Logging',
        'Main',
        'MD5',

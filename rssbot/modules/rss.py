@@ -14,7 +14,7 @@ import threading
 import _thread
 
 
-from rssbot.defines import Clients, Disk, Fetcher, Format, JSONL, Locate
+from rssbot.defines import Clients, Disk, Fetcher, Format, JSONL, Locater
 from rssbot.defines import Logging, Main, MD5, Method, Object, Repeater
 from rssbot.defines import Thread, Utils, Watcher, Workdir
 
@@ -28,14 +28,17 @@ j = os.path.join
 
 class Config(Object):
 
+    "rss config"
+
     polltime = 300
+    save = False
 
 
 def init():
     "initialize rss module."
     Disk.read(Config, "rss", "config")
     Run.start()
-    nrs = Locate.count("rss")
+    nrs = Locater.count("rss")
     txt = f"{nrs} feeds index {State.index}"
     if nrs == 1:
         txt = txt[:-1]
@@ -49,6 +52,8 @@ def shutdown():
 
 class Rss(Object):
 
+    "rss item"
+
     def __init__(self):
         super().__init__()
         self.display_list = "title,link,author"
@@ -59,21 +64,22 @@ class Rss(Object):
 
 class State(Object):
 
+    "module state"
+
     index = 0
 
 
-class Times(Object):
-
-    times = {}
-
-
 class Locks:
+
+    "locks"
 
     fetchlock = _thread.allocate_lock()
     importlock = _thread.allocate_lock()
 
 
 class Run:
+
+    "runtime"
 
     path = ""
     file = None
@@ -82,12 +88,10 @@ class Run:
     configfn = ""
     modifiedfn = ""
     statefn = ""
-    timesfn = ""
     index = 0
 
     @classmethod
     def callback(cls):
-        logging.info("callback on %s %s", Run.path, State.index)
         with cls.lock:
             cls.file.seek(State.index, 0)
             while True:
@@ -125,7 +129,6 @@ class Run:
     @classmethod
     def enable(cls, path):
         "enabke module logger."
-        pathlib.Path(path).touch()
         formatter = Format(Logging.formats, Logging.datefmt)
         filehandler = logging.handlers.TimedRotatingFileHandler(path, 'midnight')
         filehandler.setFormatter(formatter)
@@ -138,17 +141,18 @@ class Run:
 
     @classmethod
     def log(cls, txt):
-        md5 = MD5.source(txt)
+        "log to file."
+        md5 = MD5.source(txt)[:7]
         if md5 in cls.matching:
             return
-        cls.matching.append(md5)    
+        cls.matching.append(md5)
         logger.debug(txt)
 
     @classmethod
     def run(cls, silent=False):
         "do a fetch run of all feeds."
         nrs = 0
-        for fnm, feed in Locate.find(Method.fqn(Rss)):
+        for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 continue
             Runners.put(fnm, feed, silent)
@@ -158,17 +162,17 @@ class Run:
     @classmethod
     def start(cls, once=False):
         "initialise module."
-        cls.path = j(Workdir.logdir("rss"), 'rss.log')
-        Utils.cdir(cls.path)
-        pathlib.Path(cls.path).touch()
-        cls.file = open(cls.path, "a+", encoding="utf-8")
-        cls.timesfn = Locate.last(Watcher.times) or Disk.ident(Watcher.times)
-        cls.statefn = Locate.last(State) or Disk.ident(State)
+        if Config.save:
+            cls.path = j(Workdir.logdir("rss"), 'rss.log')
+            Utils.cdir(cls.path)
+            pathlib.Path(cls.path).touch()
+            cls.file = open(cls.path, "a+", encoding="utf-8")
+            cls.enable(cls.path)
+            watcher.add(cls.path, cls.callback)
+            watcher.start()
+        cls.statefn = Locater.last(State) or Disk.ident(State)
         if not once:
             Repeater.add(Config.polltime, cls.run)
-        cls.enable(cls.path)
-        watcher.add(cls.path, cls.callback)
-        watcher.start()
         
     @classmethod
     def stop(cls):
@@ -177,13 +181,15 @@ class Run:
 
     @classmethod
     def sync(cls):
+        "sync state to disk."
         if cls.index > State.index:
             State.index = cls.index
             Disk.write(State, cls.statefn)
-        Disk.write(Watcher.times, cls.timesfn)
 
 
 class Runner:
+
+    "feed fetcher"
 
     def __init__(self):
         self.dosave = True
@@ -202,7 +208,10 @@ class Runner:
             fed = Object()
             Method.update(fed, obj)
             Method.update(fed, feed)
-            Run.log(JSONL.logtxt(fed))
+            if Config.save:
+                Run.log(JSONL.logtxt(fed))
+            else:
+                Clients.announce(Run.display(JSONL.logtxt(fed)))
             counter += 1
         Run.sync()
         return counter
@@ -247,6 +256,8 @@ class Runner:
 
 class Runners:
 
+    "pool of runners"
+
     runners = {}
     max = os.cpu_count()
     nrcpu = 1
@@ -264,6 +275,7 @@ class Runners:
 
     @classmethod
     def init(cls, nr):
+        "initialze a number of runners."
         for x in range(nr):
             runner = Runner()
             runner.start()
@@ -282,6 +294,8 @@ class Runners:
 
 
 class RSS:
+
+    "RSS parser"
 
     @classmethod
     def getitem(cls, line, item):
@@ -336,7 +350,7 @@ def atr(event):
     if not event.rest:
         event.iface("<stringinurl>")
         return
-    for _fnm, obj in Locate.find(Method.fqn(Rss), {'rss': event.rest}):
+    for _fnm, obj in Locater.find(Method.fqn(Rss), {'rss': event.rest}):
         request = None
         try:
             request = Fetcher.geturl(obj.rss, True)
@@ -370,7 +384,7 @@ def dpl(event):
         event.iface("<stringinurl> <item1,item2>")
         return
     setter = {"display_list": event.args[1]}
-    for fnm, feed in Locate.find(Method.fqn(Rss), {"rss": event.args[0]}):
+    for fnm, feed in Locater.find(Method.fqn(Rss), {"rss": event.args[0]}):
         if feed:
             Method.update(feed, setter)
             Disk.write(feed, fnm)
@@ -387,7 +401,7 @@ def nme(event):
         event.iface("<stringinurl> <name>")
         return
     selector = {"rss": event.args[0]}
-    for fnm, fed in Locate.find(
+    for fnm, fed in Locater.find(
                                 Method.fqn(Rss),
                                 selector
                                ):
@@ -404,7 +418,7 @@ def rem(event):
     if len(event.args) != 1:
         event.iface("<stringinurl>")
         return
-    for fnm, fed in Locate.find(Method.fqn(Rss)):
+    for fnm, fed in Locater.find(Method.fqn(Rss)):
         feed = Rss()
         Method.update(feed, fed)
         if event.args[0] not in feed.rss:
@@ -422,7 +436,7 @@ def res(event):
         event.iface("<stringinurl>")
         return
     nrs = 0
-    for fnm, fed in Locate.find(
+    for fnm, fed in Locater.find(
                                 Method.fqn(Rss),
                                 removed=True
                                ):
@@ -445,7 +459,7 @@ def rss(event):
     if "http://" not in url and "https://" not in url:
         event.reply("i need an url")
         return
-    for fnm, result in Locate.find(
+    for fnm, result in Locater.find(
                                    Method.fqn(Rss),
                                    {"rss": url}
                                   ):

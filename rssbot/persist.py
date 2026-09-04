@@ -93,7 +93,7 @@ class Disk:
             return path
 
 
-class Locate:
+class Locater:
 
     lock = threading.RLock()
 
@@ -261,6 +261,6 @@ class Workdir:
 def __dir__():
     return (
         'Disk',
-        'Locatel',
+        'Locater',
         'Workdir'
     )

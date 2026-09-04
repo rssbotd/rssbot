@@ -11,7 +11,7 @@ import _thread
 
 
 from .brokers import Broker
-from .clients import Client
+from .clients import Client, Clients
 from .package import Mods
 from .persist import Workdir
 from .threads import Task, Thread
@@ -19,6 +19,8 @@ from .utility import Logging, Utils
 
 
 class Boot:
+
+    "configure runtime"
 
     @classmethod
     def banner(cls):
@@ -62,7 +64,7 @@ class Boot:
     @classmethod
     def shutdown(cls):
         "call stop on clients."
-        Broker.stop()
+        Clients.shutdown()
         while True:
             if len(threading.enumerate()) == 1:
                 break

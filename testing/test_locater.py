@@ -7,11 +7,11 @@
 import unittest
 
 
-from rssbot.defines import Locate
+from rssbot.defines import Locater
 
 
 class TestLocater(unittest.TestCase):
 
     def test_construct(self):
-        lct = Locate()
+        lct = Locater()
         self.assertTrue(lct)

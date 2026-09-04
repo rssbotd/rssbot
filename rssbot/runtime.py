@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"long time background running processes"
+"background processes"
 
 
 import argparse
@@ -42,6 +42,7 @@ class Arguments:
         optparser.add_argument("--admin", action="store_true", help="enable admin mode.")
         optparser.add_argument("--channel", default="", help="channel to join")
         optparser.add_argument("--default", default="irc,mdl,rss,wsd", help=argparse.SUPPRESS)
+        optparser.add_argument("--local", action="store_true", help="user local mods dir.")
         optparser.add_argument("--nochdir", action="store_true", help=argparse.SUPPRESS)
         optparser.add_argument("--scanner", action="store_true", help="do full modules scan on boot.")
         optparser.add_argument("--wdr", default="", help="set modules directory.")
@@ -113,6 +114,8 @@ class Kernel(Boot, Daemon):
         cls.configure(Main)
         Mods.dir(Workdir.moddir())
         Mods.dir(Mods.moddir())
+        if Main.sets.local:
+            Mods.dir("mods", "mods")
         Commands.add(Cmd.cmd)
         if Main.sets.admin:
             Commands.add(Cmd.tbl)
