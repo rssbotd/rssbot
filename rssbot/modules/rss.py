@@ -106,6 +106,19 @@ class Run:
         gc.collect(0)
 
     @classmethod
+    def clear(cls):
+        if runners.busy():
+            logging.debug("next!")
+            return
+        counter = 0
+        for fnm, feed in Locater.find(Method.fqn(Rss), {"skip": True}):
+            feed.skip = False
+            Disk.write(feed, fnm)
+            counter += 1
+        logging.debug("cleared %s", counter)
+        return counter
+
+    @classmethod
     def display(cls, obj, name=None):
         "display feed."
         displaylist = ""
@@ -184,6 +197,7 @@ class Run:
         cls.run(True)
         if not once:
             Repeater.add(Config.polltime, cls.run)
+            Repeater.add(3600, cls.clear)
                 
     @classmethod
     def stop(cls):
@@ -205,6 +219,7 @@ class Fetching(Runner):
     def __init__(self):
         Runner.__init__(self)
 
+
     def run(self, *args, **kwargs):
         "fetch a feed."
         counter = 0
@@ -216,6 +231,11 @@ class Fetching(Runner):
             if obj is None:
                 continue
             if Method.isempty(obj):
+                continue
+            if Fetcher.doskip(obj.error):
+                feed.error = obj.error
+                feed.skip = True
+                Disk.write(feed. fnm)
                 continue
             fed = Data()
             Method.update(fed, obj)
