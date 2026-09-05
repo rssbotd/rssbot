@@ -43,15 +43,11 @@ def shutdown():
 
 class Config(Object):
 
-    "rss config"
-
     polltime = 300
     save = False
 
 
 class Rss(Object):
-
-    "rss item"
 
     def __init__(self):
         super().__init__()
@@ -59,18 +55,16 @@ class Rss(Object):
         self.insertid = None
         self.name = ""
         self.rss = ""
+        self.seen = []
+        self.size = 0
 
 
 class State(Object):
-
-    "module state"
 
     index = 0
 
 
 class Locks:
-
-    "locks"
 
     fetchlock = _thread.allocate_lock()
     importlock = _thread.allocate_lock()
@@ -78,8 +72,6 @@ class Locks:
 
 
 class Run:
-
-    "runtime"
 
     path = ""
     file = None
@@ -92,6 +84,7 @@ class Run:
 
     @classmethod
     def callback(cls):
+        "monitor log file."
         with cls.lock:
             cls.file.seek(State.index, 0)
             while True:
@@ -107,6 +100,7 @@ class Run:
 
     @classmethod
     def clear(cls):
+        "retry all failed feeds."
         if runners.busy():
             logging.debug("next!")
             return
@@ -155,11 +149,12 @@ class Run:
         logger.setLevel("DEBUG")
 
     @classmethod
-    def got(cls, txt):
+    def got(cls, txt, fnm, feed):
+        "verify whether text has already been seen."
         md5 = MD5.source(txt)[:7]
-        if md5 in cls.matching:
+        if md5 in feed.seen:
             return True
-        cls.matching.append(md5)
+        feed.seen.append(md5)
         return False
 
     @classmethod
@@ -194,7 +189,6 @@ class Run:
             watcher.add(cls.path, cls.callback)
             watcher.start()
         cls.statefn = Locater.last(State) or Disk.ident(State)
-        cls.run(True)
         if not once:
             Repeater.add(Config.polltime, cls.run)
             Repeater.add(3600, cls.clear)
@@ -214,19 +208,18 @@ class Run:
 
 class Fetching(Runner):
 
-    "feed fetcher"
-
     def __init__(self):
         Runner.__init__(self)
 
-
     def run(self, *args, **kwargs):
-        "fetch a feed."
-        counter = 0
+        "poll all feeds."
         try:
             fnm, feed, silent = args
         except ValueError:
             return counter
+        counter = 0
+        if not feed.seen:
+            feed.seen = []
         for obj in self.getfeed(fnm, feed, feed.display_list):
             if obj is None:
                 continue
@@ -235,20 +228,21 @@ class Fetching(Runner):
             if Fetcher.doskip(obj.error):
                 feed.error = obj.error
                 feed.skip = True
-                Disk.write(feed. fnm)
                 continue
             fed = Data()
             Method.update(fed, obj)
             Method.update(fed, feed)
             if Config.save:
                 Run.log(JSONL.logtxt(fed))
-            else:
+            if not silent:
                 txt = Run.display(fed)
-                if not Run.got(txt):
-                    if silent:
-                        continue
+                if not Run.got(txt, fnm, feed):
                     Clients.announce(txt)
             counter += 1
+        if counter:
+            feed.seen = feed.seen[:counter]
+            Disk.write(feed, fnm)
+            logging.debug("wrote %s", fnm)
         return counter
 
     def getfeed(self, fnm, feed, items):
