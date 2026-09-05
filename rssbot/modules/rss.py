@@ -8,15 +8,14 @@ import gc
 import logging
 import os
 import pathlib
-import queue
 import re
 import threading
 import _thread
 
 
-from rssbot.defines import Clients, Disk, Fetcher, Format, JSONL, Locater
-from rssbot.defines import Logging, Main, MD5, Method, Object, Repeater
-from rssbot.defines import Thread, Utils, Watcher, Workdir
+from rssbot.defines import Clients, Data, Disk, Fetcher, Format, JSONL, Locater
+from rssbot.defines import Logging, Main, MD5, Method, Object, Repeater, RSS
+from rssbot.defines import Runner, Runners, Utils, Watcher, Workdir
 
 
 logger = logging.getLogger("rss")
@@ -26,20 +25,12 @@ watcher = Watcher()
 j = os.path.join
 
 
-class Config(Object):
-
-    "rss config"
-
-    polltime = 300
-    save = False
-
-
 def init():
     "initialize rss module."
     Disk.read(Config, "rss", "config")
     Run.start()
     nrs = Locater.count("rss")
-    txt = f"{nrs} feeds index {State.index}"
+    txt = f"{nrs} feeds"
     if nrs == 1:
         txt = txt[:-1]
     logging.info(txt)
@@ -48,6 +39,14 @@ def init():
 def shutdown():
     "shutdown rss module."
     Run.stop()
+
+
+class Config(Object):
+
+    "rss config"
+
+    polltime = 300
+    save = False
 
 
 class Rss(Object):
@@ -77,6 +76,7 @@ class Locks:
     importlock = _thread.allocate_lock()
 
 
+
 class Run:
 
     "runtime"
@@ -98,7 +98,9 @@ class Run:
                 line = cls.file.readline()
                 if not line:
                     break
-                Clients.announce(cls.display(JSONL.loads(line.strip())))
+                txt = cls.display(JSONL.loads(line.strip()))
+                if not Run.got(txt):
+                    Clients.announce(txt)
             State.index = cls.file.tell()
         Disk.write(State, cls.statefn)
         gc.collect(0)
@@ -140,22 +142,30 @@ class Run:
         logger.setLevel("DEBUG")
 
     @classmethod
-    def log(cls, txt):
-        "log to file."
+    def got(cls, txt):
         md5 = MD5.source(txt)[:7]
         if md5 in cls.matching:
-            return
+            return True
         cls.matching.append(md5)
-        logger.debug(txt)
+        return False
+
+    @classmethod
+    def log(cls, txt):
+        "log to file."
+        if not cls.got(txt):
+            logger.debug(txt)
 
     @classmethod
     def run(cls, silent=False):
         "do a fetch run of all feeds."
         nrs = 0
+        if runners.busy():
+            logging.debug("next!")
+            return
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 continue
-            Runners.put(fnm, feed, silent)
+            runners.put(fnm, feed, silent)
             nrs += 1
         return nrs
 
@@ -171,9 +181,10 @@ class Run:
             watcher.add(cls.path, cls.callback)
             watcher.start()
         cls.statefn = Locater.last(State) or Disk.ident(State)
+        cls.run(True)
         if not once:
             Repeater.add(Config.polltime, cls.run)
-        
+                
     @classmethod
     def stop(cls):
         "shutdown."
@@ -187,33 +198,37 @@ class Run:
             Disk.write(State, cls.statefn)
 
 
-class Runner:
+class Fetching(Runner):
 
     "feed fetcher"
 
     def __init__(self):
-        self.dosave = True
-        self.queue = queue.Queue()
-        self.running = threading.Event()
-        self.todo = queue.Queue()
+        Runner.__init__(self)
 
-    def fetch(self, fnm, feed, silent=False):
+    def run(self, *args, **kwargs):
         "fetch a feed."
         counter = 0
+        try:
+            fnm, feed, silent = args
+        except ValueError:
+            return counter
         for obj in self.getfeed(fnm, feed, feed.display_list):
             if obj is None:
                 continue
             if Method.isempty(obj):
                 continue
-            fed = Object()
+            fed = Data()
             Method.update(fed, obj)
             Method.update(fed, feed)
             if Config.save:
                 Run.log(JSONL.logtxt(fed))
             else:
-                Clients.announce(Run.display(fed))
+                txt = Run.display(fed)
+                if not Run.got(txt):
+                    if silent:
+                        continue
+                    Clients.announce(txt)
             counter += 1
-        Run.sync()
         return counter
 
     def getfeed(self, fnm, feed, items):
@@ -221,8 +236,9 @@ class Runner:
         result = [None,]
         response = Fetcher.geturl(feed.rss)
         if response.error or not response.data:
-            logging.debug("skip %s", feed.rss)
+            logging.debug("skip %s %s", feed.rss, response.error)
             return result
+        logging.debug("fetched %s %s", feed.rss, response.error)
         if "link" not in items:
             items += ",link"
         yield from RSS.parse(
@@ -231,118 +247,8 @@ class Runner:
                              items
                             ) or []
 
-    def loop(self):
-        "loop to handle fetch jobs."
-        while self.running.is_set():
-            job = self.queue.get()
-            if job is None:
-                break
-            self.fetch(*job)
 
-    def put(self, *args):
-        "put jobs on queue."
-        self.queue.put(args)
-
-    def start(self, daemon=True):
-        "start runner."
-        self.running.set()
-        Thread.launch(self.loop, daemon=daemon)
-
-    def stop(self):
-        "stop runner."
-        self.running.clear()
-        self.queue.put(None)
-
-
-class Runners:
-
-    "pool of runners"
-
-    runners = {}
-    max = os.cpu_count()
-    nrcpu = 1
-    nrlast = 0
-
-    @classmethod
-    def add(cls, client):
-        "add a runner."
-        cls.runners[repr(client)] = client
-
-    @classmethod
-    def get(cls, orig):
-        "return client by origin."
-        return cls.runners.get(orig)
-
-    @classmethod
-    def init(cls, nr):
-        "initialze a number of runners."
-        for x in range(nr):
-            runner = Runner()
-            runner.start()
-            cls.add(runner)
-
-    @classmethod
-    def put(cls, *args):
-        "push job to a runner."
-        if not cls.runners:
-            cls.init(1)
-        if cls.nrlast > cls.nrcpu-1:
-            cls.nrlast = 0
-        clt = list(cls.runners.values())[cls.nrlast]
-        clt.put(*args)
-        cls.nrlast += 1
-
-
-class RSS:
-
-    "RSS parser"
-
-    @classmethod
-    def getitem(cls, line, item):
-        "return item from line."
-        lne = ""
-        index1 = line.find(f"<{item}>")
-        if index1 == -1:
-            return lne
-        index1 += len(item) + 2
-        index2 = line.find(f"</{item}>", index1)
-        if index2 == -1:
-            return lne
-        return Utils.cdata(line[index1:index2]).strip()
-
-    @classmethod
-    def getitems(cls, text, token, nrs=None):
-        "get items from text."
-        index = 0
-        end = len(text)
-        stop = False
-        nrx = -1
-        while not stop:
-            nrx += 1
-            if nrs and nrx >= nrs:
-                break
-            index1 = text.rfind(f"<{token}", index, end)
-            if index1 == -1:
-                break
-            end = index1
-            index1 += len(token) + 2
-            index2 = text.rfind(f"</{token}>", index1)
-            if index2 == -1:
-                break
-            yield text[index1:index2]
-
-    @classmethod
-    def parse(cls, txt, toke="item", items="title,link"):
-        "parse feed."
-        for line in cls.getitems(txt, toke):
-            line = line.strip()
-            obj = {}
-            for itm in Utils.spl(items):
-                val = cls.getitem(line, itm)
-                if val:
-                    escaped = Utils.unescape(val.strip())
-                    obj[itm] = Utils.striphtml(escaped).replace("\n", "")
-            yield obj
+runners = Runners(Fetching)
 
 
 def atr(event):

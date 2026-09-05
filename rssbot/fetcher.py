@@ -10,7 +10,7 @@ import urllib.request
 
 
 from .methods import Method
-from .objects import Object
+from .objects import Data
 from .utility import Utils
 
 
@@ -45,7 +45,7 @@ class Fetcher:
         since = cls.modified.get(url, "")
         if since:
             req.add_header('If-Modified-Since', since)
-        response = Object()
+        response = Data()
         try:
             Method.update(response, cls.request(req))
         except Exception as ex:
