@@ -70,7 +70,6 @@ class Locks:
     importlock = _thread.allocate_lock()
 
 
-
 class Run:
 
     path = ""
@@ -105,10 +104,11 @@ class Run:
             logging.debug("next!")
             return
         counter = 0
-        for fnm, feed in Locater.find(Method.fqn(Rss), {"skip": True}):
-            feed.skip = False
-            Disk.write(feed, fnm)
-            counter += 1
+        for fnm, feed in Locater.find(Method.fqn(Rss)):
+            if feed.skip:
+                feed.skip = False
+                Disk.write(feed, fnm)
+                counter += 1
         logging.debug("cleared %s", counter)
         return counter
 
@@ -239,10 +239,14 @@ class Fetching(Runner):
                 if not Run.got(txt, fnm, feed):
                     Clients.announce(txt)
             counter += 1
+            del obj
         if counter:
-            feed.seen = feed.seen[:counter]
+            if counter > int(feed.counter or "0"):
+                feed.counter = counter
+            feed.seen = feed.seen[:feed.counter]
             Disk.write(feed, fnm)
             logging.debug("wrote %s", fnm)
+        gc.collect(0)
         return counter
 
     def getfeed(self, fnm, feed, items):
