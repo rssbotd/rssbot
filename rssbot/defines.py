@@ -22,7 +22,7 @@ from .parsers import Parser, RSS
 from .persist import Disk, Locater, Workdir
 from .repeats import Repeater
 from .require import Cmd
-from .runners import Runner, Runners
+from .runners import Pool, Runner
 from .threads import Task, Thread
 from .utility import Format, Logging, Time, Utils
 from .watcher import Watcher
@@ -54,10 +54,10 @@ def __dir__():
        'Mods',
        'Output',
        'Parser',
+       'Pppl',
        'Repeater',
        'RSS',
        'Runner',
-       'Runners',
        'Task',
        'Thread',
        'Time',
