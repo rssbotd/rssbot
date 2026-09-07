@@ -101,16 +101,16 @@ class Run:
     @classmethod
     def clear(cls):
         "retry all failed feeds."
-        if pool.busy():
-            logging.debug("next!")
-            return
+        # if pool.busy():
+        #     logging.debug("next!")
+        #     return
         counter = 0
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 feed.skip = False
                 Disk.write(feed, fnm)
                 counter += 1
-        logging.debug("cleared %s", counter)
+        logging.debug("clear %s", counter)
         return counter
 
     @classmethod
@@ -192,8 +192,8 @@ class Run:
         cls.statefn = Locater.last(State) or Disk.ident(State)
         if not once:
             repeater.add(Config.polltime, cls.run)
-            repeater.add(3600, cls.clear)
-                
+            repeater.add(7200, cls.clear)
+
     @classmethod
     def stop(cls):
         "shutdown."
@@ -212,6 +212,33 @@ class Fetching(Runner):
     def __init__(self):
         Runner.__init__(self)
 
+    def doskip(self, errs):
+        "check whether to log."
+        if errs not in [200, 304]:
+            return True
+        return False
+
+    def getfeed(self, fnm, feed, items):
+        "fetch a feed."
+        result = [None,]
+        response = Fetcher.geturl(feed.rss)
+        if not response.data:
+            if response.status and self.doskip(response.status):
+                feed.status = response.status
+                feed.error = response.error
+                feed.skip = True
+                Disk.write(feed, fnm)
+                logging.debug("skip %s %s %s", feed.rss, response.status, response.reason)
+            return result
+        logging.debug("fetch %s", feed.rss)
+        if "link" not in items:
+            items += ",link"
+        yield from RSS.parse(
+                             str(response.data, "utf-8", errors='ignore'),
+                             (feed.rss.endswith("atom") and "entry") or "item",
+                             items
+                            ) or []
+
     def run(self, *args, **kwargs):
         "poll all feeds."
         try:
@@ -228,12 +255,6 @@ class Fetching(Runner):
                 continue
             if Method.isempty(obj):
                 continue
-            if Fetcher.doskip(obj.error):
-                feed.error = obj.error
-                feed.skip = True
-                Disk.write(feed, fnm)
-                logging.debug("skipping %s" % fnm)
-                continue
             fed = Data()
             Method.update(fed, obj)
             Method.update(fed, feed)
@@ -248,29 +269,10 @@ class Fetching(Runner):
         if has:
             feed.seen = feed.seen[:counter]
             Disk.write(feed, fnm)
-            logging.debug("wrote %s", fnm)
-        gc.collect(0)
+            logging.debug("write %s", fnm)
+        if counter:
+            gc.collect(0)
         return counter
-
-    def getfeed(self, fnm, feed, items):
-        "fetch a feed."
-        result = [None,]
-        response = Fetcher.geturl(feed.rss)
-        if response.error or not response.data:
-            logging.debug("error %s %s", feed.rss, response.error)
-            return result
-        logging.debug("fetched %s %s", feed.rss, response.error)
-        if "link" not in items:
-            items += ",link"
-        yield from RSS.parse(
-                             str(response.data, "utf-8", errors='ignore'),
-                             (feed.rss.endswith("atom") and "entry") or "item",
-                             items
-                            ) or []
-
-
-pool = Pool(Fetching)
-pool.init(3)
 
 
 class RSS:
@@ -323,6 +325,10 @@ class RSS:
                     escaped = Utils.unescape(val.strip())
                     obj[itm] = Utils.striphtml(escaped).replace("\n", "")
             yield obj
+
+
+pool = Pool(Fetching)
+pool.init(2)
 
 
 def atr(event):

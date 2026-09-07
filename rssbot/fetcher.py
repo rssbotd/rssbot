@@ -5,6 +5,7 @@
 
 
 import urllib
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -17,24 +18,6 @@ from .utility import Utils
 class Fetcher:
 
     modified = {}
-    skip = [
-        '403',
-        '404',
-        '410',
-        '500',
-        '503',
-        'not valid',
-        'not known',
-        'failed'
-    ]
-
-    @classmethod
-    def doskip(cls, errs):
-        "check whether to log."
-        for error in cls.skip:
-            if error in errs:
-                return True
-        return False
 
     @classmethod
     def geturl(cls, url, force=False):
@@ -46,17 +29,24 @@ class Fetcher:
         if since:
             req.add_header('If-Modified-Since', since)
         response = Data()
+        response.reason = ""
         try:
             Method.update(response, cls.request(req))
         except Exception as ex:
-            response.data = []
-            response.error = str(ex)
-            response.headers = req.headers
+            response.data = b""
+            try:
+                response.reason = ex.reason
+            except AttributeError:
+                response.reason = str(ex)
+            try:
+                response.status = ex.status
+            except AttributeError:
+                response.status = 0
         return response
 
     @classmethod
     def request(cls, req):
-        with urllib.request.urlopen(req, timeout=3) as response:  # nosec
+        with urllib.request.urlopen(req, timeout=4) as response:  # nosec
             modi = response.headers.get('Last-Modified', "")
             if modi:
                 cls.modified[req.get_full_url()] = modi
