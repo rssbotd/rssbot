@@ -102,9 +102,6 @@ class Run:
     @classmethod
     def clear(cls):
         "retry all failed feeds."
-        # if pool.busy():
-        #     logging.debug("next!")
-        #     return
         counter = 0
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
