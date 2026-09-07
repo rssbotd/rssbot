@@ -170,7 +170,7 @@ class Run:
         nrs = 0
         if pool.busy():
             logging.debug("next!")
-            return
+            return 0
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 continue
@@ -463,4 +463,5 @@ def syn(event):
     if Main.debug:
         return
     nrs = Run.run(True)
-    event.reply(f"{nrs} feeds synced")
+    cleared = Run.clear()
+    event.reply(f"{nrs} feeds synced {cleared} cleared")

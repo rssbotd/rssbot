@@ -21,7 +21,7 @@ class Repeater(Loop):
 
     def add(self, sleep, func, *args, **kwargs):
         "add a repeater."
-        if self.stopped.is_set():
+        if not self.stopped.is_set():
             self.start()
         sleep = str(sleep)
         if sleep not in self.todo:
