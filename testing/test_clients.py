@@ -7,7 +7,7 @@
 import unittest
 
 
-from rssbot.defines import Client, Engine, Message
+from rssbot.defines import Engine, Message, Screen
 
 
 buffer = []
@@ -18,11 +18,11 @@ def hello(event):
     event.ready()
 
 
-class MyClient(Client, Engine):
+class MyClient(Screen, Engine):
 
     def __init__(self):
         Engine.__init__(self)
-        Client.__init__(self)
+        Screen.__init__(self)
         self.register("hello", hello)
 
     def raw(self, text):
