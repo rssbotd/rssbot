@@ -10,11 +10,13 @@ import time
 import _thread
 
 
-from .clients import Client, Clients
+from .clients import Clients
+from .loggers import Logging
 from .package import Mods
 from .persist import Workdir
+from .screens import Screen
 from .threads import Task, Thread
-from .utility import Logging, Utils
+from .utility import Utils
 
 
 class Boot:
@@ -76,7 +78,7 @@ class Boot:
         try:
             func(*args)
         except (KeyboardInterrupt, EOFError):
-            Client.block.set()
+            Screen.block.set()
             Task.block.set()
             _thread.interrupt_main()
         except Exception as ex:

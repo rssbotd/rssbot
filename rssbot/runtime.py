@@ -10,8 +10,8 @@ import sys
 import time
 
 
-from .defines import Boot, Client, Cmd, Commands, Main, MD5
-from .defines import Message, Mods, Method, Workdir
+from .defines import Boot,  Cmd, Commands, Main, MD5
+from .defines import Message, Mods, Method, Screen, Workdir
 
 
 class Arguments:
@@ -141,10 +141,10 @@ class Kernel(Boot, Daemon):
             dofinal()
 
 
-class CLI(Client):
+class CLI(Screen):
 
     def __init__(self):
-        Client.__init__(self)
+        Screen.__init__(self)
         self.register("command", Commands.command)
 
     def after(self, event):

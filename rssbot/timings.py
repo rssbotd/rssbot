@@ -1,67 +1,11 @@
 # This file is placed in the Public Domain.
 
 
-"usefulness"
+"time related functions"
 
 
 import datetime
-import inspect
-import logging
-import logging.handlers
-import html
-import os
-import pathlib
-import re
 import time
-import urllib
-import uuid
-
-
-j = os.path.join
-
-
-class Format(logging.Formatter):
-
-    disable = False
-    size = 3
-
-    def format(self, record):
-        "logging formatter."
-        if not Format.disable:
-            record.module = record.module.upper()
-            record.module = record.module[:Format.size]
-        return logging.Formatter.format(self, record)
-
-
-class Logging:
-
-    datefmt = "%H:%M:%S"
-    format = "%(module)-3s %(message)s"
-    formats = "%(message)s"
-    
-    @classmethod
-    def level(cls, loglevel, systemd=False):
-        "set log level."
-        formatter = Format(cls.format, cls.datefmt)
-        stream = logging.StreamHandler()
-        stream.setFormatter(formatter)
-        try:
-            logging.basicConfig(
-                level=loglevel.upper(),
-                handlers=[stream],
-                force=True
-            )
-        except ValueError:
-            pass
-
-    @classmethod
-    def size(cls, nr):
-        "set text size."
-        index = cls.format.find("-")+1
-        newformat = cls.format[:index]
-        newformat += str(nr)
-        newformat += cls.format[index+1:]
-        cls.format = newformat
 
 
 class Time:
@@ -168,121 +112,7 @@ class Time:
         return str(datetime.datetime.today()).split()[0]
 
 
-class Utils:
-
-    @staticmethod
-    def cdata(line):
-        "scrape CDATA block."
-        if "CDATA" in line:
-            lne = line.replace("![CDATA[", "")
-            lne = lne.replace("]]", "")
-            lne = lne[1:-1]
-            return lne
-        return line
-
-    @classmethod
-    def cdir(cls, path):
-        "create directory."
-        if os.path.exists(path):
-            return
-        pth = pathlib.Path(path)
-        if not os.path.exists(pth.parent):
-            pth.parent.mkdir(parents=True, exist_ok=True)
-
-    @staticmethod
-    def clsname(obj):
-        "return classname of an object."
-        return obj.__class__.__name__
-
-    @staticmethod
-    def home(name):
-        "return home working directory."
-        return os.path.expanduser(f"~/.{name}")
-
-    @staticmethod
-    def listdir(path, ignore=""):
-        "list modules in a directory."
-        return [
-                x[:-3] for x in os.listdir(path)
-                if x.endswith(".py") and
-                not x.startswith("__") and
-                x[:-3] not in Utils.spl(ignore)
-               ]
-
-    @staticmethod
-    def shortid():
-        "return a shortid."
-        return str(uuid.uuid4())[:8]
-
-    @staticmethod
-    def skip(obj):
-        "skip underscored keys."
-        result = []
-        for x in dir(obj):
-            if x.startswith("_"):
-                continue
-            result.append(x)
-        return sorted(result)
-
-    @staticmethod
-    def skipped(obj):
-        "yield values without underscored keys."
-        for key in dir(obj):
-            if key.startswith("_"):
-                continue
-            yield getattr(obj, key)
-
-    @staticmethod
-    def source(module):
-        "return the source of a module."
-        return module.__loader__.get_source(module.__name__)
-
-    @staticmethod
-    def spl(txt, ignore=""):
-        "list from comma seperated string."
-        try:
-            ignores = ignore.split(",")
-            result = txt.split(",")
-        except (TypeError, ValueError):
-            result = []
-        return [x for x in result if x and x not in ignores]
-
-    @staticmethod
-    def strip(path, nr=3):
-        "strip filename from path."
-        return os.path.join(*path.split(os.sep)[-nr:])
-
-    @staticmethod
-    def striphtml(text):
-        "strip html."
-        clean = re.compile("<.*?>")
-        return re.sub(clean, "", text)
-
-    @staticmethod
-    def unescape(text):
-        "unescape html."
-        txt = re.sub(r"\s+", " ", text)
-        return html.unescape(txt)
-
-    @staticmethod
-    def unquote(url):
-        "unquote an url."
-        return urllib.parse.unquote(url, errors='ignore')
-
-    @staticmethod
-    def useragent(txt):
-        "produce useragent string."
-        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
-
-    @staticmethod
-    def where(obj):
-        "path where object is defined."
-        return os.path.dirname(inspect.getfile(obj))
-
-
 def __dir__():
     return (
-        'Logging',
         'Time',
-        'Utils'
     )

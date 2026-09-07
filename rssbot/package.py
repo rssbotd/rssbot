@@ -7,6 +7,7 @@
 import os
 
 
+from .sources import MD5
 from .utility import Utils
 
 
