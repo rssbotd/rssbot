@@ -5,12 +5,8 @@
 
 
 import os
-import queue
-import threading
-
 
 from .handler import Loop
-from .threads import Thread
 
 
 class Runner(Loop):

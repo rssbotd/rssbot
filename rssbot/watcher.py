@@ -5,7 +5,6 @@
 
 
 import os
-import threading
 import time
 
 
@@ -42,7 +41,7 @@ class Watcher(Loop):
                     continue
                 mtime = os.stat(path).st_mtime
                 if mtime > self.times[path]:
-                    self.cbs(path)()
+                    self.cbs[path]()
                 self.times[path] = mtime
             time.sleep(self.sleep)
 
