@@ -45,11 +45,14 @@ class Logging:
         formatter = Format(cls.format, cls.datefmt)
         stream = logging.StreamHandler()
         stream.setFormatter(formatter)
-        logging.basicConfig(
-            level=loglevel.upper(),
-            handlers=[stream],
-            force=True
-        )
+        try:
+            logging.basicConfig(
+                level=loglevel.upper(),
+                handlers=[stream],
+                force=True
+            )
+        except ValueError:
+            pass
 
     @classmethod
     def size(cls, nr):

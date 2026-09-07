@@ -9,66 +9,47 @@ import threading
 import time
 
 
-from .threads import Thread
+from .loopers import Loop
 
 
-b = os.path.basename
 e = os.path.exists
 
 
-class Watcher:
+class Watcher(Loop):
 
     running = threading.Event()
     sleep = 1.0
     cbs = {}
     times = {}
 
-    @classmethod
-    def add(cls, path, callback):
+    def add(self, path, callback):
         "add callback"
         if not os.path.exists(path):
             return
-        cls.cbs[path] = callback
-        
-    @classmethod
-    def callback(cls, path):
-        "run callback."
-        cls.cbs[path]()
+        self.cbs[path] = callback
 
-    @classmethod
-    def init(cls, times={}):
+    def callback(self, path):
+        "run callback."
+        self.cbs[path]()
+
+    def init(self, times={}):
         "read timestamps."
-        for path in cls.cbs:
+        for path in self.cbs:
             if not e(path):
                 continue
-            cls.times[path] = times.get(path, os.stat(path).st_mtime)
-            
-    @classmethod
-    def loop(cls):
+            self.times[path] = times.get(path, os.stat(path).st_mtime)
+
+    def loop(self):
         "loop select."
-        while cls.running.isSet():
-            for path in cls.cbs:
+        while self.running.isSet():
+            for path in self.cbs:
                 if not e(path):
                     continue
                 mtime = os.stat(path).st_mtime
-                if mtime > cls.times[path]:
-                    cls.callback(path)
-                cls.times[path] = mtime
-            time.sleep(cls.sleep)
-
-    @classmethod
-    def start(cls, times={}):
-        "start watcher"
-        if cls.running.isSet():
-            return
-        cls.running.set()
-        cls.init(times)
-        Thread.launch(cls.loop, name="Watcher.loop")
-
-    @classmethod
-    def stop(cls):
-        "stop watcher."
-        cls.running.clear()
+                if mtime > self.times[path]:
+                    self.callback(path)
+                self.times[path] = mtime
+            time.sleep(self.sleep)
 
 
 def __dir__():

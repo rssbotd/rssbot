@@ -11,8 +11,7 @@ import os
 from .command import Commands
 from .configs import Main
 from .encoder import JSON
-from .hashing import MD5
-from .package import Mods
+from .package import MD5, Mods
 
 
 class Cmd:

@@ -29,11 +29,11 @@ class TestEngine(unittest.TestCase):
     def shutDown(self):
         self.hdl.stop()
 
-    def test_callback(self):
+    def test_handle(self):
         evt = Message()
         evt.kind = "hello"
         evt.text = "hello"
-        self.hdl.callback(evt)
+        self.hdl.handle(evt)
         evt.wait()
         self.assertTrue("hello" in evt.result)
 

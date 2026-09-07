@@ -8,50 +8,40 @@ import threading
 import time
 
 
+from .loopers import Loop
 from .threads import Thread
 
 
-class Repeater:
+class Repeater(Loop):
 
     counter = 0
     running = threading.Event()
     stopped = threading.Event()
     todo = {}
 
-    @classmethod
-    def add(cls, sleep, func, *args, **kwargs):
+    def __init__(self):
+        Loop.__init__(self)
+
+    def add(self, sleep, func, *args, **kwargs):
         "add a repeater."
-        if not cls.running.is_set():
-            cls.start()
+        if not self.running.is_set():
+            self.start()
         sleep = str(sleep)
-        if sleep not in cls.todo:
-            cls.todo[sleep] = []
-        cls.todo[sleep].append((func, args, kwargs))
+        if sleep not in self.todo:
+            self.todo[sleep] = []
+        self.todo[sleep].append((func, args, kwargs))
 
-    @classmethod
-    def loop(cls):
+    def loop(self):
         "repeater loop."
-        while not cls.stopped.is_set():
+        while not self.stopped.is_set():
             time.sleep(1.0)
-            cls.counter += 1
-            for sleep in cls.todo:
+            self.counter += 1
+            for sleep in self.todo:
                 slept = float(sleep)
-                if cls.counter % slept != 0:
+                if self.counter % slept != 0:
                     continue
-                for func, args, kwargs in cls.todo[sleep]:
+                for func, args, kwargs in self.todo[sleep]:
                     Thread.launch(func, *args, **kwargs)
-
-    @classmethod
-    def start(cls):
-        "start repeater loop."
-        cls.running.set()
-        cls.stopped.clear()
-        Thread.launch(cls.loop, name="Repeater.loop")
-
-    @classmethod
-    def stop(cls):
-        "stop repeater loop."
-        cls.stopped.set()
 
 
 def __dir__():

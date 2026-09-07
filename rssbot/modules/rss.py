@@ -91,8 +91,9 @@ class Run:
                 line = cls.file.readline()
                 if not line:
                     break
-                txt = cls.display(JSONL.loads(line.strip()))
-                if not Run.got(txt):
+                feed = JSONL.loads(line.strip())
+                txt = cls.display(feed)
+                if not Run.got(txt, feed):
                     Clients.announce(txt)
             State.index = cls.file.tell()
         Disk.write(State, cls.statefn)
@@ -150,7 +151,7 @@ class Run:
         logger.setLevel("DEBUG")
 
     @classmethod
-    def got(cls, txt, fnm, feed):
+    def got(cls, txt, feed):
         "verify whether text has already been seen."
         md5 = MD5.source(txt)[:7]
         if md5 in feed.seen:
@@ -161,8 +162,7 @@ class Run:
     @classmethod
     def log(cls, txt):
         "log to file."
-        if not cls.got(txt):
-            logger.debug(txt)
+        logger.debug(txt)
 
     @classmethod
     def run(cls, silent=False):
@@ -241,6 +241,7 @@ class Fetching(Runner):
 
     def run(self, *args, **kwargs):
         "poll all feeds."
+        counter = 0
         try:
             fnm, feed, silent = args
         except ValueError:
@@ -248,7 +249,6 @@ class Fetching(Runner):
         if not feed.seen:
             feed.seen = []
         has = False
-        counter = 0
         for obj in self.getfeed(fnm, feed, feed.display_list):
             counter += 1
             if obj is None:
@@ -262,7 +262,7 @@ class Fetching(Runner):
                 Run.log(JSONL.logtxt(fed))
             if not silent:
                 txt = Run.display(fed)
-                if not Run.got(txt, fnm, feed):
+                if not Run.got(txt, feed):
                     Clients.announce(txt)
                     has = True
             del obj

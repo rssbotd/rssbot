@@ -13,11 +13,11 @@ from .configs import Main
 from .encoder import JSON, JSONL
 from .engines import Engine
 from .fetcher import Fetcher
-from .hashing import MD5
+from .loopers import Loop
 from .message import Message
 from .methods import Method
 from .objects import Data, Object
-from .package import Mods
+from .package import MD5, Mods
 from .parsers import Parser, RSS
 from .persist import Disk, Locater, Workdir
 from .repeats import Repeater
@@ -47,6 +47,7 @@ def __dir__():
        'JSONL',
        'Locater',
        'Logging',
+       'Loop',
        'Main',
        'MD5',
        'Message',
@@ -54,7 +55,7 @@ def __dir__():
        'Mods',
        'Output',
        'Parser',
-       'Pppl',
+       'Pool',
        'Repeater',
        'RSS',
        'Runner',
