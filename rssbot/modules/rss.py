@@ -171,6 +171,7 @@ class Run:
         if pool.busy():
             logging.debug("next!")
             return 0
+        logging.debug("starting run")
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 continue
