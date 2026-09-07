@@ -26,7 +26,7 @@ class Loop:
         "callback loop."
         while not self.stopped.is_set():
             args = self.queue.get()
-            if event is None:
+            if args is None:
                 break
             self.handle(*args)
         self.done.set()
