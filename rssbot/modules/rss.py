@@ -230,7 +230,7 @@ class Fetching(Runner):
                 feed.error = response.error
                 feed.skip = True
                 Disk.write(feed, fnm)
-                logging.debug("skip %s %s %s", feed.rss, response.status, response.reason)
+                logging.debug("skipt %s %s %s", feed.rss, response.status, response.reason)
             return result
         logging.debug("fetch %s", feed.rss)
         if "link" not in items:
