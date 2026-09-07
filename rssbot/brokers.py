@@ -11,9 +11,9 @@ class Broker:
     @classmethod
     def add(cls, obj):
         "add object to the broker, key is repr(obj)."
-        id = repr(obj)
-        cls.objects[id] = obj
-        return id
+        oid = repr(obj)
+        cls.objects[oid] = obj
+        return oid
 
     @classmethod
     def get(cls, origin):
@@ -39,9 +39,12 @@ class Broker:
             if attr in dir(obj):
                 yield obj
 
+    @classmethod
+    def remove(cls, obj):
+        del cls.objects[repr(obj)]
+
 
 def __dir__():
     return (
         'Broker',
-        'Clients'
     )
