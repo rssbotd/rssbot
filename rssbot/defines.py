@@ -42,8 +42,7 @@ def __dir__():
     return (
        'Boot',
        'Broker',
-       'Buffered',
-       'Client',
+       'Buffer',
        'Clients',
        'Cmd',
        'Commands',
@@ -68,6 +67,7 @@ def __dir__():
        'Pool',
        'Repeater',
        'Runner',
+       'Screen',
        'Task',
        'Thread',
        'Time',

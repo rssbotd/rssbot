@@ -6,7 +6,6 @@
 import os
 import time
 import threading
-import _thread
 
 
 from .methods import Method

@@ -15,8 +15,8 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.defines import Boot, Client, Commands, Main, Message
-from rssbot.defines import Method, Mods, Parser, Time, Workdir
+from rssbot.defines import Boot, Commands, Main, Message, Method
+from rssbot.defines import Mods, Parser, Screen, Time, Workdir
 
 
 Workdir.wdr = ".test"
@@ -53,10 +53,10 @@ class Kernel(Boot):
             dofinal()
 
 
-class CLI(Client):
+class CLI(Screen):
 
     def __init__(self):
-        Client.__init__(self)
+        Screen.__init__(self)
         self.register("command", Commands.command)
 
     def raw(self, text):

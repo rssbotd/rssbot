@@ -132,8 +132,8 @@ class Run:
             data = Method.get(obj, key, None)
             if not data:
                 continue
-            stripped = Utils.striphtml(data.replace("\n", " ").rstrip())
-            result += Utils.unescape(stripped)
+            stripped = Fetcher.striphtml(data.replace("\n", " ").rstrip())
+            result += Fetcher.unescape(stripped)
             result += " - "
         return result[:-2].rstrip()
 
@@ -323,8 +323,8 @@ class RSS:
             for itm in Utils.spl(items):
                 val = cls.getitem(line, itm)
                 if val:
-                    escaped = Utils.unescape(val.strip())
-                    obj[itm] = Utils.striphtml(escaped).replace("\n", "")
+                    escaped = Fetcher.unescape(val.strip())
+                    obj[itm] = Fetcher.striphtml(escaped).replace("\n", "")
             yield obj
 
 

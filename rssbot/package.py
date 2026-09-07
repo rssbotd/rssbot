@@ -113,6 +113,7 @@ class Mods:
         if cls.core:
             MD5.check(cls.core)
 
+
 def __dir__():
     return (
         'Mods',

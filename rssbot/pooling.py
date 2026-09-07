@@ -9,8 +9,8 @@ import os
 
 class Pool:
 
-    def __init__(self, clazz=None):
-        self.clazz = clazz or Runner()
+    def __init__(self, clazz):
+        self.clazz = clazz
         self.runners = []
         self.max = os.cpu_count()
         self.nrcpu = 1

@@ -4,11 +4,9 @@
 "usefulness"
 
 
-import html
 import inspect
 import os
 import pathlib
-import re
 import uuid
 
 
@@ -95,28 +93,6 @@ class Utils:
     def strip(path, nr=3):
         "strip filename from path."
         return os.path.join(*path.split(os.sep)[-nr:])
-
-    @staticmethod
-    def striphtml(text):
-        "strip html."
-        clean = re.compile("<.*?>")
-        return re.sub(clean, "", text)
-
-    @staticmethod
-    def unescape(text):
-        "unescape html."
-        txt = re.sub(r"\s+", " ", text)
-        return html.unescape(txt)
-
-    @staticmethod
-    def unquote(url):
-        "unquote an url."
-        return urllib.parse.unquote(url, errors='ignore')
-
-    @staticmethod
-    def useragent(txt):
-        "produce useragent string."
-        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
 
     @staticmethod
     def where(obj):

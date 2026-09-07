@@ -4,6 +4,8 @@
 "fectch feeds"
 
 
+import html
+import re
 import urllib
 import urllib.error
 import urllib.parse
@@ -12,7 +14,6 @@ import urllib.request
 
 from .methods import Method
 from .objects import Data
-from .utility import Utils
 
 
 class Fetcher:
@@ -24,7 +25,7 @@ class Fetcher:
         "fetch an url."
         url = urllib.parse.urlunparse(urllib.parse.urlparse(url))
         req = urllib.request.Request(str(url))
-        req.add_header("User-Agent", Utils.useragent("RSS Fetcher"))
+        req.add_header("User-Agent", cls.useragent("RSS Fetcher"))
         since = cls.modified.get(url, "")
         if since:
             req.add_header('If-Modified-Since', since)
@@ -53,6 +54,28 @@ class Fetcher:
             response.data = response.read()
             response.error = ""
             return response
+
+    @staticmethod
+    def striphtml(text):
+        "strip html."
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text)
+
+    @staticmethod
+    def unescape(text):
+        "unescape html."
+        txt = re.sub(r"\s+", " ", text)
+        return html.unescape(txt)
+
+    @staticmethod
+    def unquote(url):
+        "unquote an url."
+        return urllib.parse.unquote(url, errors='ignore')
+
+    @staticmethod
+    def useragent(txt):
+        "produce useragent string."
+        return "Mozilla/5.0 (X11; Linux x86_64) " + txt
 
 
 def __dir__():
