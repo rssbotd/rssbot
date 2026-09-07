@@ -9,14 +9,11 @@ import queue
 import threading
 
 
+from .handler import Loop
 from .threads import Thread
 
 
-class Runner:
-
-    def __init__(self):
-        self.queue = queue.Queue()
-        self.running = threading.Event()
+class Runner(Loop):
 
     def run(self, *args, **kwargs):
         "fetch a feed."
@@ -24,25 +21,11 @@ class Runner:
 
     def loop(self):
         "loop to handle fetch jobs."
-        while self.running.is_set():
+        while not self.stopped.is_set():
             job = self.queue.get()
             if job is None:
                 break
             self.run(*job)
-
-    def put(self, *args):
-        "put jobs on queue."
-        self.queue.put(args)
-
-    def start(self, daemon=True):
-        "start runner."
-        self.running.set()
-        Thread.launch(self.loop, daemon=daemon)
-
-    def stop(self):
-        "stop runner."
-        self.running.clear()
-        self.queue.put(None)
 
 
 class Pool:
@@ -74,7 +57,7 @@ class Pool:
     def put(self, *args):
         "push job to a runner."
         if not self.runners:
-            self.init(1)
+            return
         if self.nrlast > self.nrcpu-1:
             self.nrlast = 0
         clt = self.runners[self.nrlast]

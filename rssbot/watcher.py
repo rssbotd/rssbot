@@ -9,7 +9,7 @@ import threading
 import time
 
 
-from .loopers import Loop
+from .handler import Loop
 
 
 e = os.path.exists
@@ -17,7 +17,6 @@ e = os.path.exists
 
 class Watcher(Loop):
 
-    running = threading.Event()
     sleep = 1.0
     cbs = {}
     times = {}
@@ -28,10 +27,6 @@ class Watcher(Loop):
             return
         self.cbs[path] = callback
 
-    def callback(self, path):
-        "run callback."
-        self.cbs[path]()
-
     def init(self, times={}):
         "read timestamps."
         for path in self.cbs:
@@ -41,13 +36,13 @@ class Watcher(Loop):
 
     def loop(self):
         "loop select."
-        while self.running.isSet():
+        while not self.stopped.isSet():
             for path in self.cbs:
                 if not e(path):
                     continue
                 mtime = os.stat(path).st_mtime
                 if mtime > self.times[path]:
-                    self.callback(path)
+                    self.cbs(path)()
                 self.times[path] = mtime
             time.sleep(self.sleep)
 

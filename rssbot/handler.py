@@ -19,28 +19,17 @@ class Loop:
         self.stopped = threading.Event()
         self.done = threading.Event()
 
-    def after(self, event):
-        "called after callback."
-
     def handle(self, event):
         "handle event."
 
     def loop(self):
         "callback loop."
         while not self.stopped.is_set():
-            self.poll()
             event = self.queue.get()
             if event is None:
-                self.queue.task_done()
                 break
-            event.orig = repr(self)
             self.handle(event)
-            self.after(event)
-            self.queue.task_done()
         self.done.set()
-
-    def poll(self):
-        "create event and put it on the queue."
 
     def put(self, event):
         "put event on queue."
@@ -66,7 +55,31 @@ class Loop:
             _thread.interrupt_main()
 
 
+class Handler(Loop):
+
+    def after(self, event):
+        "called after callback."
+
+    def loop(self):
+        "callback loop."
+        while not self.stopped.is_set():
+            self.poll()
+            event = self.queue.get()
+            if event is None:
+                self.queue.task_done()
+                break
+            event.orig = repr(self)
+            self.handle(event)
+            self.after(event)
+            self.queue.task_done()
+        self.done.set()
+
+    def poll(self):
+        "create event and put it on the queue."
+
+
 def __dir__():
     return (
-        'Loop',
+        'Handler'
+        'Loop'
     )

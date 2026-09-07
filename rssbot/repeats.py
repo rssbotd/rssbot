@@ -8,7 +8,7 @@ import threading
 import time
 
 
-from .loopers import Loop
+from .handler import Loop
 from .threads import Thread
 
 
@@ -19,12 +19,9 @@ class Repeater(Loop):
     stopped = threading.Event()
     todo = {}
 
-    def __init__(self):
-        Loop.__init__(self)
-
     def add(self, sleep, func, *args, **kwargs):
         "add a repeater."
-        if not self.running.is_set():
+        if self.stopped.is_set():
             self.start()
         sleep = str(sleep)
         if sleep not in self.todo:

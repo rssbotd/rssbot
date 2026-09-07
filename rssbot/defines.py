@@ -13,7 +13,7 @@ from .configs import Main
 from .encoder import JSON, JSONL
 from .engines import Engine
 from .fetcher import Fetcher
-from .loopers import Loop
+from .handler import Handler, Loop
 from .message import Message
 from .methods import Method
 from .objects import Data, Object

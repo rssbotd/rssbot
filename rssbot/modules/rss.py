@@ -190,6 +190,7 @@ class Run:
             watcher.add(cls.path, cls.callback)
             watcher.start()
         cls.statefn = Locater.last(State) or Disk.ident(State)
+        pool.init(2)
         if not once:
             repeater.add(Config.polltime, cls.run)
             repeater.add(7200, cls.clear)
@@ -328,7 +329,6 @@ class RSS:
 
 
 pool = Pool(Fetching)
-pool.init(2)
 
 
 def atr(event):
