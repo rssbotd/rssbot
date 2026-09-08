@@ -4,15 +4,10 @@
 "stuck in a loop"
 
 
-import queue
-import threading
-import _thread
+from .engines import Engine
 
 
-from .looping import Loop
-
-
-class Handler(Loop):
+class Handler(Engine):
 
     def after(self, event):
         "called after callback."
@@ -21,13 +16,12 @@ class Handler(Loop):
         "callback loop."
         while not self.stopped.is_set():
             self.poll()
-            event = self.queue.get()
-            if event is None:
+            args = self.queue.get()
+            if args[0] is None:
                 self.queue.task_done()
                 break
-            event.orig = repr(self)
-            self.handle(event)
-            self.after(event)
+            self.handle(*args)
+            self.after(*args)
             self.queue.task_done()
         self.done.set()
 
@@ -37,6 +31,5 @@ class Handler(Loop):
 
 def __dir__():
     return (
-        'Handler'
-        'Loop'
+        'Handler',
     )

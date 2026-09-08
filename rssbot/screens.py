@@ -5,13 +5,13 @@
 
 
 from .display import Display
-from .engines import Engine
+from .handler import Handler
 
 
-class Screen(Engine, Display):
+class Screen(Handler, Display):
 
     def __init__(self):
-        Engine.__init__(self)
+        Handler.__init__(self)
         Display.__init__(self)
 
     def raw(self, text):

@@ -58,7 +58,7 @@ class TestEngine(unittest.TestCase):
         evt = Message()
         evt.kind = "hello"
         hdl.put(evt)
-        event = hdl.queue.get()
+        (event,) = hdl.queue.get()
         self.assertTrue(event is evt)
 
     def test_register(self):

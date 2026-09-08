@@ -8,7 +8,7 @@ import inspect
 
 
 from .clients import Clients
-from .package import MisMatch, Mods
+from .package import Mods
 from .parsers import Parser
 
 

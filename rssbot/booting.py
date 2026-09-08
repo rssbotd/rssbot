@@ -81,7 +81,7 @@ class Boot:
             Screen.block.set()
             Thr.block.set()
             _thread.interrupt_main()
-        except MisMatch as ex:
+        except MisMatch:
             raise
         except Exception as ex:
             logging.exception(ex)

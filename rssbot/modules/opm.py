@@ -9,7 +9,7 @@ import urllib
 import _thread
 
 
-from rssbot.defines import Disk, Locater, Method, Utils
+from rssbot.defines import Disk, Fetcher, Locater, Method, Utils
 
 
 from .rss import Rss
@@ -40,7 +40,7 @@ class OPML:
             index2 = line.find("/>", index1)
         if index2 == -1:
             return lne
-        return Utils.cdata(line[index1:index2])
+        return Fetcher.cdata(line[index1:index2])
 
     @classmethod
     def getattrs(cls, line, token):

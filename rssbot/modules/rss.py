@@ -289,7 +289,7 @@ class RSS:
         index2 = line.find(f"</{item}>", index1)
         if index2 == -1:
             return lne
-        return Utils.cdata(line[index1:index2]).strip()
+        return Fetcher.cdata(line[index1:index2]).strip()
 
     @classmethod
     def getitems(cls, text, token, nrs=None):

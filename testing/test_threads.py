@@ -7,7 +7,7 @@
 import unittest
 
 
-from rssbot.defines import Task
+from rssbot.defines import Thr
 
 
 def func():
@@ -17,7 +17,7 @@ def func():
 class TestThread(unittest.TestCase):
 
     def test_task(self):
-        task = Task(func)
+        task = Thr(func)
         task.start()
         result = task.join()
         self.assertEqual(result, "ok")
