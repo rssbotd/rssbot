@@ -10,11 +10,10 @@ import time
 import _thread
 
 
-from .clients import Clients
+from .clients import Clients, Screen
 from .loggers import Logging
 from .package import MisMatch, Mods
 from .persist import Workdir
-from .screens import Screen
 from .threads import Thr, Thread
 from .utility import Utils
 

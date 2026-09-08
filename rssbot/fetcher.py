@@ -12,8 +12,7 @@ import urllib.parse
 import urllib.request
 
 
-from .methods import Method
-from .objects import Data
+from .objects import Data, Method
 
 
 class Fetcher:

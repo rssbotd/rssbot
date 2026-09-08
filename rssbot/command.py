@@ -8,8 +8,8 @@ import inspect
 
 
 from .clients import Clients
+from .objects import Parser
 from .package import Mods
-from .parsers import Parser
 
 
 class Commands:
