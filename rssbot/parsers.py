@@ -4,7 +4,7 @@
 "cli parser"
 
 
-from .objects import Data
+from .objects import Data, Method
 
 
 class Parser:

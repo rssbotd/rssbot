@@ -36,7 +36,7 @@ class Arguments:
         parser.add_argument("-v", "--verbose", action='store_true', help='enable verbose.')
         parser.add_argument("-w", "--wait", action='store_true', help='wait for services to start.')
         optionparser = theparser.add_argument_group()
-        optionparser.add_argument("-l", "--level", default="warning", help='set loglevel.', metavar="level")
+        optionparser.add_argument("-l", "--level", default="info", help='set loglevel.', metavar="level")
         optionparser.add_argument("-m", "--mods", default="", help='modules to load.', metavar="m1,m2")
         optionparser.add_argument("-p", "--path", default='', help='path to modules directory.', metavar="path")
         optparser = theparser.add_argument_group()
@@ -51,6 +51,59 @@ class Arguments:
         args, arguments = theparser.parse_known_args()
         Method.update(Main, args)
         Main.otxt = " ".join(arguments)
+
+
+
+class Booting(Boot):
+
+    @classmethod
+    def banner(cls, force=False):
+        "hello."
+        if not force and not Main.verbose:
+            return
+        tmr = time.ctime(time.time()).replace("  ", " ")
+        txt = "%s since %s %s (%s)" % (
+            Main.name.upper(),
+            tmr,
+            Main.level.upper() or "INFO",
+            MD5.core()
+        )
+        print(txt.replace("  ", " "))
+        sys.stdout.flush()
+
+    @classmethod
+    def boot(cls):
+        cls.configure(Main)
+        Mods.dir(Workdir.moddir())
+        Mods.dir(Mods.moddir())
+        if Main.local:
+            Mods.dir("mods", "mods")
+        if Main.all:
+            Main.mods = ",".join(Mods.list())
+        cls.banner()
+        Commands.table()
+        Mods.table()
+        if Main.scanner or Main.local:
+            Commands.scanner()
+
+    @classmethod
+    def wrap(cls, func, *args, dofinal=None):
+        "restore console."
+        import termios
+        try:
+            old = termios.tcgetattr(sys.stdin.fileno())
+        except termios.error:
+            old = False
+        try:
+            cls.wrapped(func, *args)
+        except MisMatch as ex:
+            logging.error("mismatch %s", ex)
+        except (KeyboardInterrupt, EOFError):
+            pass
+        if old:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+        if dofinal:
+            dofinal()
 
 
 class Daemon:
@@ -93,55 +146,9 @@ class Daemon:
         os.setuid(pwnam2.pw_uid)
 
 
-class Kernel(Boot, Daemon):
+class Kernel(Booting, Daemon):
 
-    @classmethod
-    def banner(cls, force=False):
-        "hello."
-        if not force and not Main.verbose:
-            return
-        tmr = time.ctime(time.time()).replace("  ", " ")
-        txt = "%s since %s %s (%s)" % (
-            Main.name.upper(),
-            tmr,
-            Main.level.upper() or "WARNING",
-            MD5.core()
-        )
-        print(txt.replace("  ", " "))
-        sys.stdout.flush()
-
-    @classmethod
-    def boot(cls):
-        cls.configure(Main)
-        Mods.dir(Workdir.moddir())
-        Mods.dir(Mods.moddir())
-        if Main.local:
-            Mods.dir("mods", "mods")
-        if Main.all:
-            Main.mods = ",".join(Mods.list())
-        Commands.table()
-        Mods.table()
-        if Main.scanner or Main.local:
-            Commands.scanner()
-
-    @classmethod
-    def wrap(cls, func, *args, dofinal=None):
-        "restore console."
-        import termios
-        try:
-            old = termios.tcgetattr(sys.stdin.fileno())
-        except termios.error:
-            old = False
-        try:
-            cls.wrapped(func, *args)
-        except MisMatch as ex:
-            logging.error("mismatch %s", ex)
-        except (KeyboardInterrupt, EOFError):
-            pass
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-        if dofinal:
-            dofinal()
+    pass
 
 
 class CLI(Screen):
@@ -196,8 +203,6 @@ class Scripts:
         readline.redisplay()
         Kernel.boot()
         Commands.add(Cmd.cmd)
-        if Main.verbose:
-            Kernel.banner()
         Kernel.init(Main.mods, Main.wait)
         csl = Console()
         csl.start()

@@ -132,6 +132,12 @@ class Repeater(Loop):
                 for func, args, kwargs in self.todo[sleep]:
                     Thread.launch(func, *args, **kwargs)
 
+    def start(self, daemon=True):
+        "start callback loop."
+        self.done.clear()
+        self.stopped.clear()
+        Thread.launch(self.loop, daemon=daemon, name="Repeater.loop")
+
 
 class Runner(Loop):
 
@@ -147,6 +153,11 @@ class Runner(Loop):
                 break
             self.run(*job)
 
+    def start(self, daemon=True):
+        "start callback loop."
+        self.done.clear()
+        self.stopped.clear()
+        Thread.launch(self.loop, daemon=daemon, name="Runner.loop")
 
 class Watcher(Loop):
 

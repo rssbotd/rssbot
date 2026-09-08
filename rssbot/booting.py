@@ -33,7 +33,7 @@ class Boot:
         if not cfg.nodisk:
             Workdir.skel()
         Logging.size(len(cfg.name))
-        Logging.level(cfg.level or "warning")
+        Logging.level(cfg.level or "info")
         Mods.dir(cfg.path)
 
     @classmethod

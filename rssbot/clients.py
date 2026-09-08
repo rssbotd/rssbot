@@ -12,7 +12,7 @@ import time
 import _thread
 
 
-from .threads import Handler, Loop, Thread
+from .threads import Handler, Thread
 
 
 class Broker:
