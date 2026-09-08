@@ -37,9 +37,7 @@ classifiers = [
 packages=[
     'rssbot',
     'rssbot.minimal',
-    'rssbot.mirrors',
     'rssbot.modules',
-    'rssbot.neurons',
     'rssbot.numbers'
 ]
 
