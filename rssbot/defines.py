@@ -11,11 +11,13 @@ from .buffers import Buffer
 from .clients import Clients
 from .command import Commands
 from .configs import Main
+from .console import CLI, Console
 from .display import Display
 from .encoder import JSON, JSONL
 from .engines import Engine
 from .fetcher import Fetcher
 from .handler import Handler
+from .kernels import Kernel
 from .locater import Locater
 from .loggers import Format, Logging
 from .looping import Loop
@@ -43,9 +45,11 @@ def __dir__():
        'Boot',
        'Broker',
        'Buffer',
+       'CLI',
        'Clients',
        'Cmd',
        'Commands',
+       'Console',
        'Data',
        'Disk',
        'Display',
@@ -54,6 +58,7 @@ def __dir__():
        'Format',
        'JSON',
        'JSONL',
+       'Kernel',
        'Locater',
        'Logging',
        'Loop',

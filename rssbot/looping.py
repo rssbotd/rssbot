@@ -19,21 +19,21 @@ class Loop:
         self.stopped = threading.Event()
         self.done = threading.Event()
 
-    def handle(self, *args):
+    def handle(self, event):
         "handle event."
 
     def loop(self):
         "callback loop."
         while not self.stopped.is_set():
-            args = self.queue.get()
-            if args is None:
+            event = self.queue.get()
+            if event is None:
                 break
-            self.handle(*args)
+            self.handle(event)
         self.done.set()
 
-    def put(self, *args):
+    def put(self, event):
         "put event on queue."
-        self.queue.put(args)
+        self.queue.put(event)
 
     def start(self, daemon=True):
         "start callback loop."

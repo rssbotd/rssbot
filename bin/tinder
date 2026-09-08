@@ -6,7 +6,6 @@
 
 
 import os
-import shutil
 import sys
 import threading
 import time
@@ -15,89 +14,21 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.defines import Boot, Commands, Main, Message, Method
-from rssbot.defines import Mods, Parser, Screen, Time, Workdir
+from rssbot.defines import CLI, Commands, Kernel, Main, Message, Parser
+from rssbot.defines import Method, Pool, Time, Workdir
 
 
 Workdir.wdr = ".test"
 
 
-class Kernel(Boot):
+class Line(CLI):
 
-    nrevents = 0
-    starttime = 0
-
-    @classmethod
-    def boot(cls):
-        Parser.parse(Main, " ".join(sys.argv[1:]))
-        cls.configure(Main)
-        Mods.dir("examples")
-        Mods.dir(Mods.moddir())
-        Mods.dir("mods")
-        Commands.scanner()
-        if os.path.exists(Workdir.wdr):
-            shutil.rmtree(Workdir.wdr)
-
-    @classmethod
-    def wrap(cls, func, *args, dofinal=None):
-        "restore console."
-        import termios
-        try:
-            old = termios.tcgetattr(sys.stdin.fileno())
-        except termios.error:
-            old = False
-        cls.wrapped(func, *args)
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-        if dofinal:
-            dofinal()
+    def raw(self, txt):
+        if Main.verbose:
+            CLI.raw(self, txt)
 
 
-class CLI(Screen):
-
-    def __init__(self):
-        Screen.__init__(self)
-        self.register("command", Commands.command)
-
-    def raw(self, text):
-        "write to console."
-        if "v" in Main.opts:
-            print(text.encode('utf-8', 'replace').decode("utf-8"))
-            sys.stdout.flush()
-
-
-class Runners:
-
-    runners = []
-    lock = threading.RLock()
-    nrcpu = 1
-    nrlast = 0
-
-    @staticmethod
-    def add(client):
-        "add a runner."
-        Runners.runners.append(client)
-
-    @staticmethod
-    def init(nrcpu, cls):
-        "initialize a runner."
-        Runners.nrcpu = nrcpu
-        for _x in range(Runners.nrcpu):
-            clt = cls()
-            clt.start()
-            Runners.add(clt)
-
-    @staticmethod
-    def put(*args):
-        "push job to a runner."
-        if not Runners.runners:
-            Runners.init(Runners.nrcpu, CLI)
-        with Runners.lock:
-            if Runners.nrlast >= Runners.nrcpu-1:
-                Runners.nrlast = 0
-            clt = Runners.runners[Runners.nrlast]
-            clt.put(*args)
-            Runners.nrlast += 1
+pool = Pool(Line)
 
 
 def payload(todo):
@@ -107,7 +38,7 @@ def payload(todo):
             evt = Message()
             evt.kind = "command"
             evt.text = f"{cmd} {ex}"
-            Runners.put(evt)
+            pool.put(evt)
 
 
 def final():
@@ -124,14 +55,18 @@ def final():
 
 
 def main():
+    Parser.parse(Main, " ".join(sys.argv[1:]))
+    Main.local = True
+    Main.threaded = "t" in Main.opts
+    Main.verbose = "v" in Main.opts
     Kernel.boot()
-    if "nodisk" in Main.opts:
-        Main.nodisk = True
-    if "t" in Main.opts:
+    Commands.scanner()
+    Kernel.nrevents = 0
+    if Main.threaded:
         nrcpu = os.cpu_count()
     else:
         nrcpu = 1
-    Runners.init(nrcpu, CLI)
+    pool.init(nrcpu)
     Kernel.starttime = time.time()
     nrs = Main.index or 1
     for _x in range(nrs):

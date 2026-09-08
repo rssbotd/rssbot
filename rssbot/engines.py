@@ -21,16 +21,13 @@ class Engine(Loop):
         self.stopped = threading.Event()
         self.done = threading.Event()
 
-    def handle(self, *args):
+    def handle(self, event):
         "run callback function with event."
-        if not args:
-            return
-        event = args[0]
         func = self.cbs.get(event.kind, None)
         if not func:
             event.ready()
             return
-        event._thr = Thread.launch(func, *args)
+        event._thr = Thread.launch(func, event)
 
     def register(self, kind, callback):
         "register callback."

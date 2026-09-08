@@ -16,12 +16,13 @@ class Handler(Engine):
         "callback loop."
         while not self.stopped.is_set():
             self.poll()
-            args = self.queue.get()
-            if args[0] is None:
+            event = self.queue.get()
+            if event is None:
                 self.queue.task_done()
                 break
-            self.handle(*args)
-            self.after(*args)
+            event.orig = repr(self)
+            self.handle(event)
+            self.after(event)
             self.queue.task_done()
         self.done.set()
 

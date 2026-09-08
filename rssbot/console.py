@@ -7,7 +7,7 @@
 import sys
 
 
-from .cpmmand import Commands
+from .command import Commands
 from .message import Message
 from .screens import Screen
 
