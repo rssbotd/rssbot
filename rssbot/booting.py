@@ -12,10 +12,10 @@ import _thread
 
 from .clients import Clients
 from .loggers import Logging
-from .package import Mods
+from .package import MisMatch, Mods
 from .persist import Workdir
 from .screens import Screen
-from .threads import Task, Thread
+from .threads import Thr, Thread
 from .utility import Utils
 
 
@@ -79,8 +79,10 @@ class Boot:
             func(*args)
         except (KeyboardInterrupt, EOFError):
             Screen.block.set()
-            Task.block.set()
+            Thr.block.set()
             _thread.interrupt_main()
+        except MisMatch as ex:
+            raise
         except Exception as ex:
             logging.exception(ex)
             _thread.interrupt_main()

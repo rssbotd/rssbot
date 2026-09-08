@@ -48,10 +48,7 @@ class Commands:
         modname = cls.names.get(name, None)
         if not modname:
             return
-        try:
-            mod = Mods.get(modname)
-        except MisMatch:
-            return
+        mod = Mods.get(modname)
         if not mod:
             return
         cls.scan(mod)
@@ -72,10 +69,7 @@ class Commands:
     def scanner(cls):
         "scan all modules."
         for name in Mods.list():
-            try:
-                cls.scan(Mods.get(name))
-            except MisMatch:
-                pass
+            cls.scan(Mods.get(name))
 
     @classmethod
     def statics(cls):

@@ -1,17 +1,18 @@
 # This file is placed in the Public Domain.
 
 
-"background processes"
+"runtime"
 
 
 import argparse
+import logging
 import os
 import sys
 import time
 
 
-from .defines import Boot,  Cmd, Commands, Main, MD5
-from .defines import Message, Mods, Method, Screen, Workdir
+from .defines import Boot, Cmd, Commands, Main, MD5, Message
+from .defines import Method, MisMatch, Mods, Screen, Workdir
 
 
 class Arguments:
@@ -133,6 +134,8 @@ class Kernel(Boot, Daemon):
             old = False
         try:
             cls.wrapped(func, *args)
+        except MisMatch as ex:
+            logging.error("mismatch %s", ex)
         except (KeyboardInterrupt, EOFError):
             pass
         if old:
@@ -215,20 +218,6 @@ class Scripts:
         evt.wait()
 
     @staticmethod
-    def nodisk():
-        Kernel.boot()
-        Commands.add(Cmd.cmd)
-        if Main.verbose:
-            Kernel.banner(True)
-        if Main.console:
-            import readline
-            readline.redisplay()
-            csl = Console()
-            csl.start()
-        Kernel.init(Main.mods)
-        Kernel.forever()
-
-    @staticmethod
     def service():
         "service script."
         Kernel.boot()
@@ -245,9 +234,7 @@ class Scripts:
 def main():
     "main"
     Arguments.getargs()
-    if Main.nodisk:
-        Kernel.wrap(Scripts.nodisk)
-    elif Main.console:
+    if Main.console:
         Kernel.wrap(Scripts.console)
     elif Main.service:
         Kernel.wrap(Scripts.service)
@@ -261,6 +248,7 @@ def __dir__():
     return (
         'Arguments',
         'CLI',
+        'Daemon',
         'Kernel',
         'Scripts',
         'main'

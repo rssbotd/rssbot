@@ -12,7 +12,7 @@ import time
 import _thread
 
 
-class Task(threading.Thread):
+class Thr(threading.Thread):
 
     block = threading.Event()
 
@@ -62,7 +62,7 @@ class Thread:
         "start a new thread running function with arguments."
         with cls.lock:
             "run function in a thread."
-            task = Task(func, *args, **kwargs)
+            task = Thr(func, *args, **kwargs)
             task.start()
             return task
 
@@ -85,6 +85,6 @@ class Thread:
 
 def __dir__():
     return (
-        'Task',
+        'Thr',
         'Thread'
     )

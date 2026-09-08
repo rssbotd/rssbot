@@ -8,7 +8,7 @@ import os
 import time
 
 
-from .handler import Loop
+from .looping import Loop
 
 
 e = os.path.exists

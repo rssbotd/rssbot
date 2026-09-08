@@ -8,14 +8,14 @@ import queue
 import threading
 
 
-from .handler import Handler
+from .looping import Loop
 from .threads import Thread
 
 
-class Engine(Handler):
+class Engine(Loop):
 
     def __init__(self):
-        Handler.__init__(self)
+        Loop.__init__(self)
         self.cbs = {}
         self.queue = queue.Queue()
         self.stopped = threading.Event()

@@ -7,6 +7,7 @@
 import os
 
 
+from .methods import Method
 from .sources import MD5
 from .utility import Utils
 
@@ -39,15 +40,17 @@ class Mods:
         "return module from cache or import module."
         for pkgname, path in cls.dirs.items():
             modname = f"{pkgname}.{name}"
-            try:
-                mod = cls.mods.get(modname, None)
-            except MisMatch:
-                continue
+            mod = cls.mods.get(modname, None)
             if mod:
                 return mod
             fnm = os.path.join(path, name + ".py")
             if not os.path.exists(fnm):
                 continue
+            if cls.md5s:
+                md5 = MD5.md5(fnm)
+                md5s = cls.md5s.get(name)
+                if md5s and md5 != md5s:
+                    raise MisMatch(modname)
             return cls.importer(modname, fnm)
 
     @classmethod
@@ -85,12 +88,12 @@ class Mods:
     @classmethod
     def minimal(cls):
         "return package minimal path."
-        return os.path.join(Utils.where(Mods), "minimal")
+        return os.path.join(Method.where(Mods), "minimal")
 
     @classmethod
     def moddir(cls):
         "return package modules path."
-        return os.path.join(Utils.where(Mods), "modules")
+        return os.path.join(Method.where(Mods), "modules")
 
     @classmethod
     def statics(cls):

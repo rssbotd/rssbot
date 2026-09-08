@@ -23,7 +23,7 @@ from .message import Message
 from .methods import Method
 from .objects import Data, Object
 from .outputs import Output
-from .package import MD5, Mods
+from .package import MD5, MisMatch, Mods
 from .parsers import Parser
 from .persist import Disk
 from .pooling import Pool
@@ -31,7 +31,7 @@ from .repeats import Repeater
 from .require import Cmd
 from .runners import Runner
 from .screens import Screen
-from .threads import Task, Thread
+from .threads import Thr, Thread
 from .timings import Time
 from .utility import Utils
 from .watcher import Watcher
@@ -61,6 +61,7 @@ def __dir__():
        'MD5',
        'Message',
        'Method',
+       'MisMatch',
        'Mods',
        'Output',
        'Parser',
@@ -68,7 +69,7 @@ def __dir__():
        'Repeater',
        'Runner',
        'Screen',
-       'Task',
+       'Thr',
        'Thread',
        'Time',
        'Utils',

@@ -4,6 +4,8 @@
 "a function with an object as the first argument"
 
 
+import inspect
+import os
 import types
 
 
@@ -218,6 +220,14 @@ class Method:
             setattr(res, key, value)
         return res
 
+    @staticmethod
+    def skipped(obj):
+        "yield values without underscored keys."
+        for key in dir(obj):
+            if key.startswith("_"):
+                continue
+            yield getattr(obj, key)
+
     @classmethod
     def typed(cls, obj, key, val):
         "assign proper types."
@@ -277,6 +287,11 @@ class Method:
                 res.append(obj[key])
             return res
         return obj.__dict__.values()
+
+    @staticmethod
+    def where(obj):
+        "path where object is defined."
+        return os.path.dirname(inspect.getfile(obj))
 
 
 def __dir__():

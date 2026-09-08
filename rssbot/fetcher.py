@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"fectch feeds"
+"fetching feeds"
 
 
 import html
@@ -19,6 +19,16 @@ from .objects import Data
 class Fetcher:
 
     modified = {}
+
+    @classmethod
+    def cdata(cls, line):
+        "scrape CDATA block."
+        if "CDATA" in line:
+            lne = line.replace("![CDATA[", "")
+            lne = lne.replace("]]", "")
+            lne = lne[1:-1]
+            return lne
+        return line
 
     @classmethod
     def geturl(cls, url, force=False):
@@ -55,25 +65,25 @@ class Fetcher:
             response.error = ""
             return response
 
-    @staticmethod
-    def striphtml(text):
+    @classmethod
+    def striphtml(cls, text):
         "strip html."
         clean = re.compile("<.*?>")
         return re.sub(clean, "", text)
 
-    @staticmethod
-    def unescape(text):
+    @classmethod
+    def unescape(cls, text):
         "unescape html."
         txt = re.sub(r"\s+", " ", text)
         return html.unescape(txt)
 
-    @staticmethod
-    def unquote(url):
+    @classmethod
+    def unquote(cls, url):
         "unquote an url."
         return urllib.parse.unquote(url, errors='ignore')
 
-    @staticmethod
-    def useragent(txt):
+    @classmethod
+    def useragent(cls, txt):
         "produce useragent string."
         return "Mozilla/5.0 (X11; Linux x86_64) " + txt
 
