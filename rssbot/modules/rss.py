@@ -172,7 +172,7 @@ class Run:
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 continue
-            pool.put(fnm, feed, silent)
+            pool.put((fnm, feed, silent))
             nrs += 1
         return nrs
 
