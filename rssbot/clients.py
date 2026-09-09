@@ -11,7 +11,7 @@ import time
 import _thread
 
 
-from .looping import Handler
+from .handler import Handler
 from .threads import Thread
 
 

@@ -11,7 +11,7 @@ from .command import Commands
 from .configs import Main
 from .encoder import JSON, JSONL
 from .fetcher import Fetcher
-from .looping import Engine, Handler, Loop, Pool, Repeater, Runner, Watcher
+from .handler import Engine, Handler, Loop, Pool, Repeater, Runner, Watcher
 from .message import Message
 from .objects import Data, Object, Method
 from .package import MD5, MisMatch, Mods
