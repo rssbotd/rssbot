@@ -105,7 +105,7 @@ def main():
     nrs = Main.index or 1
     thrs = []
     for _x in range(nrs):
-        thrs.append(Thread.launch(payload,pre))
+        thrs.append(Thread.launch(payload, pre))
     for _x in range(nrs):
         thrs.append(Thread.launch(payload, examples))
     for _x in range(nrs):

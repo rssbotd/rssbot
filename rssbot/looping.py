@@ -4,8 +4,6 @@
 "stuck in a loop"
 
 
-import inspect
-import logging
 import os
 import queue
 import threading

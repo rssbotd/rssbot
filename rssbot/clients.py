@@ -4,7 +4,6 @@
 "an object for a string"
 
 
-import gc
 import logging
 import queue
 import threading
