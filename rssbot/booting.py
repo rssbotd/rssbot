@@ -11,7 +11,7 @@ import _thread
 
 
 from .clients import Clients, Screen
-from .package import MisMatch, Mods
+from .package import Mods
 from .persist import Workdir
 from .threads import Thr, Thread
 from .utility import Logging, Utils
@@ -77,8 +77,6 @@ class Boot:
             Screen.block.set()
             Thr.block.set()
             _thread.interrupt_main()
-        except MisMatch:
-            raise
         except Exception as ex:
             logging.exception(ex)
             _thread.interrupt_main()

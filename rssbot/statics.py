@@ -5,23 +5,29 @@
 
 
 CORE = {
-    "booting": "c2fc3cec7dd76782d0df43c31ac937e3",
-    "clients": "a2c15d352580295a310353723a3d1ebd",
+    "booting": "956b090ed72c9b74c628ae7999d46a9e",
+    "brokers": "7578f0f6f1074b91416117aabb9518c6",
+    "clients": "95600e32e012d7e5b028d172fdc64ca9",
     "command": "4849f20c1f890fdf0bd45905c24b7b07",
     "configs": "35fd868784ef7d8e33a9452e8660cc9d",
-    "defines": "ac80c4c1cf01a25556b1344b0f7edde8",
+    "defines": "050932529f1811acd000bd30fbc88df6",
     "encoder": "749faec2870ee53b1bbe11a340a3f947",
+    "engines": "4fced79d4f693572b7b95b092a7aa5ca",
     "fetcher": "91cae8ef0e2a27c588cad6ad14e7174b",
-    "handler": "d9856ea44df1a5f7ce1d7101af34d775",
+    "handler": "e26133d11ff15abac00d1913bf19b408",
+    "looping": "e3a6e1b05e9209813ebe4874475d0ed3",
     "message": "6c2322224bbca893fd5899bda65df43e",
     "objects": "c892a3d53b73bbdf2b85c2adf105d6e8",
     "package": "7e9535636da7b77009aa4ac66873e4c7",
     "parsers": "178864f8cde7b2465b490451aa06d9d6",
     "persist": "e696c599efd459cbf6374572592d1807",
+    "repeats": "fe94850ab1d0d77c8c4a9b77bf0d459c",
     "require": "8468b2c606e90d1f33816f059ddafbdc",
+    "runners": "d5f0fe89e610327d505e2ba32e351b42",
     "runtime": "9a8b3baabc8b9dc2ab0855a9f275bb9b",
     "threads": "b31f02074221b838a78f4183aa2794ae",
-    "utility": "9576ee8a8e47ca90afaa7d6d4db5a381"
+    "utility": "9576ee8a8e47ca90afaa7d6d4db5a381",
+    "watcher": "9e63bbe93a9f57a3d55d6a56e2dfcb01"
 }
 
 
