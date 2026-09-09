@@ -20,11 +20,6 @@ from .utility import Utils
 j = os.path.join
 
 
-class NoDisk(Exception):
-
-    "disk is disabled."
-
-
 class DecodeError(Exception):
 
     "could not parse input."
@@ -55,20 +50,7 @@ class Cache:
 
 class Disk:
 
-    disable = False
     lock = threading.RLock()
-
-    @classmethod
-    def cached(cls, path, base="store"):
-        pth = os.path.join(Workdir.wdr, base, path)
-        if not os.path.exists(pth):
-            return False
-        obj = Cache.get(pth)
-        if obj:
-            return obj
-        obj = Data()
-        cls.read(obj, pth, base)
-        return obj
 
     @classmethod
     def ident(cls, obj):
@@ -78,8 +60,6 @@ class Disk:
     @classmethod
     def read(cls, obj, path, base="store"):
         "read object from path."
-        if cls.disable:
-            raise NoDisk
         with cls.lock:
             pth = os.path.join(Workdir.wdr, base, path)
             if not os.path.exists(pth):
@@ -89,14 +69,11 @@ class Disk:
                     Method.update(obj, JSON.load(fpt))
                 except json.decoder.JSONDecodeError as ex:
                     raise DecodeError(Utils.strip(pth)) from ex
-            Cache.add(pth, obj)
             return True
 
     @classmethod
     def write(cls, obj, path="", base="store", skip=False):
         "write object to disk."
-        if cls.disable:
-            raise NoDisk
         with cls.lock:
             if path == "":
                 path = cls.ident(obj)
@@ -131,7 +108,11 @@ class Locater:
         with cls.lock:
             nrs = 0
             for pth in cls.fns(Workdir.long(kind)):
-                obj = Disk.cached(pth)
+                obj = Cache.get(pth)
+                if not obj:
+                    obj = Data()
+                    Disk.read(obj, pth)
+                    Cache.add(pth, obj)
                 if not removed and Method.deleted(obj):
                     continue
                 if selector and not Method.search(obj, selector, matching):

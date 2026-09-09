@@ -12,7 +12,8 @@ import time
 import _thread
 
 
-from .threads import Handler, Thread
+from .looping import Handler
+from .threads import Thread
 
 
 class Broker:
@@ -110,7 +111,6 @@ class Display:
                     return
                 self.dosay(event.channel, txt)
         del event
-        gc.collect()
 
     def dosay(self, channel, text):
         "say called by display."

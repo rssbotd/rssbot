@@ -45,13 +45,11 @@ class Arguments:
         optparser.add_argument("--default", default="irc,mdl,rss,wsd", help=argparse.SUPPRESS)
         optparser.add_argument("--local", action="store_true", help="user local mods dir.")
         optparser.add_argument("--nochdir", action="store_true", help=argparse.SUPPRESS)
-        optparser.add_argument("--nodisk", action="store_true", help="memory only.")
         optparser.add_argument("--scanner", action="store_true", help="do full modules scan on boot.")
         optparser.add_argument("--wdr", default="", help="set modules directory.")
         args, arguments = theparser.parse_known_args()
         Method.update(Main, args)
         Main.otxt = " ".join(arguments)
-
 
 
 class Booting(Boot):
@@ -80,7 +78,8 @@ class Booting(Boot):
             Mods.dir("mods", "mods")
         if Main.all:
             Main.mods = ",".join(Mods.list())
-        cls.banner()
+        if Main.verbose:
+            cls.banner()
         Commands.table()
         Mods.table()
         if Main.scanner or Main.local:

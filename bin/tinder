@@ -15,8 +15,8 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.defines import Boot, Commands, Main, Message, Screen
-from rssbot.defines import Method, Mods, Parser, Time, Workdir
+from rssbot.defines import Boot, Commands, Main, Message, Method, Mods, Parser
+from rssbot.defines import Pool, Screen, Thread, Time, Workdir
 
 
 Workdir.wdr = ".test"
@@ -34,9 +34,8 @@ class Kernel(Boot):
         Mods.dir("examples")
         Mods.dir("mods")
         Mods.dir(Mods.moddir())
-        Commands.scanner()
-        if os.path.exists(Workdir.wdr):
-            shutil.rmtree(Workdir.wdr)
+        Commands.table()
+        Mods.table()
         
     @classmethod
     def wrap(cls, func, *args, dofinal=None):
@@ -66,38 +65,7 @@ class CLI(Screen):
             sys.stdout.flush()
 
 
-class Runners:
-
-    runners = []
-    lock = threading.RLock()
-    nrcpu = 1
-    nrlast = 0
-
-    @staticmethod
-    def add(client):
-        "add a runner."
-        Runners.runners.append(client)
-
-    @staticmethod
-    def init(nrcpu, cls):
-        "initialize a runner."
-        Runners.nrcpu = nrcpu
-        for _x in range(Runners.nrcpu):
-            clt = cls()
-            clt.start()
-            Runners.add(clt)
-
-    @staticmethod
-    def put(*args):
-        "push job to a runner."
-        if not Runners.runners:
-            Runners.init(Runners.nrcpu, CLI)
-        with Runners.lock:
-            if Runners.nrlast >= Runners.nrcpu-1:
-                Runners.nrlast = 0
-            clt = Runners.runners[Runners.nrlast]
-            clt.put(*args)
-            Runners.nrlast += 1
+pool = Pool(CLI)
 
 
 def payload(todo):
@@ -107,7 +75,7 @@ def payload(todo):
             evt = Message()
             evt.kind = "command"
             evt.text = f"{cmd} {ex}"
-            Runners.put(evt)
+            pool.put(evt)
 
 
 def final():
@@ -125,19 +93,25 @@ def final():
 
 def main():
     Kernel.boot()
+    Commands.scanner()
+    if os.path.exists(Workdir.wdr):
+        shutil.rmtree(Workdir.wdr)
     if "t" in Main.opts:
         nrcpu = os.cpu_count()
     else:
         nrcpu = 1
-    Runners.init(nrcpu, CLI)
+    pool.init(nrcpu)
     Kernel.starttime = time.time()
     nrs = Main.index or 1
+    thrs = []
     for _x in range(nrs):
-        payload(pre)
+        thrs.append(Thread.launch(payload,pre))
     for _x in range(nrs):
-        payload(examples)
+        thrs.append(Thread.launch(payload, examples))
     for _x in range(nrs):
-        payload(post)
+        thrs.append(Thread.launch(payload, post))
+    for thr in thrs:
+        thr.join()
     Kernel.shutdown()
 
 
@@ -174,15 +148,9 @@ pre = {
         'main',
         'irc',
         'rss',
-        'rst',
-        'udp',
-        'web',
         'main nick=mekker',
         'irc nick=mekker',
         'rss nick=mekker',
-        'rst nick=mekker',
-        'udp nick=mekker',
-        'web nick=mekker'
     ],
     "imp": [
         "",
