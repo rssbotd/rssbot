@@ -32,67 +32,33 @@ CORE = {
 
 
 MODULES = {
-    "cfg": "83bd7e9b313fb55fc46c7bf797a70f77",
-    "eml": "d1aa1a59b40a4c3d1fadcbf2424b8880",
-    "fie": "bc9361e18eefa2a97be4fa806021e53b",
-    "flt": "c40a68583139d18206d885959c0ece30",
-    "fnd": "bf337a3d5b00f942441638e450553030",
-    "hlp": "0e3fe796350fb7707e218e4a94f440b8",
-    "irc": "398a8520c899ad463066d8cac84b521a",
-    "log": "5d11a098f0c298fe773f8d9bfbb21d11",
-    "man": "920599410f7739c9503e0eea9e4e5885",
-    "mdl": "fdd0773090bb067ae0efdd611d64f0b1",
-    "opm": "758a02ce54aff5a0580702865454858f",
-    "pth": "1b7e056a0f4e258dde8dc80e31cbd17a",
-    "req": "bc1984d2e9de0310dc1b468f25c7ab8c",
-    "rss": "598faa4d6a50c0f6ea07bf96efba9af0",
-    "sil": "6409941fa5f1f20a23f37774ec0c6a7d",
-    "slg": "e68f11973ddc2e3edeb0de0e16e9fe7a",
-    "srv": "0c6cf401023c4b0fd13a06271ae3ddcb",
-    "tdo": "e472d38368e3a278581caeeff08be558",
-    "thr": "a9ab22cec2f1e919e09c243af21f306c",
-    "tmr": "61c1044f61d778f3ecaf33ed25202acd",
-    "upt": "d7f456e017f217289720a0ddda3aa24d",
-    "ver": "34380fe0a4bacc6379593e99a3633054",
-    "wsd": "577b9cbf15e731bcab8458e2343125a5"
+    "cfg": "a47404e23ba563ebc0c3ac7a99fb8b77",
+    "fnd": "c7816bb51a83be76bcccf5bc514f367b",
+    "irc": "d77258369b0c92e8e38980a5c0fb10e7",
+    "opm": "e691361b8fda0596cb67cdd9af36c1a8",
+    "rss": "34809cbf9ddef9e5e0adeec9de8fec2e",
+    "srv": "79208bdb18f9e4429ac35d8721fd0822",
+    "thr": "aa9d092137049239127bbf5b85599018",
+    "upt": "4e8110d1b93254cd6555a619b2b78ccc"
 }
 
 
 NAMES = {
     "atr": "rss",
     "cfg": "cfg",
-    "dis": "mdl",
-    "dne": "tdo",
     "dpl": "rss",
-    "eml": "eml",
     "exp": "opm",
-    "fie": "fie",
-    "flt": "flt",
     "fnd": "fnd",
-    "hlp": "hlp",
     "imp": "opm",
-    "log": "log",
-    "lou": "sil",
-    "man": "man",
-    "mbx": "eml",
     "nme": "rss",
-    "now": "mdl",
-    "pth": "pth",
     "pwd": "irc",
     "rem": "rss",
-    "req": "req",
     "res": "rss",
     "rss": "rss",
-    "sil": "sil",
-    "slg": "slg",
     "srv": "srv",
     "syn": "rss",
-    "tdo": "tdo",
     "thr": "thr",
-    "tmr": "tmr",
-    "upt": "upt",
-    "ver": "ver",
-    "wsd": "wsd"
+    "upt": "upt"
 }
 
 

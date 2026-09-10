@@ -15,8 +15,8 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.defines import Boot, Commands, Main, Message, Method, Mods, Parser
-from rssbot.defines import Pool, Screen, Thread, Time, Workdir
+from rssbot.defines import Boot, Broker, Commands, Main, MD5, Message, Method
+from rssbot.defines import Mods, Parser, Pool, Screen, Thread, Time, Workdir
 
 
 Workdir.wdr = ".test"
@@ -24,19 +24,42 @@ Workdir.wdr = ".test"
 
 class Kernel(Boot):
 
+    "at first."
+
     nrevents = 0
-    starttime = 0
+
+    @classmethod
+    def banner(cls, force=False):
+        "hello."
+        if not force and not Main.verbose:
+            return
+        tmr = time.ctime(time.time()).replace("  ", " ")
+        txt = "%s since %s %s (%s)" % (
+            Main.name.upper(),
+            tmr,
+            Main.level.upper() or "INFO",
+            MD5.core()
+        )
+        print(txt.replace("  ", " "))
+        sys.stdout.flush()
 
     @classmethod
     def boot(cls):
-        Parser.parse(Main, " ".join(sys.argv[1:]))
         cls.configure(Main)
-        Mods.dir("examples")
-        Mods.dir("mods")
+        Mods.dir(Workdir.moddir())
         Mods.dir(Mods.moddir())
+        Mods.dir("examples")
+        if Main.local:
+            Mods.dir("mods", "mods")
+        if Main.all:
+            Main.mods = ",".join(Mods.list())
+        if Main.verbose:
+            cls.banner()
         Commands.table()
         Mods.table()
-        
+        if Main.scanner or Main.local:
+            Commands.scanner()
+
     @classmethod
     def wrap(cls, func, *args, dofinal=None):
         "restore console."
@@ -45,11 +68,14 @@ class Kernel(Boot):
             old = termios.tcgetattr(sys.stdin.fileno())
         except termios.error:
             old = False
-        cls.wrapped(func, *args)
+        try:
+            cls.wrapped(func, *args)
+        except (KeyboardInterrupt, EOFError):
+            pass
         if old:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-        if dofinal:
-            dofinal()
+        if final:
+            final()
 
 
 class CLI(Screen):
@@ -65,9 +91,6 @@ class CLI(Screen):
             sys.stdout.flush()
 
 
-pool = Pool(CLI)
-
-
 def payload(todo):
     for cmd, example in todo.items():
         for ex in example:
@@ -75,7 +98,7 @@ def payload(todo):
             evt = Message()
             evt.kind = "command"
             evt.text = f"{cmd} {ex}"
-            pool.put(evt)
+            Pool.put(evt)
 
 
 def final():
@@ -92,6 +115,7 @@ def final():
 
 
 def main():
+    Parser.parse(Main, " ".join(sys.argv[1:]))
     Kernel.boot()
     Commands.scanner()
     if os.path.exists(Workdir.wdr):
@@ -100,7 +124,7 @@ def main():
         nrcpu = os.cpu_count()
     else:
         nrcpu = 1
-    pool.init(nrcpu)
+    Pool.init(nrcpu, CLI)
     Kernel.starttime = time.time()
     nrs = Main.index or 1
     thrs = []
@@ -125,7 +149,7 @@ examples = {
     "fie": ["", "log", "todo"],
     "lou": [""],
     "mbx": ["", "~/25-1-2013"],
-    "man": ["", "nixbot nixtniet@gmail.com Nixt Niet"],
+    "man": ["", "nixt nixtniet@gmail.com Nixt Niet"],
     "nme": ["", "hnrss hn"],
     "now": [""],
     "pth": [""],

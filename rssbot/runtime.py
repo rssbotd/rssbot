@@ -99,8 +99,6 @@ class Booting(Boot):
             old = False
         try:
             cls.wrapped(func, *args)
-        except MisMatch as ex:
-            logging.error("mismatch %s", ex)
         except (KeyboardInterrupt, EOFError):
             pass
         if old:

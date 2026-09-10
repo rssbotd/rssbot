@@ -212,7 +212,6 @@ class Fetching(Runner):
     def doskip(self, errs):
         "check whether to log."
         if errs not in [200, 304]:
-            print("304")
             return True
         return False
 
@@ -258,11 +257,11 @@ class Fetching(Runner):
             Method.update(fed, feed)
             if Config.save:
                 Run.log(JSONL.logtxt(fed))
-            if not silent:
-                txt = Run.display(fed)
-                if not Run.got(txt, feed):
+            txt = Run.display(fed)
+            if not Run.got(txt, feed):
+                if not silent:
                     Clients.announce(txt)
-                    has = True
+                has = True
             del obj
         if has:
             feed.seen = feed.seen[:counter]
@@ -456,6 +455,10 @@ def syn(event):
     "synchronize a feed."
     if Main.debug:
         return
+    Run.start(True)
     nrs = Run.run(True)
     cleared = Run.clear()
+    while True:
+        if not Pool.busy():
+            break
     event.reply(f"{nrs} feeds synced {cleared} cleared")

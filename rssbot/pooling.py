@@ -36,6 +36,7 @@ class Pool:
     @classmethod
     def init(cls, nr, clz=None):
         "initialze a number of runners."
+        cls.nrcpu = nr
         if clz:
             cls.clazz = clz
         for x in range(nr):
