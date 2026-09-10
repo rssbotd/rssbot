@@ -19,8 +19,6 @@ from rssbot.defines import Runner, Utils, Watcher, Workdir
 
 
 logger = logging.getLogger("rss")
-repeater = Repeater()
-watcher = Watcher()
 
 
 j = os.path.join
@@ -48,7 +46,7 @@ class Config(Object):
     save = False
 
 
-class Rss(Object):
+class Rss(Data):
 
     def __init__(self):
         super().__init__()
@@ -165,14 +163,13 @@ class Run:
     def run(cls, silent=False):
         "do a fetch run of all feeds."
         nrs = 0
-        if pool.busy():
+        if Pool.busy():
             logging.debug("next!")
             return 0
-        logging.debug("starting run")
         for fnm, feed in Locater.find(Method.fqn(Rss)):
             if feed.skip:
                 continue
-            pool.put((fnm, feed, silent))
+            Pool.put((fnm, feed, silent))
             nrs += 1
         return nrs
 
@@ -185,18 +182,19 @@ class Run:
             pathlib.Path(cls.path).touch()
             cls.file = open(cls.path, "a+", encoding="utf-8")
             cls.enable(cls.path)
-            watcher.add(cls.path, cls.callback)
-            watcher.start()
+            Watcher.add(cls.path, cls.callback)
+            Watcher.start()
         cls.statefn = Locater.last(State) or Disk.ident(State)
-        pool.init(1)
+        Pool.init(2, Fetching)
         if not once:
-            repeater.add(Config.polltime, cls.run)
-            repeater.add(7200, cls.clear)
+            Repeater.add(Config.polltime, cls.run)
+            Repeater.add(7200, cls.clear)
+            Repeater.start()
 
     @classmethod
     def stop(cls):
         "shutdown."
-        watcher.stop()
+        Watcher.stop()
 
     @classmethod
     def sync(cls):
@@ -214,6 +212,7 @@ class Fetching(Runner):
     def doskip(self, errs):
         "check whether to log."
         if errs not in [200, 304]:
+            print("304")
             return True
         return False
 
@@ -324,9 +323,6 @@ class RSS:
                     escaped = Fetcher.unescape(val.strip())
                     obj[itm] = Fetcher.striphtml(escaped).replace("\n", "")
             yield obj
-
-
-pool = Pool(Fetching)
 
 
 def atr(event):
