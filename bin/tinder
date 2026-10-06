@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # This file is placed in the Public Domain.
+# pylint: disable=C0413
 
 
 "stress test"
@@ -15,8 +16,8 @@ import time
 sys.path.insert(0, os.getcwd())
 
 
-from rssbot.defines import Boot, Broker, Commands, Main, MD5, Message, Method
-from rssbot.defines import Mods, Parser, Pool, Screen, Thread, Time, Workdir
+from nixt.defines import Boot, Commands, Main, MD5, Message, Method, Mods
+from nixt.defines import Parser, Pool, Screen, Threading, Time, Workdir
 
 
 Workdir.wdr = ".test"
@@ -33,31 +34,26 @@ class Kernel(Boot):
         "hello."
         if not force and not Main.verbose:
             return
-        tmr = time.ctime(time.time()).replace("  ", " ")
-        txt = "%s since %s %s (%s)" % (
-            Main.name.upper(),
-            tmr,
-            Main.level.upper() or "INFO",
-            MD5.core()
-        )
-        print(txt.replace("  ", " "))
+        timr = time.ctime(time.time()).replace("  ", " ")
+        print(f"{Main.name.upper()} {timr} {Main.level.upper() or 'INFO'} {MD5.core()}")
         sys.stdout.flush()
 
     @classmethod
     def boot(cls):
-        cls.configure(Main)
-        Mods.dir(Workdir.moddir())
-        Mods.dir(Mods.moddir())
-        Mods.dir("examples")
-        if Main.local:
+        "booting the kernel."
+        cls.configure()
+        Mods.dir("mods", Workdir.moddir())
+        Mods.dir("module", Mods.moddir())
+        Mods.dir("examples", "examples")
+        if "local" in Main.opts:
             Mods.dir("mods", "mods")
-        if Main.all:
+        if "all" in Main.opts:
             Main.mods = ",".join(Mods.list())
-        if Main.verbose:
+        if "verbose" in Main.verbose:
             cls.banner()
         Commands.table()
         Mods.table()
-        if Main.scanner or Main.local:
+        if Main.scanner:
             Commands.scanner()
 
     @classmethod
@@ -65,20 +61,22 @@ class Kernel(Boot):
         "restore console."
         import termios
         try:
-            old = termios.tcgetattr(sys.stdin.fileno())
+            olt = termios.tcgetattr(sys.stdin.fileno())
         except termios.error:
-            old = False
+            olt = False
         try:
             cls.wrapped(func, *args)
         except (KeyboardInterrupt, EOFError):
             pass
-        if old:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-        if final:
+        if olt:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, olt)
+        if dofinal:
             final()
 
 
 class CLI(Screen):
+
+    "Command Line Interface"
 
     def __init__(self):
         Screen.__init__(self)
@@ -92,6 +90,7 @@ class CLI(Screen):
 
 
 def payload(todo):
+    "payload to run."
     for cmd, example in todo.items():
         for ex in example:
             Kernel.nrevents += 1
@@ -102,6 +101,7 @@ def payload(todo):
 
 
 def final():
+    "finalizer."
     if "v" not in Main.opts:
         return
     total = Kernel.nrevents
@@ -110,11 +110,12 @@ def final():
     percall = (endtime-Kernel.starttime)/total
     print(f"{Method.fmt(Main, skip='otxt,txt')}")
     print(f"events: {total}")
-    print(f"total: {lap} nrs: {Kernel.nrevents} call: %.6fs" % percall)
+    print(f"total: {lap} nrs: {Kernel.nrevents} call: {percall}")
     print(threading.enumerate())
 
 
 def main():
+    "main code."
     Parser.parse(Main, " ".join(sys.argv[1:]))
     Kernel.boot()
     Commands.scanner()
@@ -129,11 +130,11 @@ def main():
     nrs = Main.index or 1
     thrs = []
     for _x in range(nrs):
-        thrs.append(Thread.launch(payload, pre))
+        thrs.append(Threading.launch(payload, pre))
     for _x in range(nrs):
-        thrs.append(Thread.launch(payload, examples))
+        thrs.append(Threading.launch(payload, examples))
     for _x in range(nrs):
-        thrs.append(Thread.launch(payload, post))
+        thrs.append(Threading.launch(payload, post))
     for thr in thrs:
         thr.join()
     Kernel.shutdown()

@@ -4,57 +4,61 @@
 "if it repeats it is important"
 
 
-import threading
 import time
 
 
-from .threads import Thread
+from .default import Event
+from .threads import Threading
+from .typings import Any, Callable, ClassVar, Dict, List
+
+
+Todo = Dict[str, List[Any]]
 
 
 class Repeater:
 
     "repeat at interval"
 
-    running = threading.Event()
-    stopped = threading.Event()
-    counter = 0
-    sleeptime = 0.1
-    todo = {}
+    running: ClassVar[Event] = Event()
+    stopped: ClassVar[Event] = Event()
+    counter: ClassVar[int] = 0
+    sleeptime: ClassVar[float] = 0.1
+    todo: ClassVar[Todo] = {}
 
     @classmethod
-    def add(cls, sleep, func, *args, **kwargs):
+    def add(cls, sleep: float, func: Callable, *args: Any, **kwargs: Any) -> None:
         "add a repeater."
-        sleep = str(sleep)
-        if sleep not in cls.todo:
-            cls.todo[sleep] = []
-        cls.todo[sleep].append((func, args, kwargs))
+        slp = str(sleep)
+        if slp not in cls.todo:
+            cls.todo[slp] = []
+        cls.todo[slp].append((func, args, kwargs))
 
     @classmethod
-    def loop(cls):
+    def loop(cls) -> None:
         "repeater loop."
         while not cls.stopped.is_set():
             time.sleep(1.0)
             cls.counter += 1
-            for sleep in cls.todo:
+            for sleep, arguments in cls.todo.items():
                 slept = int(sleep)
                 if cls.counter % slept != 0:
                     continue
-                for func, args, kwargs in cls.todo[sleep]:
-                    Thread.launch(func, *args, **kwargs)
+                for func, args, kwargs in arguments:
+                    Threading.launch(func, *args, **kwargs)
 
     @classmethod
-    def start(cls, daemon=True):
+    def start(cls, daemon: bool = True) -> None:
         "start callback loop."
         if not cls.stopped.is_set():
-            Thread.launch(cls.loop, daemon=daemon, name="Repeater.loop")
+            Threading.launch(cls.loop, daemon=daemon, name="Repeater.loop")
 
     @classmethod
-    def stop(cls):
-        "stop loop"
+    def stop(cls) -> None:
+        "stop loop."
         cls.stopped.set()
-        
+
     @classmethod
-    def wait(cls):
+    def wait(cls) -> None:
         "wait for loop to stop."
 
 

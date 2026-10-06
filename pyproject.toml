@@ -37,14 +37,32 @@ classifiers = [
 packages=[
     'rssbot',
     'rssbot.minimal',
+    'rssbot.mirrors',
     'rssbot.modules',
+    'rssbot.neurons',
     'rssbot.numbers'
 ]
 
 
 [tool.pylint."messages control"]
-disable = ["C,R,W,E0401,E0402"]
-
+disable = [
+    'R',
+    'invalid-name',
+    'line-too-long',
+    'import-outside-toplevel',
+    'broad-exception-caught',
+    'relative-beyond-top-level'
+]
 
 [tool.ruff.lint]
-ignore = ["ALL"]
+preview = true
+ignore = [
+    'DTZ',
+    'deprecated-import',
+    'blind-except',
+    'invalid-all-format',
+    'mutable-class-default',
+    'non-pep585-annotation',
+    'unsorted-imports',
+    'verbose-log-message'
+]

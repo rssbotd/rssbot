@@ -12,7 +12,7 @@ import sys
 NAME = "rssbot"
 
 
-SKIP = ["--", "Your", "All"]
+SKIP = ["---", "Your", "All", "Success"]
 
 
 def doskip(line):
@@ -31,6 +31,7 @@ def popen(txt):
         sys.stdout.flush()
 
 
-popen(f"ruff check {NAME} bin/tinder testing")
-popen(f"pylint {NAME} bin/tinder testing")
-#popen(f"flake8 {NAME} bin/tinder testing")
+popen(f"ruff check {NAME} bin/tinder testing examples")
+popen(f"pylint {NAME} bin/tinder testing examples")
+popen(f"mypy -p {NAME} -p testing -p examples --check-untyped-defs")
+popen("bin/tinder")

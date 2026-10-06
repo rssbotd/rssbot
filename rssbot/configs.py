@@ -4,7 +4,7 @@
 "one config to rule them all"
 
 
-from .objects import Method
+from .methods import Method
 
 
 class Config(type):
@@ -13,22 +13,31 @@ class Config(type):
 
     def __getattr__(cls, key):
         if key in dir(cls):
-            return cls.__getattribute__(cls, key)
+            return cls.__getattribute__(key)
         return ""
 
     def __str__(cls):
-        return str(Method.skip(cls.__dict__))
+        return str(Method.skip(dict(cls.__dict__)))
+
+
+class Cfg(metaclass=Config):
+
+    "inheritable config"
 
 
 class Main(metaclass=Config):
 
     "main config"
 
-    name = Method.pkgname(Config)
+    mods: str = ""
+    name: str = Method.pkgname(Config)
+    otxt: str = ""
+    path: str = ""
 
 
 def __dir__():
     return (
+        'Cfg',
         'Config',
         'Main'
     )

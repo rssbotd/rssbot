@@ -4,31 +4,31 @@
 "configuration"
 
 
-from rssbot.defines import Disk, Method, Mods, Object
+from rssbot.defines import Data, Disk, Method, Mods
+from rssbot.typings import Union
 
 
-def cfg(event):
+def cfg(msg):
     "configure modules."
-    if not event.args:
+    if not msg.args:
         mods = f"{'main,' + Mods.has('Config')}"
-        if mods.endswith(","):
-            mods = mods[:-1]
-        event.iface(f"<{mods}>")
+        mods = mods.removesuffix(mods)
+        msg.iface(f"<{mods}>")
         return
-    name = event.args[0]
-    config = Object()
+    name = msg.args[0]
+    config: Union[Data, None] = Data()
     Disk.read(config, name, "config")
     if name != "main" and not config:
         mod = Mods.get(name)
         if not mod:
-            event.reply(f"no {name} module found.")
+            msg.reply(f"no {name} module found.")
             return
         config = getattr(mod, "Config", None)
         if not config:
-            event.reply(f"no {name} config found.")
+            msg.reply(f"no {name} config found.")
             return
-    if not event.sets:
-        event.reply(
+    if not msg.sets:
+        msg.reply(
             Method.fmt(
                 config,
                 Method.keys(config),
@@ -36,6 +36,6 @@ def cfg(event):
             )
         )
         return
-    Method.edit(config, event.sets)
+    Method.edit(config, msg.sets)
     Disk.write(config, name, "config")
-    event.ok()
+    msg.ok()

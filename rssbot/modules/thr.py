@@ -8,17 +8,19 @@ import threading
 import time
 
 
-from rssbot.defines import Time
+from rssbot.defines import Thread, Time
 
 
-def thr(event):
+def thr(msg):
     "list of running threads."
     result = []
     for thread in sorted(threading.enumerate(), key=lambda x: x.name):
+        if not isinstance(thread, Thread):
+            continue
         if str(thread).startswith("<_"):
             continue
         if getattr(thread, "sleep", None):
-            uptime = thread.sleep - int(time.time() - thread.state["latest"])
+            uptime = float(thread.sleep) - float(time.time() - float(thread.state["latest"]))
         elif getattr(thread, "starttime", None):
             uptime = time.time() - thread.starttime
         else:
@@ -29,6 +31,6 @@ def thr(event):
         lap = Time.elapsed(uptime)
         res.append(f"{txt}/{lap}")
     if res:
-        event.reply(" ".join(res))
+        msg.reply(" ".join(res))
     else:
-        event.reply("no threads")
+        msg.reply("no threads")

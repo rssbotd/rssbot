@@ -4,31 +4,30 @@
 "runtime"
 
 
-import argparse
-import logging
 import os
 import sys
 import time
 
 
-from .defines import Boot, Cmd, Commands, Main, MD5, Message
-from .defines import Method, Mods, Screen, Workdir
+from .default import SUPPRESS, ArgumentParser, RawFormat
+from .defines import Boot, Commands, Main, MD5, Message, Method, Mods, Screen
+from .defines import Workdir
+from .require import Cmd
+from .typings import Any, Callable, TextIO, Union
+
+
+Final = Union[Callable, None]
 
 
 class Arguments:
 
-    "comamnd line arguments."
+    "comamnd line arguments"
 
     @classmethod
-    def getargs(cls):
+    def getargs(cls) -> None:
         "parse commandline arguments."
         Main.name = Main.name or Method.pkgname(Main)
-        theparser = argparse.ArgumentParser(
-            prog=Main.name,
-            description=f'{Main.name.upper()}',
-            epilog='use "%(prog)s cmd" for a list of commands.',
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
+        theparser = cls.getparser()
         group = theparser.add_mutually_exclusive_group()
         group.add_argument("-c", "--console", action="store_true", help="start a console.")
         group.add_argument("-d", "--daemon", action="store_true", help="run as background daemon.")
@@ -43,41 +42,47 @@ class Arguments:
         optionparser.add_argument("-p", "--path", default='', help='path to modules directory.', metavar="path")
         optparser = theparser.add_argument_group()
         optparser.add_argument("--admin", action="store_true", help="enable admin mode.")
-        optparser.add_argument("--channel", default="", help="channel to join")
-        optparser.add_argument("--default", default="irc,mdl,rss,wsd", help=argparse.SUPPRESS)
-        optparser.add_argument("--local", action="store_true", help="user local mods dir.")
-        optparser.add_argument("--nochdir", action="store_true", help=argparse.SUPPRESS)
+        optparser.add_argument("--channel", default="", help=SUPPRESS)
+        optparser.add_argument("--default", default="irc,mdl,rss,wsd", help=SUPPRESS)
+        optparser.add_argument("--local", action="store_true", help=SUPPRESS)
+        optparser.add_argument("--nochdir", action="store_true", help=SUPPRESS)
         optparser.add_argument("--scanner", action="store_true", help="do full modules scan on boot.")
         optparser.add_argument("--wdr", default="", help="set modules directory.")
         args, arguments = theparser.parse_known_args()
         Method.update(Main, args)
         Main.otxt = " ".join(arguments)
 
+    @classmethod
+    def getparser(cls) -> ArgumentParser:
+        "create parser."
+        return ArgumentParser(
+            prog=Main.name,
+            description=f'{Main.name.upper()}',
+            epilog='use "%(prog)s cmd" for a list of commands.',
+            formatter_class=RawFormat,
+            usage="%(prog)s [options] [cmd] [key=val] [key==val] [key-=val] [arguments]"
+        )
+
 
 class Booting(Boot):
 
-    "at first."
+    "at first"
 
     @classmethod
-    def banner(cls, force=False):
+    def banner(cls, force: bool = False) -> None:
         "hello."
         if not force and not Main.verbose:
             return
         tmr = time.ctime(time.time()).replace("  ", " ")
-        txt = "%s since %s %s (%s)" % (
-            Main.name.upper(),
-            tmr,
-            Main.level.upper() or "INFO",
-            MD5.core()
-        )
-        print(txt.replace("  ", " "))
+        print(f"{Main.name.upper()} {tmr} {Main.level.upper() or 'INFO'} ({MD5.core()})")
         sys.stdout.flush()
 
     @classmethod
-    def boot(cls):
-        cls.configure(Main)
-        Mods.dir(Workdir.moddir())
-        Mods.dir(Mods.moddir())
+    def boot(cls) -> None:
+        "configure runtime."
+        cls.configure()
+        Mods.dir("mods", Workdir.moddir())
+        Mods.dir("modules", Mods.moddir())
         if Main.local:
             Mods.dir("mods", "mods")
         if Main.all:
@@ -90,29 +95,65 @@ class Booting(Boot):
             Commands.scanner()
 
     @classmethod
-    def wrap(cls, func, *args, dofinal=None):
+    def wrap(cls, func: Callable, *args: Any, dofinal: Final = None) -> None:
         "restore console."
         import termios
         try:
             old = termios.tcgetattr(sys.stdin.fileno())
         except termios.error:
-            old = False
+            old = [False,]
         try:
             cls.wrapped(func, *args)
         except (KeyboardInterrupt, EOFError):
             pass
-        if old:
+        if old and old[0]:
             termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
         if dofinal:
             dofinal()
 
 
+class CLI(Screen):
+
+    "Command Line Interface"
+
+    def __init__(self):
+        Screen.__init__(self)
+        self.register("command", Commands.command)
+
+    def after(self, msg: Message) -> None:
+        "wait for msg to finish"
+        msg.wait()
+
+    def raw(self, text: str) -> None:
+        "write to console."
+        print(text.encode('utf-8', 'replace').decode("utf-8"))
+        sys.stdout.flush()
+
+
+class Console(CLI):
+
+    "prompt"
+
+    def __init__(self):
+        CLI.__init__(self)
+        self.silent = True
+
+    def poll(self) -> Message:
+        "return msg."
+        msg: Message = Message()
+        msg.orig = repr(self)
+        msg.text = input("> ")
+        msg.kind = "command"
+        self.put(msg)
+        return msg
+
+
 class Daemon:
 
-    "detach from console."
+    "detach from console"
 
     @classmethod
-    def daemon(cls):
+    def daemon(cls) -> None:
         "run in the background."
         pid = os.fork()
         if pid != 0:
@@ -130,17 +171,18 @@ class Daemon:
         os.nice(10)
 
     @classmethod
-    def null(cls, io):
-        "route to dev/null."
+    def null(cls, iostream: TextIO) -> None:
+        "route to /dev/null."
         with open('/dev/null', 'r', encoding="utf-8") as sis:
-            os.dup2(sis.fileno(), io.fileno())
+            os.dup2(sis.fileno(), iostream.fileno())
 
     @classmethod
-    def pid(cls):
+    def pid(cls) -> Union[str, None]:
+        "return pid path."
         return Workdir.pid(Main.name)
 
     @classmethod
-    def privileges(cls):
+    def privileges(cls) -> None:
         "drop privileges."
         import getpass
         import pwd
@@ -151,51 +193,15 @@ class Daemon:
 
 class Kernel(Booting, Daemon):
 
-    "center of believing."
-
-
-class CLI(Screen):
-
-    "Command Line Interface"
-
-    def __init__(self):
-        Screen.__init__(self)
-        self.register("command", Commands.command)
-
-    def after(self, event):
-        "wait for event to finish"
-        event.wait()
-
-    def raw(self, text):
-        "write to console."
-        print(text.encode('utf-8', 'replace').decode("utf-8"))
-        sys.stdout.flush()
-
-
-class Console(CLI):
-
-    "prompt."
-
-    def __init__(self):
-        CLI.__init__(self)
-        self.silent = True
-
-    def poll(self):
-        "return event."
-        evt = Message()
-        evt.orig = repr(self)
-        evt.text = input("> ")
-        evt.kind = "command"
-        self.put(evt)
-        return evt
+    "center of believing"
 
 
 class Scripts:
 
-    "actual runtime."
+    "actual runtime"
 
     @staticmethod
-    def background():
+    def background() -> None:
         "background script."
         Kernel.boot()
         Kernel.daemon()
@@ -206,7 +212,7 @@ class Scripts:
         Kernel.forever()
 
     @staticmethod
-    def console():
+    def console() -> None:
         "console script."
         import readline
         readline.redisplay()
@@ -218,21 +224,22 @@ class Scripts:
         Kernel.forever()
 
     @staticmethod
-    def control():
+    def control() -> None:
         "cli script."
         Kernel.boot()
         Commands.add(Cmd.cmd)
         if Main.admin:
             Commands.add(Cmd.tbl)
         cli = CLI()
-        evt = Message()
-        evt.orig = repr(cli)
-        evt.text = Main.otxt
-        Commands.command(evt)
-        evt.wait()
+        msg = Message()
+        msg.kind = "command"
+        msg.orig = repr(cli)
+        msg.text = Main.otxt
+        Commands.command(msg)
+        msg.wait()
 
     @staticmethod
-    def service():
+    def service() -> None:
         "service script."
         Kernel.boot()
         Kernel.privileges()
@@ -245,7 +252,13 @@ class Scripts:
         Kernel.forever()
 
 
-def main():
+def control() -> None:
+    "only console."
+    Arguments.getargs()
+    Kernel.wrap(Scripts.control)
+
+
+def main() -> None:
     "dispatch to runtime."
     Arguments.getargs()
     if Main.console:
@@ -265,5 +278,6 @@ def __dir__():
         'Daemon',
         'Kernel',
         'Scripts',
+        'control',
         'main'
     )

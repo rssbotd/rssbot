@@ -7,13 +7,13 @@
 from rssbot.defines import Main
 
 
-def srv(event):
+def srv(msg):
     "generate systemd service file."
     if not Main.admin:
         return
     import getpass
     name = getpass.getuser()
-    event.reply(SYSTEMD % (
+    msg.reply(SYSTEMD % (
                            Main.name.upper(),
                            name,
                            name,

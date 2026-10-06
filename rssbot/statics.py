@@ -4,62 +4,49 @@
 "tables"
 
 
-CORE = {
-    "booting": "33ce47d91d23e2f08ea3c88ba729c8cf",
-    "brokers": "7b538e39c4cbf771cfc7aa7af9ee6b0b",
-    "clients": "76dbf2500f53dd1f2d0dbc50c9edf35b",
-    "command": "ffcc1f6594f913efef6628294b9de515",
-    "configs": "a76957a9575874a43e19d348e61ac6f6",
-    "defines": "f6da40af2240d015d28ce6224bbbe664",
-    "encoder": "92d40ef5ae50cafba6cc88b0e260b012",
-    "engines": "6e08062628b324ff8ead4aaacdcadb32",
-    "fetcher": "350fdb8ddc37c23fbad9685bc8f5a0fe",
-    "loggers": "bff3f83a7436a45814853a34ca069251",
-    "looping": "6a8f6f3369dc6b4980d68087941857d2",
-    "message": "a4095faea9fabfeb87f9abe05da599f1",
-    "objects": "7b4de5cab301c4bb56c153a4854e09a3",
-    "package": "8c57813abd9552cf860750dbaab39ad7",
-    "parsers": "bbb1a0183c61bd9fea612ec00eedeb33",
-    "persist": "dd76d5cc15d3c16372ea34e51fa4a1f7",
-    "pooling": "f20a7782598016fc262275511df1d557",
-    "repeats": "c103268a6570558d1d53e2d2161d804c",
-    "require": "bc38ac96f2f7a6d338df77c860839989",
-    "runtime": "873afa8f2caccd62ec29d56cc4d31a39",
-    "threads": "bf204b132a637089383f407e58b553db",
-    "utility": "7736fb6aa8e951c0630531f1aa2d596c",
-    "watcher": "fd271e485857938561742702fcf12356"
+from typing import Dict
+
+
+Hash = Dict[str, str]
+
+
+CORE: Hash = {
+    "booting": "946a1b52fa8203d72137ec15fb68aea7",
+    "brokers": "be3138aaf29cd7bbe2469ae71269647f",
+    "buffers": "f0c0ff3060a620257f9df22fc9787fb7",
+    "command": "aa2382b6a438f64de987b4e80b8dcbf9",
+    "configs": "915a02e10b32cc61a5365e6401876008",
+    "default": "c37c72017779a1ad15d3b94e1257c0b7",
+    "defines": "039ef962a862febc0153a663e18201d9",
+    "display": "d9ca926a5cf3173d0bc758bc254003c5",
+    "encoder": "0c98563c401e13346c1ec43515f4bc64",
+    "fetcher": "e780e5a4edba5b5ef03b697a7206b33c",
+    "handler": "a569b4df084e1a35798cb135555ae3d6",
+    "loggers": "dd73bcbf4004f5a33d15156742b235e8",
+    "looping": "6f8666579aec275d965035864833f797",
+    "message": "7cc5255ed84908310753a8d305831f61",
+    "methods": "4a5d87f4d70f5335f58f8ef60720635a",
+    "objects": "e7d8664b921306546ac5df9bf30c9b65",
+    "package": "855a1716ed970848ef4cd035d26dac74",
+    "parsers": "1b032844c15e7f61d8ea4bc5d8864d8d",
+    "persist": "6deceebeb0702f57bfbd9d0eaf1cd775",
+    "pooling": "f4323daad55e86892317acb7abcbda7d",
+    "repeats": "4c3627f380217e44f000c4498991521a",
+    "require": "64863daa33090e4956eef461fd06280c",
+    "runners": "1d72b7273cf1b3a7a698c3328389c8e4",
+    "runtime": "61c293d71ca3e95a37c38de53c1dcfd3",
+    "sources": "d1c088f00a70866a762f660bd29b01de",
+    "threads": "812bc64a6536552137ccfa2177faf8db",
+    "typings": "2832b71930637c312853548880fb763c",
+    "utility": "2d4291520524811c0c64c91f0c6f9623",
+    "watcher": "f3934ed62a06b75338e0454d7219fd39"
 }
 
 
-MODULES = {
-    "cfg": "a47404e23ba563ebc0c3ac7a99fb8b77",
-    "fnd": "c7816bb51a83be76bcccf5bc514f367b",
-    "irc": "d77258369b0c92e8e38980a5c0fb10e7",
-    "opm": "e691361b8fda0596cb67cdd9af36c1a8",
-    "rss": "457846ad534eff3f38e93249f269cced",
-    "srv": "79208bdb18f9e4429ac35d8721fd0822",
-    "thr": "aa9d092137049239127bbf5b85599018",
-    "upt": "4e8110d1b93254cd6555a619b2b78ccc"
-}
+MODULES: Hash = {}
 
 
-NAMES = {
-    "atr": "rss",
-    "cfg": "cfg",
-    "dpl": "rss",
-    "exp": "opm",
-    "fnd": "fnd",
-    "imp": "opm",
-    "nme": "rss",
-    "pwd": "irc",
-    "rem": "rss",
-    "res": "rss",
-    "rss": "rss",
-    "srv": "srv",
-    "syn": "rss",
-    "thr": "thr",
-    "upt": "upt"
-}
+NAMES: Hash = {}
 
 
 def __dir__():

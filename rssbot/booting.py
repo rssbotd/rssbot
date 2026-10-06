@@ -4,58 +4,65 @@
 "in the beginning"
 
 
-import logging
+import os
 import threading
 import time
 import _thread
 
 
-from .clients import Clients, Screen
+from .brokers import Broker
+from .configs import Main
+from .default import Event, Logger
+from .display import Screen
 from .loggers import Logging
 from .package import Mods
 from .persist import Workdir
-from .repeats import Repeater
-from .threads import Thr, Thread
+from .threads import Thread, Threading
+from .typings import Callable
 from .utility import Utils
-from .watcher import Watcher
+
+
+Log = Logger(__name__)
 
 
 class Boot:
 
     "at startup"
 
-    @classmethod
-    def banner(cls):
-        "greetings."
+    running: Event = Event()
+    stopped: Event = Event()
 
     @classmethod
-    def configure(cls, cfg):
+    def configure(cls) -> None:
         "setup basic variables"
-        Workdir.wdr = cfg.wdr or Workdir.wdr or Workdir.home(cfg.name)
-        if not cfg.nodisk:
-            Workdir.skel()
-        Logging.size(len(cfg.name))
-        Logging.level(cfg.level or "info")
-        Mods.dir(cfg.path)
+        Workdir.wdr = Main.wdr or Workdir.wdr or Workdir.home(Main.name)
+        Workdir.skel()
+        Logging.size(len(Main.name))
+        Logging.level(Main.level or "info")
+        Main.path = os.path.normpath(Main.path)
+        pkgname = Main.path.rsplit(os.sep, maxsplit=1)[-1]
+        Mods.dir(Main.path, pkgname)
 
     @classmethod
-    def forever(cls):
+    def forever(cls) -> None:
         "run forever until ctrl-c."
-        while True:
+        cls.running.set()
+        while cls.running.is_set():
             try:
                 time.sleep(0.1)
             except (KeyboardInterrupt, EOFError):
                 break
+        cls.stopped.set()
 
     @classmethod
-    def init(cls, names, wait=False):
+    def init(cls, names: str, wait: bool = False) -> bool:
         "call init of modules that have an init function."
         thrs = []
         for name in Utils.spl(names):
             mod = Mods.get(name)
             if not mod or "init" not in dir(mod):
                 continue
-            thrs.append(Thread.launch(mod.init))
+            thrs.append(Threading.launch(mod.init))
         if thrs and wait:
             for thr in thrs:
                 try:
@@ -65,26 +72,41 @@ class Boot:
         return True
 
     @classmethod
-    def shutdown(cls):
+    def shutdown(cls, wait: bool = True) -> None:
         "call stop on clients."
-        logging.debug("shutdown")
-        Clients.shutdown()
-        while True:
-            if len(threading.enumerate()) <= 2:
-                break
-            time.sleep(0.01)
+        Log.debug("shutdown")
+        for client in Broker.objs("wait"):
+            Log.debug("wait %s", client)
+            try:
+                client.wait()
+            except (KeyboardInterrupt, EOFError):
+                pass
+        time.sleep(0.01)
+        for client in Broker.objs("stop"):
+            Log.debug("stop %s", client)
+            try:
+                client.stop()
+            except (KeyboardInterrupt, EOFError):
+                pass
+        time.sleep(0.01)
+        if wait:
+            while True:
+                if len(threading.enumerate()) <= 1:
+                    break
+                time.sleep(0.01)
+        cls.stopped.set()
 
     @classmethod
-    def wrapped(cls, func, *args):
+    def wrapped(cls, func: Callable, *args) -> None:
         "wrap function in a try/except, silence ctrl-c/ctrl-d."
         try:
             func(*args)
         except (KeyboardInterrupt, EOFError):
             Screen.block.set()
-            Thr.block.set()
+            Thread.block.set()
             _thread.interrupt_main()
         except Exception as ex:
-            logging.exception(ex)
+            Log.exception(ex)
             _thread.interrupt_main()
 
 

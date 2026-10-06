@@ -5,19 +5,24 @@
 
 
 import datetime
-import logging
 import os
 import pathlib
 import time
 import uuid
 
 
+from .typings import Any, ClassVar, List, ModuleType, Union
+
+
+Float = Union[float, None]
+
+
 class Time:
 
     "time related utilities."
 
-    starttime = time.time()
-    times = [
+    starttime: ClassVar[float] = time.time()
+    times = (
         "%a, %d %b %Y %H:%M:%S %z",
         "%a, %d %b %Y %H:%M:%S",
         "%a, %d %b %Y %T %z",
@@ -29,10 +34,10 @@ class Time:
         "%d-%m-%Y",
         "%d-%m",
         "%m-%d"
-    ]
+    )
 
     @classmethod
-    def date(cls, daystr):
+    def date(cls, daystr: str) -> Float:
         "date from string."
         daystr = daystr.encode('utf-8', 'replace').decode("utf-8")
         for fmat in cls.times:
@@ -40,9 +45,10 @@ class Time:
                 return time.mktime(time.strptime(daystr, fmat))
             except ValueError:
                 pass
+        return None
 
     @classmethod
-    def elapsed(cls, seconds, short=True):
+    def elapsed(cls, seconds: float, short: bool = True) -> str:
         "seconds to string."
         txt = ""
         nsec = float(seconds)
@@ -83,7 +89,7 @@ class Time:
         return txt
 
     @classmethod
-    def extract(cls, daystr):
+    def extract(cls, daystr: str) -> Float:
         "extract date/time from string."
         daystr = str(daystr)
         res = None
@@ -95,7 +101,7 @@ class Time:
                     continue
             res = cls.date(word.strip())
             if not res:
-                date = datetime.date.fromtimestamp(time.time())
+                date = datetime.datetime.fromtimestamp(time.time(), tz=None).date()
                 word = f"{date.year}-{date.month}-{date.day}" + " " + word
                 res = cls.date(word.strip())
             if res:
@@ -103,19 +109,12 @@ class Time:
         return res
 
     @classmethod
-    def timed(cls, datestr):
+    def timed(cls, datestr: str) -> float:
         "return time from string."
-        if not datestr:
-            return time.time()
         tme = cls.date(datestr)
         if not tme:
             tme = time.time()
         return tme
-
-    @classmethod
-    def today(cls):
-        "start of the day."
-        return str(datetime.datetime.today()).split()[0]
 
 
 class Utils:
@@ -123,7 +122,7 @@ class Utils:
     "useful functions"
 
     @staticmethod
-    def cdir(path):
+    def cdir(path: str) -> None:
         "create directory."
         if os.path.exists(path):
             return
@@ -132,17 +131,17 @@ class Utils:
             pth.parent.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def clsname(obj):
+    def clsname(obj: Any) -> str:
         "return classname of an object."
         return obj.__class__.__name__
 
     @staticmethod
-    def home(name):
+    def home(name: str) -> str:
         "return home working directory."
         return os.path.expanduser(f"~/.{name}")
 
     @staticmethod
-    def listdir(path, ignore=""):
+    def listdir(path: str, ignore: str = "") -> List[str]:
         "list modules in a directory."
         return [
                 x[:-3] for x in os.listdir(path)
@@ -152,29 +151,36 @@ class Utils:
                ]
 
     @staticmethod
-    def shortid():
+    def shortid() -> str:
         "return a shortid."
         return str(uuid.uuid4())[:8]
 
     @staticmethod
-    def source(module):
+    def source(module: ModuleType) -> Union[str, None]:
         "return the source of a module."
-        return module.__loader__.get_source(module.__name__)
+        if module.__spec__ is None:
+            return None
+        if module.__spec__.loader is None:
+            return None
+        get = getattr(module.__spec__.loader, "get_source", None)
+        if get:
+            return get(module.__name__)
+        return None
 
     @staticmethod
-    def spl(txt, ignore=""):
+    def spl(text: str, ignore: str = "") -> List[str]:
         "list from comma seperated string."
         try:
             ignores = ignore.split(",")
-            result = txt.split(",")
+            result = text.split(",")
         except (TypeError, ValueError):
             result = []
         return [x for x in result if x and x not in ignores]
 
     @staticmethod
-    def strip(path, nr=3):
+    def strip(path: str, nrchar: int = 3) -> str:
         "strip filename from path."
-        return os.path.join(*path.split(os.sep)[-nr:])
+        return os.path.join(*path.split(os.sep)[-nrchar:])
 
 
 def __dir__():

@@ -4,65 +4,74 @@
 "module management"
 
 
-import logging
 import os
 
 
-from .objects import Method
+from .default import Logger
+from .methods import Method
+from .sources import MD5
+from .typings import ClassVar, Dict, List, ModuleType, Union
 from .utility import Utils
+
+
+Log     = Logger(__name__)
+Module  = Union[ModuleType, None]
+Modules = Dict[str, ModuleType]
+Strings = Dict[str, str]
+
+
+e = os.path.exists
+j = os.path.join
 
 
 class Mods:
 
     "modules"
 
-    core = {}
-    dirs = {}
-    md5s = {}
-    mods = {}
+    core: ClassVar[Strings] = {}
+    dirs: ClassVar[Strings] = {}
+    md5s: ClassVar[Strings] = {}
+    mods: ClassVar[Modules] = {}
 
     @classmethod
-    def dir(cls, pkgname, path=None):
+    def dir(cls, pkgname: str, path: str) -> None:
         "add module/path."
-        if not pkgname:
-            return
-        pkgn = pkgname
-        if path is None:
-            path = pkgname
-            pkgn = ".".join(pkgname.split(os.sep)[-2:])
-        cls.dirs[pkgn] = path
+        cls.dirs[pkgname] = path
 
     @classmethod
-    def get(cls, name, force=False):
+    def get(cls, name: str, force: bool = False) -> Module:
         "return module from cache or import module."
         for pkgname, path in cls.dirs.items():
             modname = f"{pkgname}.{name}"
             mod = cls.mods.get(modname, None)
             if mod:
                 return mod
-            fnm = os.path.join(path, name + ".py")
-            if not os.path.exists(fnm):
+            fnm = j(path, name + ".py")
+            if not e(fnm):
                 continue
             if not force and cls.md5s:
                 md5 = MD5.md5(fnm)
                 md5s = cls.md5s.get(name)
                 if md5s and md5 != md5s:
-                    logging.warn("mismatch %s", modname)
+                    Log.info("mismatch %s", name)
             return cls.importer(modname, fnm)
+        return None
 
     @classmethod
-    def has(cls, attr):
-        "return list of modules containing an attribute."
+    def has(cls, attr: str) -> str:
+        "return comma seperated string of module names containing an attribute."
         result = []
         for modname in cls.list():
             mod = cls.get(modname)
+            if not mod:
+                continue
             if not getattr(mod, attr, False):
                 continue
             result.append(mod.__name__.split(".")[-1])
         return ",".join(result)
 
     @classmethod
-    def importer(cls, name, pth=""):
+    def importer(cls, name: str, pth: str = "") -> Module:
         "import module by path."
         import importlib.util
         spec = importlib.util.spec_from_file_location(name, pth)
@@ -73,27 +82,27 @@ class Mods:
         return cls.mods[name]
 
     @classmethod
-    def list(cls):
+    def list(cls) -> List[str]:
         "comma seperated list of available modules."
         mods = []
-        for pkgname, path in cls.dirs.items():
-            if not os.path.exists(path):
+        for path in cls.dirs.values():
+            if not e(path):
                 continue
             mods.extend(Utils.listdir(path))
         return sorted(set(mods))
 
     @classmethod
-    def minimal(cls):
+    def minimal(cls) -> str:
         "return package minimal path."
-        return os.path.join(Method.where(Mods), "minimal")
+        return j(Method.where(Mods), "minimal")
 
     @classmethod
-    def moddir(cls):
+    def moddir(cls) -> str:
         "return package modules path."
-        return os.path.join(Method.where(Mods), "modules")
+        return j(Method.where(Mods), "modules")
 
     @classmethod
-    def statics(cls):
+    def statics(cls) -> None:
         "read table,"
         try:
             from .statics import CORE
@@ -107,81 +116,14 @@ class Mods:
             pass
 
     @classmethod
-    def table(cls):
+    def table(cls) -> None:
         "read static tables."
         cls.statics()
         if cls.core:
             MD5.check(cls.core)
 
 
-class MD5:
-
-    "module md5sums"
-
-    @classmethod
-    def check(cls, md5s):
-        "check for md5sums in a given path."
-        ok = True
-        path = os.path.dirname(__spec__.origin)
-        if not os.path.exists(path):
-            return False
-        for pth in os.listdir(path):
-            if pth.startswith("__") or not pth.endswith(".py") or "statics" in pth:
-                continue
-            name = pth[:-3]
-            modpath = os.path.join(path, pth)
-            if md5s and cls.md5(modpath) != md5s.get(name):
-                logging.warning("mismatch %s", name)
-                ok = False
-        return ok
-
-    @classmethod
-    def core(cls):
-        "calculate md5 of the statics module."
-        try:
-            from . import statics
-        except (ModuleNotFoundError, ImportError, SyntaxError):
-            return ""
-        return cls.source(Utils.source(statics))[:7].upper()
-
-    @classmethod
-    def createmd5(cls, path, data):
-        for pth in os.listdir(path):
-            if pth.startswith("__") or not pth.endswith(".py") or "statics" in pth:
-                continue
-            name = pth[:-3]
-            data[name] = cls.md5(os.path.join(path, pth))
-
-    @classmethod
-    def dir(cls, path, md5):
-        "create a md5 for a directory."
-        for fnm in os.listdir(path):
-            if not fnm.endswith(".py"):
-                continue
-            mpath = os.path.join(path, fnm)
-            with open(mpath, "r", encoding="utf-8") as file:
-                md5.update(file.read().encode("utf-8"))
-
-    @classmethod
-    def md5(cls, path):
-        "calculate md5sum of a file."
-        import hashlib
-        md5 = hashlib.md5()
-        with open(path, "r", encoding="utf-8") as file:
-            md5.update(file.read().encode("utf-8"))
-        return str(md5.hexdigest())
-
-    @classmethod
-    def source(cls, src):
-        "determine md5 of source code."
-        import hashlib
-        md5 = hashlib.md5()
-        md5.update(src.encode("utf-8"))
-        return str(md5.hexdigest())
-
-
 def __dir__():
     return (
-        'MD5',
-        'Mods'
+        'Mods',
     )

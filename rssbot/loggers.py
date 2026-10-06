@@ -4,45 +4,41 @@
 "usefullness"
 
 
-import datetime
-import logging
-import os
-import pathlib
-import time
-import uuid
+from .default import basicConfig, Formatter, LogRecord, StreamHandler
+from .typings import ClassVar
 
 
-class Format(logging.Formatter):
+class Format(Formatter):
 
-    "logging format."
+    "logging format"
 
-    disable = False
-    size = 3
+    disable: ClassVar[bool] = False
+    size: ClassVar[int] = 3
 
-    def format(self, record):
+    def format(self, record: LogRecord) -> str:
         "logging formatter."
         if not Format.disable:
             record.module = record.module.upper()
             record.module = record.module[:Format.size]
-        return logging.Formatter.format(self, record)
+        return Formatter.format(self, record)
 
 
 class Logging:
 
-    "logging."
+    "log"
 
-    datefmt = "%H:%M:%S"
-    format = "%(module)-3s %(message)s"
-    formats = "%(message)s"
-    
+    datefmt: ClassVar[str] = "%H:%M:%S"
+    format:  ClassVar[str] = "%(module)-3s %(message)s"
+    formats: ClassVar[str] = "%(message)s"
+
     @classmethod
-    def level(cls, loglevel, systemd=False):
+    def level(cls, loglevel: str) -> None:
         "set log level."
-        formatter = Format(cls.format, cls.datefmt)
-        stream = logging.StreamHandler()
+        formatter = Format(cls.formats, cls.datefmt)
+        stream = StreamHandler()
         stream.setFormatter(formatter)
         try:
-            logging.basicConfig(
+            basicConfig(
                 level=loglevel.upper(),
                 handlers=[stream],
                 force=True
@@ -51,13 +47,15 @@ class Logging:
             pass
 
     @classmethod
-    def size(cls, nr):
+    def size(cls, nrchars: int) -> None:
         "set text size."
         index = cls.format.find("-")+1
         newformat = cls.format[:index]
-        newformat += str(nr)
+        newformat += str(nrchars)
         newformat += cls.format[index+1:]
         cls.format = newformat
+
+
 
 def __dir__():
     return (

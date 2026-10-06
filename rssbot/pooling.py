@@ -1,59 +1,57 @@
 # This file is placed in the Public Domain.
 
 
-"you'd  better run"
+"collection of runners/clients"
 
 
 import os
 
 
-from .looping import Runner
-from .threads import Thread
+from .default import RLock
+from .runners import Runner
+from .typings import Any, ClassVar, List
 
 
 class Pool:
 
-    "multiple runners."
+    "multiple runners"
 
-    clazz = Runner
-    runners = []
+    runners: ClassVar[List[Runner]] = []
+    clazz: type = Runner
+    lock: RLock = RLock()
     max = os.cpu_count()
     nrcpu = 1
     nrlast = 0
 
     @classmethod
-    def add(cls, client):
+    def add(cls, runner: Runner) -> None:
         "add a runner."
-        cls.runners.append(client)
+        cls.runners.append(runner)
 
     @classmethod
-    def busy(cls):
-        for runner in cls.runners:
-            if runner.queue.qsize():
-                return True
-        return False
+    def busy(cls) -> bool:
+        "see if pool is busy."
+        return any(runner.queue.qsize() for runner in cls.runners)
 
     @classmethod
-    def init(cls, nr, clz=None):
+    def init(cls, nrs: int, clz: Any = None) -> None:
         "initialze a number of runners."
-        cls.nrcpu = nr
         if clz:
             cls.clazz = clz
-        for x in range(nr):
+        for _x in range(nrs):
             runner = cls.clazz()
             runner.start()
             cls.add(runner)
 
     @classmethod
-    def put(cls, *args):
+    def put(cls, *args: Any) -> None:
         "push job to a runner."
-        if not cls.runners:
-            return
-        if cls.nrlast > cls.nrcpu-1:
-            cls.nrlast = 0
-        clt = cls.runners[cls.nrlast]
-        clt.put(*args)
-        cls.nrlast += 1
+        with cls.lock:
+            if cls.nrlast-1 >= len(cls.runners)-1:
+                cls.nrlast = 0
+            clt = cls.runners[cls.nrlast-1]
+            clt.put(*args)
+            cls.nrlast += 1
 
 
 def __dir__():

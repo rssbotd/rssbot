@@ -10,6 +10,6 @@ import time
 from rssbot.defines import Time
 
 
-def upt(event):
+def upt(msg):
     "show uptiome."
-    event.reply(Time.elapsed(time.time()-Time.starttime))
+    msg.reply(Time.elapsed(time.time()-Time.starttime))

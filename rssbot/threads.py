@@ -5,26 +5,34 @@
 
 
 import inspect
-import logging
-import queue
 import threading
 import time
 import _thread
 
 
-class Thr(threading.Thread):
+from .default import Event, Logger, Queue, RLock
+from .typings import Any, Callable, ClassVar, Dict, Union
 
-    "unit of thread."
 
-    block = threading.Event()
+Anys    = Dict[str, Any]
+Log     = Logger(__name__)
+TimeOut = Union[float, None]
+
+
+class Thread(threading.Thread):
+
+    "unit of thread"
+
+    block: ClassVar[Event] = Event()
 
     def __init__(self, func, *args, daemon=True, **kwargs):
         super().__init__(None, self.run, None, (), daemon=daemon)
-        self.event = None
-        self.name = kwargs.get("name", Thread.name(func))
-        self.queue = queue.Queue()
-        self.result = None
-        self.starttime = time.time()
+        self.name: str = kwargs.get("name", self.getname(func) or "")
+        self.queue: Queue = Queue()
+        self.result: Any = None
+        self.sleep: float = 0.0
+        self.starttime: float = time.time()
+        self.state = Anys
         self.queue.put((func, args))
 
     def __iter__(self):
@@ -33,15 +41,30 @@ class Thr(threading.Thread):
     def __next__(self):
         yield from dir(self)
 
-    def join(self, timeout=0.0):
+    def join(self, timeout: TimeOut = None) -> Union[Any, None]:
         "join thread and return result."
         try:
             super().join(timeout or None)
             return self.result
         except (KeyboardInterrupt, EOFError):
             _thread.interrupt_main()
+            return None
 
-    def run(self):
+    def clsname(self, obj: Any) -> str:
+        "class name of an object."
+        if "__self__" in dir(obj):
+            return obj.__self__.__class__.__name__
+        return obj.__class__.__name__
+
+    def getname(self, obj: Any) -> str:
+        "string of function/method."
+        if inspect.ismethod(obj):
+            return f"{self.clsname(obj)}.{obj.__name__}"
+        if inspect.isfunction(obj):
+            return repr(obj).split()[1]
+        return repr(obj)
+
+    def run(self) -> None:
         "run function."
         func, args = self.queue.get()
         if self.block.is_set():
@@ -50,45 +73,28 @@ class Thr(threading.Thread):
             self.result = func(*args)
         except (KeyboardInterrupt, EOFError):
             _thread.interrupt_main()
-        except Exception as ex:
-            logging.exception(ex)
+        except Exception:
+            Log.exception(str(func))
             _thread.interrupt_main()
 
 
-class Thread:
+class Threading:
 
-    "helper class."
+    "thread helper class"
 
-    lock = threading.RLock()
+    lock: RLock = RLock()
 
     @classmethod
-    def launch(cls, func, *args, **kwargs):
+    def launch(cls, func: Callable, *args: Any, **kwargs: Any) -> Thread:
         "start a new thread running function with arguments."
         with cls.lock:
-            "run function in a thread."
-            thr = Thr(func, *args, **kwargs)
+            thr = Thread(func, *args, **kwargs)
             thr.start()
             return thr
-
-    @classmethod
-    def clsname(cls, obj):
-        "class name of an object."
-        if "__self__" in dir(obj):
-            return obj.__self__.__class__.__name__
-        return obj.__class__.__name_
-
-    @classmethod
-    def name(cls, obj):
-        "string of function/method."
-        if inspect.ismethod(obj):
-            return f"{cls.clsname(obj)}.{obj.__name__}"
-        if inspect.isfunction(obj):
-            return repr(obj).split()[1]
-        return repr(obj)
 
 
 def __dir__():
     return (
-        'Thr',
-        'Thread'
+        'Thread',
+        'Threading'
     )
