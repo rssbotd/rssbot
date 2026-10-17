@@ -4,61 +4,53 @@
 "module management"
 
 
+import logging
 import os
 
 
-from .default import Logger
 from .methods import Method
 from .sources import MD5
-from .typings import ClassVar, Dict, List, ModuleType, Union
 from .utility import Utils
 
 
-Log     = Logger(__name__)
-Module  = Union[ModuleType, None]
-Modules = Dict[str, ModuleType]
-Strings = Dict[str, str]
-
-
-e = os.path.exists
-j = os.path.join
+logger = logging.getLogger(__name__)
 
 
 class Mods:
 
     "modules"
 
-    core: ClassVar[Strings] = {}
-    dirs: ClassVar[Strings] = {}
-    md5s: ClassVar[Strings] = {}
-    mods: ClassVar[Modules] = {}
+    core = {}
+    dirs = {}
+    md5s = {}
+    mods = {}
 
     @classmethod
-    def dir(cls, pkgname: str, path: str) -> None:
+    def dir(cls, pkgname, path):
         "add module/path."
         cls.dirs[pkgname] = path
 
     @classmethod
-    def get(cls, name: str, force: bool = False) -> Module:
+    def get(cls, name, force=False):
         "return module from cache or import module."
         for pkgname, path in cls.dirs.items():
             modname = f"{pkgname}.{name}"
             mod = cls.mods.get(modname, None)
             if mod:
                 return mod
-            fnm = j(path, name + ".py")
-            if not e(fnm):
+            fnm = os.path.join(path, name + ".py")
+            if not os.path.exists(fnm):
                 continue
             if not force and cls.md5s:
                 md5 = MD5.md5(fnm)
                 md5s = cls.md5s.get(name)
                 if md5s and md5 != md5s:
-                    Log.info("mismatch %s", name)
+                    logger.info("mismatch %s", name)
             return cls.importer(modname, fnm)
         return None
 
     @classmethod
-    def has(cls, attr: str) -> str:
+    def has(cls, attr):
         "return comma seperated string of module names containing an attribute."
         result = []
         for modname in cls.list():
@@ -71,7 +63,7 @@ class Mods:
         return ",".join(result)
 
     @classmethod
-    def importer(cls, name: str, pth: str = "") -> Module:
+    def importer(cls, name, pth=""):
         "import module by path."
         import importlib.util
         spec = importlib.util.spec_from_file_location(name, pth)
@@ -82,27 +74,27 @@ class Mods:
         return cls.mods[name]
 
     @classmethod
-    def list(cls) -> List[str]:
+    def list(cls):
         "comma seperated list of available modules."
         mods = []
         for path in cls.dirs.values():
-            if not e(path):
+            if not os.path.exists(path):
                 continue
             mods.extend(Utils.listdir(path))
         return sorted(set(mods))
 
     @classmethod
-    def minimal(cls) -> str:
+    def minimal(cls):
         "return package minimal path."
-        return j(Method.where(Mods), "minimal")
+        return os.path.join(Method.where(Mods), "minimal")
 
     @classmethod
-    def moddir(cls) -> str:
+    def moddir(cls):
         "return package modules path."
-        return j(Method.where(Mods), "modules")
+        return os.path.join(Method.where(Mods), "modules")
 
     @classmethod
-    def statics(cls) -> None:
+    def statics(cls):
         "read table,"
         try:
             from .statics import CORE
@@ -116,7 +108,7 @@ class Mods:
             pass
 
     @classmethod
-    def table(cls) -> None:
+    def table(cls):
         "read static tables."
         cls.statics()
         if cls.core:

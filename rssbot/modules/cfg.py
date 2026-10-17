@@ -5,7 +5,6 @@
 
 
 from rssbot.defines import Data, Disk, Method, Mods
-from rssbot.typings import Union
 
 
 def cfg(msg):
@@ -16,7 +15,7 @@ def cfg(msg):
         msg.iface(f"<{mods}>")
         return
     name = msg.args[0]
-    config: Union[Data, None] = Data()
+    config = Data()
     Disk.read(config, name, "config")
     if name != "main" and not config:
         mod = Mods.get(name)

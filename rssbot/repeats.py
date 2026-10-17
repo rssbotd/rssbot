@@ -8,57 +8,59 @@ import time
 
 
 from .default import Event
-from .threads import Threading
-from .typings import Any, Callable, ClassVar, Dict, List
-
-
-Todo = Dict[str, List[Any]]
+from .tasking import Task
 
 
 class Repeater:
 
     "repeat at interval"
 
-    running: ClassVar[Event] = Event()
-    stopped: ClassVar[Event] = Event()
-    counter: ClassVar[int] = 0
-    sleeptime: ClassVar[float] = 0.1
-    todo: ClassVar[Todo] = {}
+    running = Event()
+    stopped = Event()
+    counter = 0
+    sleeptime = 0.1
+    todo = {}
 
     @classmethod
-    def add(cls, sleep: float, func: Callable, *args: Any, **kwargs: Any) -> None:
+    def add(
+        cls,
+        sleeptime,
+        func,
+        *args,
+        **kwargs
+        ):
         "add a repeater."
-        slp = str(sleep)
+        slp = str(sleeptime)
         if slp not in cls.todo:
             cls.todo[slp] = []
         cls.todo[slp].append((func, args, kwargs))
 
     @classmethod
-    def loop(cls) -> None:
+    def loop(cls):
         "repeater loop."
         while not cls.stopped.is_set():
             time.sleep(1.0)
             cls.counter += 1
-            for sleep, arguments in cls.todo.items():
-                slept = int(sleep)
+            for sleeptime, arguments in cls.todo.items():
+                slept = int(sleeptime)
                 if cls.counter % slept != 0:
                     continue
                 for func, args, kwargs in arguments:
-                    Threading.launch(func, *args, **kwargs)
+                    Task.start(func, *args, **kwargs)
 
     @classmethod
-    def start(cls, daemon: bool = True) -> None:
+    def start(cls, daemon=True):
         "start callback loop."
         if not cls.stopped.is_set():
-            Threading.launch(cls.loop, daemon=daemon, name="Repeater.loop")
+            Task.start(cls.loop, daemon=daemon, name="Repeater.loop")
 
     @classmethod
-    def stop(cls) -> None:
+    def stop(cls):
         "stop loop."
         cls.stopped.set()
 
     @classmethod
-    def wait(cls) -> None:
+    def wait(cls):
         "wait for loop to stop."
 
 

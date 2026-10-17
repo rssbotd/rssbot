@@ -5,21 +5,17 @@
 
 
 import html
-import re
 
 
 from urllib.parse   import unquote, urlparse, urlunparse
 from urllib.request import Request, urlopen
 
 
+from .configs import Main
 from .methods import Method
 from .objects import Data
-from .typings import Any, ClassVar, Dict, Union
-
-
-Anys    = Dict[str, Any]
-Integer = Union[int, None]
-Strings = Dict[str, str]
+from .sources import MD5
+from .typings import Dict
 
 
 class Response(Data):
@@ -28,20 +24,20 @@ class Response(Data):
 
     def __init__(self):
         Data.__init__(self)
-        self.data: bytes = b""
-        self.reason: str = ""
-        self.status: Integer = None
-        self.url: str = ""
+        self.data = b""
+        self.reason = ""
+        self.status = None
+        self.url = ""
 
 
 class Fetcher:
 
     "fetch urls"
 
-    modified: ClassVar[Strings] = {}
+    modified: Dict[str, str] = {}
 
     @classmethod
-    def cdata(cls, line: str) -> str:
+    def cdata(cls, line):
         "scrape CDATA block."
         if "CDATA" in line:
             lne = line.replace("![CDATA[", "")
@@ -51,11 +47,11 @@ class Fetcher:
         return line
 
     @classmethod
-    def geturl(cls, url: str) -> Response:
+    def geturl(cls, url):
         "fetch an url."
         url = urlunparse(urlparse(url))
         req = Request(str(url))
-        req.add_header("User-Agent", cls.useragent("RSS Fetcher"))
+        req.add_header("User-Agent", cls.useragent(f"{Main.name.upper()} {MD5.core()}"))
         since = cls.modified.get(url, "")
         if since:
             req.add_header('If-Modified-Since', since)
@@ -78,7 +74,7 @@ class Fetcher:
         return response
 
     @classmethod
-    def request(cls, req: Request) -> Anys:
+    def request(cls, req):
         "handle  a request."
         with urlopen(req, timeout=4) as response:  # nosec
             modi = response.headers.get('Last-Modified', "")
@@ -89,24 +85,26 @@ class Fetcher:
             return response
 
     @classmethod
-    def striphtml(cls, text: str) -> str:
+    def striphtml(cls, text):
         "strip html."
+        import re
         clean = re.compile("<.*?>")
         return re.sub(clean, "", text)
 
     @classmethod
-    def unescape(cls, text: str) -> str:
+    def unescape(cls, text):
         "unescape html."
+        import re
         txt = re.sub(r"\s+", " ", text)
         return html.unescape(txt)
 
     @classmethod
-    def unquote(cls, url: str) -> str:
+    def unquote(cls, url):
         "unquote an url."
         return unquote(url, errors='ignore')
 
     @classmethod
-    def useragent(cls, text: str) -> str:
+    def useragent(cls, text):
         "produce useragent string."
         return "Mozilla/5.0 (X11; Linux x86_64) " + text
 

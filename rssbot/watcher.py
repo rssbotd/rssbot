@@ -9,15 +9,11 @@ import time
 
 
 from .default import Event
-from .threads import Threading
-from .typings import Callable, ClassVar, Dict, Union
+from .tasking import Task
+from .typings import Callable, Callables, ClassVar, Dict, Union
 
 
-Callables = Dict[str, Callable]
-Floats    = Dict[str, float]
-
-
-e = os.path.exists
+Floats = Dict[str, float]
 
 
 class Watcher:
@@ -32,17 +28,17 @@ class Watcher:
     @classmethod
     def add(cls, path: str, callback: Callable):
         "add callback"
-        if not e(path):
+        if not os.path.exists(path):
             return
         cls.cbs[path] = callback
 
     @classmethod
-    def init(cls, times: Union[Dict[str,int], None] = None):
+    def init(cls, times: Union[Floats, None] = None):
         "read timestamps."
         if times is None:
             times= {}
         for path in cls.cbs:
-            if not e(path):
+            if not os.path.exists(path):
                 continue
             cls.times[path] = times.get(path, os.stat(path).st_mtime)
 
@@ -51,7 +47,7 @@ class Watcher:
         "loop select."
         while not cls.stopped.is_set():
             for path, callback in cls.cbs.items():
-                if not e(path):
+                if not os.path.exists(path):
                     continue
                 mtime = os.stat(path).st_mtime
                 if mtime > cls.times[path]:
@@ -64,7 +60,7 @@ class Watcher:
         "start callback loop."
         if not cls.stopped.is_set():
             return
-        Threading.launch(cls.loop, daemon=daemon)
+        Task.start(cls.loop, daemon=daemon)
 
     @classmethod
     def stop(cls):

@@ -1,16 +1,11 @@
 # This file is placed in the Public Domain.
 
 
-"callback engine"
+"message handler"
 
 
 from .looping import Loop
-from .message import Message
-from .threads import Threading
-from .typings import Callable, Dict
-
-
-Callables = Dict[str, Callable]
+from .tasking import Task
 
 
 class Handler(Loop):
@@ -19,18 +14,18 @@ class Handler(Loop):
 
     def __init__(self):
         super().__init__()
-        self.cbs: Callables = {}
+        self.cbs = {}
 
-    def handle(self, msg: Message) -> None:
+    def handle(self, msg):
         "run callback function with msg."
         func = self.cbs.get(msg.kind, None)
         if not func:
             msg.ready()
             return
         name = msg.text and msg.text.split()[0]
-        msg.__thr__ = Threading.launch(func, msg, name=name)
+        msg.__thr__ = Task.start(func, msg, name=name)
 
-    def register(self, kind: str, callback: Callable) -> None:
+    def register(self, kind, callback):
         "register callback."
         self.cbs[kind] = callback
 

@@ -4,6 +4,7 @@
 "internet relay chat"
 
 
+import logging
 import os
 import socket
 import ssl
@@ -13,13 +14,12 @@ import time
 import _thread
 
 
-from rssbot.default import Event, Logger
+from rssbot.default import Event, Queue
 from rssbot.defines import Broker, Buffer, Cfg, Commands, Disk, Main
-from rssbot.defines import Message, Mods, Method, Object, Threading
-from rssbot.typings import Any, ClassVar, List
+from rssbot.defines import Message, Mods, Method, Object, Task
 
 
-Log = Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def init():
@@ -31,7 +31,7 @@ def init():
     except (KeyboardInterrupt, EOFError):
         _thread.interrupt_main()
     if irc.msgs.joined.is_set():
-        Log.info("%s", Method.fmt(irc.cfg, ["nick", "channel", "server", "port"]))
+        logger.info("%s", Method.fmt(irc.cfg, ["nick", "channel", "server", "port"]))
     else:
         irc.stop()
     return irc
@@ -43,9 +43,9 @@ class Config(Cfg):
 
     name = Main.name or Method.pkgname(Mods)
     channel = Main.channel or f"#{name}"
-    commands = True
+    commands = False
     control = "!"
-    ignore: ClassVar[List[str]] = ["PING", "PONG", "PRIVMSG"]
+    ignore = ["PING", "PONG", "PRIVMSG"]
     nick = name
     word = ""
     port = 6667
@@ -84,11 +84,11 @@ class Events(Object):
 
     def __init__(self):
         super().__init__()
-        self.authed: Event = Event()
-        self.connected: Event = Event()
-        self.joined: Event = Event()
-        self.logon: Event = Event()
-        self.ready: Event = Event()
+        self.authed = Event()
+        self.connected= Event()
+        self.joined = Event()
+        self.logon = Event()
+        self.ready = Event()
 
 
 class State(Object):
@@ -141,6 +141,7 @@ class IRC(Buffer):
         self.msgs = Events()
         self.lock = threading.RLock()
         self.noflood = True
+        self.queue = Queue()
         self.silent = False
         self.sock: Any = None
         self.state = State()
@@ -167,7 +168,7 @@ class IRC(Buffer):
         self.msgs.connected.clear()
         self.msgs.joined.clear()
         if self.cfg.word or self.cfg.word:
-            Log.debug("using SASL")
+            logger.debug("using SASL")
             self.cfg.sasl = True
             self.cfg.port = 6697
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
@@ -188,7 +189,7 @@ class IRC(Buffer):
             self.sock.setblocking(True)
             self.sock.settimeout(180.0)
             self.msgs.connected.set()
-            Log.debug(
+            logger.debug(
                       "connected %s:%s channel %s",
                       self.cfg.server,
                       self.cfg.port,
@@ -259,7 +260,7 @@ class IRC(Buffer):
                    ) as ex:
                 self.msgs.joined.set()
                 self.state.error = str(ex)
-                Log.debug("%s", str(type(ex)) + " " + str(ex))
+                logger.debug("%s", str(type(ex)) + " " + str(ex))
             time.sleep(self.cfg.sleep)
 
     def dosay(self, channel, text):
@@ -402,7 +403,7 @@ class IRC(Buffer):
             ) as ex:
                 self.state.nrerror += 1
                 self.state.error = str(type(ex)) + " " + str(ex)
-                Log.debug(self.state.error)
+                logger.debug(self.state.error)
                 self.state.pongcheck = True
                 self.stop()
                 return None
@@ -447,7 +448,7 @@ class IRC(Buffer):
                 ConnectionResetError,
                 BrokenPipeError,
             ) as ex:
-                Log.debug("%s", str(type(ex)) + " " + str(ex))
+                logger.debug("%s", str(type(ex)) + " " + str(ex))
                 self.msgs.joined.set()
                 self.state.nrerror += 1
                 self.state.error = str(ex)
@@ -459,7 +460,7 @@ class IRC(Buffer):
 
     def reconnect(self):
         "reconnect to server."
-        Log.debug("reconnecting %s:%s", self.cfg.server, self.cfg.port)
+        logger.debug("reconnecting %s:%s", self.cfg.server, self.cfg.port)
         self.disconnect()
         self.msgs.connected.clear()
         self.msgs.joined.clear()
@@ -467,20 +468,20 @@ class IRC(Buffer):
 
     def restart(self):
         "restart client."
-        Log.debug("restart")
+        logger.debug("restart")
         self.msgs.joined.set()
         self.state.pongcheck = False
         self.state.keeprunning = False
         self.state.stopkeep = True
         self.stop()
-        Threading.launch(init)
+        Task.start(init)
 
     def rlog(self, txt):
         "log function that ignore ping/pong/etc."
         for ign in Config.ignore:
             if ign in str(txt):
                 return
-        Log.debug(txt)
+        logger.debug(txt)
 
     def say(self, channel, text):
         "say text in the channel."
@@ -514,8 +515,8 @@ class IRC(Buffer):
         self.msgs.ready.clear()
         Buffer.start(self)
         if not self.state.keeprunning:
-            Threading.launch(self.keep, daemon=daemon)
-        Threading.launch(self.doconnect)
+            Task.start(self.keep, daemon=daemon)
+        Task.start(self.doconnect)
 
     def stop(self):
         "stop client."
@@ -550,7 +551,7 @@ def cb_error(msg):
     bot = Broker.get(msg.orig)
     bot.state.nrerror += 1
     bot.state.error = msg.text
-    Log.debug(Method.fmt(msg))
+    logger.debug(Method.fmt(msg))
 
 
 def cb_h903(msg):
@@ -614,13 +615,13 @@ def cb_privmsg(msg):
             msg.text = msg.text[0].lower() + msg.text[1:]
         if msg.text:
             name = msg.text and msg.text.split()[0]
-            Threading.launch(Commands.command, msg, name=name)
+            Task.start(Commands.command, msg, name=name)
 
 
 def cb_quit(msg):
     "qiot callback."
     bot = Broker.get(msg.orig)
-    Log.debug("quit from %s", bot.cfg.server)
+    logger.debug("quit from %s", bot.cfg.server)
     bot.state.nrerror += 1
     bot.state.error = msg.text
     if msg.orig and msg.orig in bot.zelf:

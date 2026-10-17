@@ -1,27 +1,25 @@
 # This file is placed in the Public Domain.
 
 
-"usefullness"
+"usefulness"
 
 
-import datetime
 import os
-import pathlib
 import time
 import uuid
 
 
-from .typings import Any, ClassVar, List, ModuleType, Union
+from datetime import datetime
 
 
-Float = Union[float, None]
+from .default import Path
 
 
 class Time:
 
     "time related utilities."
 
-    starttime: ClassVar[float] = time.time()
+    starttime = time.time()
     times = (
         "%a, %d %b %Y %H:%M:%S %z",
         "%a, %d %b %Y %H:%M:%S",
@@ -37,7 +35,7 @@ class Time:
     )
 
     @classmethod
-    def date(cls, daystr: str) -> Float:
+    def date(cls, daystr):
         "date from string."
         daystr = daystr.encode('utf-8', 'replace').decode("utf-8")
         for fmat in cls.times:
@@ -48,7 +46,7 @@ class Time:
         return None
 
     @classmethod
-    def elapsed(cls, seconds: float, short: bool = True) -> str:
+    def elapsed(cls, seconds, short=True):
         "seconds to string."
         txt = ""
         nsec = float(seconds)
@@ -89,7 +87,7 @@ class Time:
         return txt
 
     @classmethod
-    def extract(cls, daystr: str) -> Float:
+    def extract(cls, daystr):
         "extract date/time from string."
         daystr = str(daystr)
         res = None
@@ -101,7 +99,7 @@ class Time:
                     continue
             res = cls.date(word.strip())
             if not res:
-                date = datetime.datetime.fromtimestamp(time.time(), tz=None).date()
+                date = datetime.fromtimestamp(time.time(), tz=None).date()
                 word = f"{date.year}-{date.month}-{date.day}" + " " + word
                 res = cls.date(word.strip())
             if res:
@@ -109,7 +107,7 @@ class Time:
         return res
 
     @classmethod
-    def timed(cls, datestr: str) -> float:
+    def timed(cls, datestr):
         "return time from string."
         tme = cls.date(datestr)
         if not tme:
@@ -122,26 +120,34 @@ class Utils:
     "useful functions"
 
     @staticmethod
-    def cdir(path: str) -> None:
+    def cdir(path):
         "create directory."
         if os.path.exists(path):
             return
-        pth = pathlib.Path(path)
+        pth = Path(path)
         if not os.path.exists(pth.parent):
             pth.parent.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def clsname(obj: Any) -> str:
+    def clsname(obj):
         "return classname of an object."
         return obj.__class__.__name__
 
     @staticmethod
-    def home(name: str) -> str:
+    def funcname(obj):
+        "return functionname."
+        try:
+            return obj.__name__
+        except AttributeError:
+            return ""
+
+    @staticmethod
+    def home(name):
         "return home working directory."
         return os.path.expanduser(f"~/.{name}")
 
     @staticmethod
-    def listdir(path: str, ignore: str = "") -> List[str]:
+    def listdir(path, ignore=""):
         "list modules in a directory."
         return [
                 x[:-3] for x in os.listdir(path)
@@ -156,7 +162,7 @@ class Utils:
         return str(uuid.uuid4())[:8]
 
     @staticmethod
-    def source(module: ModuleType) -> Union[str, None]:
+    def source(module):
         "return the source of a module."
         if module.__spec__ is None:
             return None
@@ -168,7 +174,7 @@ class Utils:
         return None
 
     @staticmethod
-    def spl(text: str, ignore: str = "") -> List[str]:
+    def spl(text, ignore=""):
         "list from comma seperated string."
         try:
             ignores = ignore.split(",")
@@ -178,7 +184,7 @@ class Utils:
         return [x for x in result if x and x not in ignores]
 
     @staticmethod
-    def strip(path: str, nrchar: int = 3) -> str:
+    def strip(path, nrchar=3):
         "strip filename from path."
         return os.path.join(*path.split(os.sep)[-nrchar:])
 

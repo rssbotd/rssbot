@@ -4,28 +4,20 @@
 "path to object cache"
 
 
-import datetime
 import json
 import os
-import pathlib
 import time
 
 
-from .default import RLock
+from datetime import datetime
+
+
+from .default import Path, RLock
 from .encoder import JSON
 from .methods import Method
 from .objects import Data
-from .typings import Any, ClassVar, Dict, Generator, List, Set, Tuple, Union
+from .typings import Dict
 from .utility import Utils
-
-
-Paths    = Generator[str, None, None]
-Result   = Generator[Tuple[str, Any], None, None]
-Selector = Union[Dict[str, str], None]
-
-
-e = os.path.exists
-j = os.path.join
 
 
 class DecodeError(Exception):
@@ -37,20 +29,20 @@ class Cache:
 
     "path object cache"
 
-    paths: ClassVar[Dict[str, Any]] = {}
+    paths: Dict[str, str] = {}
 
     @classmethod
-    def add(cls, path: str, obj: Any) -> None:
+    def add(cls, path, obj):
         "put object into cache."
         cls.paths[path] = obj
 
     @classmethod
-    def get(cls, path: str) -> Any:
+    def get(cls, path):
         "get object from cache."
         return cls.paths.get(path, None)
 
     @classmethod
-    def sync(cls, path: str, obj: Any) -> None:
+    def sync(cls, path, obj):
         "update cached object."
         try:
             Method.update(cls.paths[path], obj)
@@ -62,34 +54,34 @@ class Disk:
 
     "read/write disk"
 
-    lock: RLock = RLock()
+    lock = RLock()
 
     @classmethod
-    def ident(cls, obj: Any) -> str:
+    def ident(cls, obj):
         "return ident string for object."
-        return j(Method.fqn(obj), *str(datetime.datetime.now(tz=None)).split())
+        return os.path.join(Method.fqn(obj), *str(datetime.now(tz=None)).split())
 
     @classmethod
-    def read(cls, obj: Any, path: str, base: str = "store") -> bool:
+    def read(cls, obj, path, base="store"):
         "read object from path."
         with cls.lock:
-            pth = j(Workdir.wdr, base, path)
-            if not e(pth):
+            pth = os.path.join(Workdir.wdr, base, path)
+            if not os.path.exists(pth):
                 return False
             with open(pth, "r", encoding="utf-8") as fpt:
                 try:
                     Method.update(obj, JSON.load(fpt))
-                except json.decoder.JSONDecodeError as ex:
+                except json.JSONDecodeError as ex:
                     raise DecodeError(Utils.strip(pth)) from ex
             return True
 
     @classmethod
-    def write(cls, obj: Any, path: str = "", base: str = "store") -> str:
+    def write(cls, obj, path="", base="store"):
         "write object to disk."
         with cls.lock:
             if path == "":
                 path = cls.ident(obj)
-            pth = j(Workdir.wdr, base, path)
+            pth = os.path.join(Workdir.wdr, base, path)
             Utils.cdir(pth)
             with open(pth, "w", encoding="utf-8") as fpt:
                 JSON.dump(obj, fpt, indent=4)
@@ -101,10 +93,10 @@ class Locater:
 
     "find objects"
 
-    lock: RLock = RLock()
+    lock = RLock()
 
     @classmethod
-    def attrs(cls, kind: str) -> Set[str]:
+    def attrs(cls, kind):
         "show attributes for kind of objects."
         result = []
         for _pth, obj in cls.find(kind, nritems=1):
@@ -114,17 +106,19 @@ class Locater:
         return set(result)
 
     @classmethod
-    def count(cls, kind: str) -> int:
+    def count(cls, kind):
         "count kinds of objects."
         return len(list(cls.find(kind)))
 
     @classmethod
-    def find(cls,
-             kind: str,
-             selector: Selector = None,
-             removed: bool = False,
-             matching: bool = False,
-             nritems: int = 0) -> Result:
+    def find(
+        cls,
+        kind,
+        selector=None,
+        removed=False,
+        matching=False,
+        nritems=0
+        ):
         "locate objects by matching atributes."
         with cls.lock:
             if selector is None:
@@ -146,7 +140,11 @@ class Locater:
                 yield (pth, obj)
 
     @classmethod
-    def first(cls, obj: Any, selector: Selector = None) -> str:
+    def first(
+        cls,
+        obj,
+        selector=None
+        ):
         "return first object of a kind."
         if selector is None:
             selector = {}
@@ -162,19 +160,19 @@ class Locater:
         return res
 
     @classmethod
-    def fns(cls, kind: str) -> Paths:
+    def fns(cls, kind):
         "file names by kind of object."
-        path = j(Workdir.wdr, "store", kind)
+        path = os.path.join(Workdir.wdr, "store", kind)
         for rootdir, dirs, _files in os.walk(path, topdown=True):
             for dname in dirs:
                 if dname.count("-") != 2:
                     continue
-                ddd = j(rootdir, dname)
+                ddd = os.path.join(rootdir, dname)
                 for fll in os.listdir(ddd):
-                    yield cls.strip(j(ddd, fll))
+                    yield cls.strip(os.path.join(ddd, fll))
 
     @classmethod
-    def fntime(cls, daystr: str) -> float:
+    def fntime(cls, daystr):
         "time from path."
         datestr = " ".join(daystr.split(os.sep)[-2:])
         datestr = datestr.replace("_", " ")
@@ -191,7 +189,7 @@ class Locater:
         return float(timd)
 
     @classmethod
-    def last(cls, obj: Any, selector=None) -> str:
+    def last(cls, obj, selector=None):
         "last saved version."
         if selector is None:
             selector = {}
@@ -207,12 +205,14 @@ class Locater:
         return res
 
     @classmethod
-    def objects(cls,
-                kind: str,
-                selector: Selector = None,
-                removed: bool = False,
-                matching: bool = False,
-                nritems: int = 0) -> Generator[Any, None, None]:
+    def objects(
+        cls,
+        kind,
+        selector=None,
+        removed=False,
+        matching=False,
+        nritems=0
+        ):
         "return objects by matching atributes."
         yield from [x[1] for x in cls.find(kind,
                                            selector,
@@ -221,7 +221,7 @@ class Locater:
                                            nritems)]
 
     @classmethod
-    def strip(cls, path: str) -> str:
+    def strip(cls, path):
         "strip filename from path."
         return path.rsplit('store', maxsplit=1)[-1][1:]
 
@@ -233,27 +233,27 @@ class Workdir:
     wdr = ""
 
     @classmethod
-    def home(cls, name: str) -> str:
+    def home(cls, name):
         "return home working directory."
         return os.path.expanduser(f"~/.{name}")
 
     @classmethod
-    def kinds(cls) -> List[str]:
+    def kinds(cls):
         "show kind on objects in cache."
         assert cls.wdr
-        path = j(cls.wdr, "store")
-        if not e(path):
+        path = os.path.join(cls.wdr, "store")
+        if not os.path.exists(path):
             cls.skel()
         return os.listdir(path)
 
     @classmethod
-    def logdir(cls, path: str = "") -> str:
+    def logdir(cls, path=""):
         "return directory to logs."
         assert cls.wdr
-        return j(cls.wdr, "logs", path)
+        return os.path.join(cls.wdr, "logs", path)
 
     @classmethod
-    def long(cls, name: str) -> str:
+    def long(cls, name):
         "expand to fqn."
         if "." in name:
             return name
@@ -266,32 +266,38 @@ class Workdir:
         return res
 
     @classmethod
-    def moddir(cls) -> str:
+    def moddir(cls):
         "return modules directory."
         assert cls.wdr
-        return j(cls.wdr, "mods")
+        return os.path.join(cls.wdr, "mods")
 
     @classmethod
-    def pid(cls, name: str) -> None:
+    def pid(cls, name):
         "write pid to file."
         assert cls.wdr
-        filename = j(cls.wdr, f"{name}.pid")
-        if e(filename):
+        filename = os.path.join(cls.wdr, f"{name}.pid")
+        if os.path.exists(filename):
             os.unlink(filename)
-        path2 = pathlib.Path(filename)
+        path2 = Path(filename)
         path2.parent.mkdir(parents=True, exist_ok=True)
         with open(filename, "w", encoding="utf-8") as fds:
             fds.write(str(os.getpid()))
 
     @classmethod
-    def skel(cls) -> None:
+    def runpath(cls, name):
+        "return path in run directory."
+        assert cls.wdr
+        return os.path.join(cls.wdr, "run", name)
+
+    @classmethod
+    def skel(cls):
         "create directories."
         assert cls.wdr
-        if not e(cls.wdr):
+        if not os.path.exists(cls.wdr):
             Utils.cdir(cls.wdr)
         path = os.path.abspath(cls.wdr)
-        for wpth in ["config", "logs", "mods", "store"]:
-            pth = pathlib.Path(j(path, wpth))
+        for wpth in ["config", "logs", "mods", "run", "store"]:
+            pth = Path(os.path.join(path, wpth))
             pth.mkdir(parents=True, exist_ok=True)
 
 

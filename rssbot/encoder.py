@@ -5,20 +5,19 @@
 
 
 import json
+import types
 
 
 from .default import RLock
-from .typings import Any, MappingProxyType, Union
-
-
-Json = Union[dict,list,bool,float,int,str]
+from .methods import Method
+from .typings import MappingProxyType
 
 
 class Encoder(json.JSONEncoder):
 
     "object to string"
 
-    lock: RLock = RLock()
+    lock = RLock()
 
     def default(self, o):
         "generate serializable versions."
@@ -35,17 +34,19 @@ class Encoder(json.JSONEncoder):
                 return json.JSONEncoder.default(self, o)
             except TypeError:
                 try:
-                    return vars(o)
+                    return self.skip(vars(o))
                 except TypeError:
                     return repr(o)
 
-    def skip(self, obj: Any) -> dict:
+    def skip(self, obj):
         "yield values without underscored keys."
         result = {}
-        for key in dir(obj):
+        for key, value in Method.items(obj):
             if key.startswith("_"):
                 continue
-            result[key] = getattr(obj, key)
+            if isinstance(value, types.MethodType):
+                continue
+            result[key] = value
         return result
 
 
@@ -54,24 +55,24 @@ class JSON:
     "json wrapper"
 
     @classmethod
-    def dump(cls, *args, **kw) -> None:
+    def dump(cls, *args, **kw):
         "dump object to disk."
         kw["cls"] = Encoder
         return json.dump(*args, **kw)
 
     @classmethod
-    def dumps(cls, *args, **kw) -> str:
+    def dumps(cls, *args, **kw):
         "dump object to string."
         kw["cls"] = Encoder
         return json.dumps(*args, **kw)
 
     @classmethod
-    def load(cls, s, *args, **kw) -> Json:
+    def load(cls, s, *args, **kw):
         "load object from disk."
         return json.load(s, *args, **kw)
 
     @classmethod
-    def loads(cls, s, *args, **kw) -> Json:
+    def loads(cls, s, *args, **kw):
         "load object from string."
         return json.loads(s, *args, **kw)
 
@@ -81,16 +82,19 @@ class JSONL(JSON):
     "line oriented"
 
     @classmethod
-    def log(cls, *args, **kw) -> None:
-        "dump object to disk."
-        kw["indent"] = None
-        JSON.dump(cls, *args, **kw)
+    def read(cls, fp, *args, **kw):
+        "read from file."
+        return cls.load(fp, *args, **kw)
 
     @classmethod
-    def logtxt(cls, *args, **kw) -> str:
-        "dump object to string."
+    def write(cls, obj, fp, *args, **kw):
+        "dump object to disk."
         kw["indent"] = None
-        return JSON.dumps(*args, **kw)
+        kw["skipkeys"] = True
+        kw["sort_keys"] = True
+        cls.dump(obj, fp, *args, **kw)
+        fp.write("\n")
+        fp.flush()
 
 
 def __dir__():

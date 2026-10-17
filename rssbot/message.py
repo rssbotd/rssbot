@@ -6,13 +6,8 @@
 
 from .default import Event
 from .objects import Data
-from .threads import Thread
+from .tasking import Worker
 from .typings import List, Union
-
-
-Args   = List[str]
-Result = List[str]
-Thr    = Union[Thread, None]
 
 
 class Message(Data):
@@ -22,33 +17,36 @@ class Message(Data):
     def __init__(self):
         super().__init__()
         self.__ready__: Event = Event()
-        self.__thr__: Thr = None
-        self.args: Args = []
+        self.__thr__: Union[Worker ,None] = None
+        self.args: List[str] = []
         self.cmd: str = ""
         self.index: int = 0
         self.kind: str = "msg"
         self.orig: str = ""
         self.rest: str = ""
-        self.result: Result = []
+        self.result: List[str] = []
         self.text: str = ""
 
-    def iface(self, text: str) -> None:
+    def __iter__(self):
+        return iter([x for x in self.__dict__ if not x.startswith("_")])
+
+    def iface(self, text):
         "show interface."
         self.reply(f"{self.cmd} {text}")
 
-    def ok(self, text: str = "") -> None:
+    def ok(self, text=""):
         "print ok response."
         self.reply(f"ok {text}".strip())
 
-    def ready(self) -> None:
+    def ready(self):
         "flag msg as ready."
         self.__ready__.set()
 
-    def reply(self, text: str) -> None:
+    def reply(self, text):
         "add text to result."
         self.result.append(text)
 
-    def wait(self, timeout: float = 0.0) -> None:
+    def wait(self, timeout=0.0):
         "wait for completion."
         self.__ready__.wait(timeout or None)
         if self.__thr__:

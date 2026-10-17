@@ -8,14 +8,14 @@ import threading
 import time
 
 
-from rssbot.defines import Thread, Time
+from rssbot.defines import Time, Worker
 
 
 def thr(msg):
     "list of running threads."
     result = []
     for thread in sorted(threading.enumerate(), key=lambda x: x.name):
-        if not isinstance(thread, Thread):
+        if not isinstance(thread, Worker):
             continue
         if str(thread).startswith("<_"):
             continue

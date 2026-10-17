@@ -8,33 +8,27 @@ import inspect
 
 
 from .brokers import Clients
-from .message import Message
 from .package import Mods
 from .parsers import Parser
-from .typings import Callable, ClassVar, Dict, List, ModuleType, Union
-
-
-Callables = Dict[str, Callable]
-Hash      = Dict[str, str]
+from .utility import Utils
 
 
 class Commands:
 
     "command dispatch"
 
-    cmds: ClassVar[Callables] = {}
-    names: ClassVar[Hash] = {}
+    cmds = {}
+    names = {}
 
     @classmethod
-    def add(cls, *funcs: Callable) -> None:
+    def add(cls, *funcs):
         "register a command."
         for func in funcs:
-            if "__name__" not in dir(func):
-                continue
-            cls.cmds[func.__name__] = func
+            name = Utils.funcname(func)
+            cls.cmds[name] = func
 
     @classmethod
-    def command(cls, msg: Message) -> None:
+    def command(cls, msg):
         "command callback."
         Parser.parse(msg, msg.text)
         func = cls.cmds.get(msg.cmd, cls.ondemand(msg.cmd))
@@ -44,18 +38,18 @@ class Commands:
         msg.ready()
 
     @classmethod
-    def list(cls) -> List[str]:
+    def list(cls):
         "scan for a list of all commands."
         result = []
         for modname in Mods.list():
             mod = Mods.get(modname)
             if not mod:
                 continue
-            result.extend([x.__name__ for x in Commands.scan(mod, True)])
+            result.extend([Utils.funcname(x) for x in Commands.scan(mod, True)])
         return result
 
     @classmethod
-    def ondemand(cls, name: str) -> Union[Callable, None]:
+    def ondemand(cls, name):
         "ondemand loading of commands."
         modname = cls.names.get(name, None)
         if not modname:
@@ -67,9 +61,9 @@ class Commands:
         return cls.cmds.get(name, None)
 
     @classmethod
-    def scan(cls, mod: ModuleType, skip: bool = False) -> List[Callable]:
+    def scan(cls, mod, skip=False):
         "scan module for commands."
-        result: List[Callable] = []
+        result = []
         for nme, func in inspect.getmembers(mod, inspect.isfunction):
             if "cb_" in nme:
                 continue
@@ -80,7 +74,7 @@ class Commands:
         return result
 
     @classmethod
-    def scanner(cls) -> None:
+    def scanner(cls):
         "scan all modules."
         for name in Mods.list():
             mod = Mods.get(name)
@@ -89,7 +83,7 @@ class Commands:
             cls.scan(mod)
 
     @classmethod
-    def statics(cls) -> None:
+    def statics(cls):
         "read table,"
         try:
             from .statics import NAMES
@@ -98,7 +92,7 @@ class Commands:
             pass
 
     @classmethod
-    def table(cls) -> None:
+    def table(cls):
         "read static tables."
         cls.statics()
         if not cls.names:

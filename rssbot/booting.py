@@ -4,6 +4,7 @@
 "in the beginning"
 
 
+import logging
 import os
 import threading
 import time
@@ -12,28 +13,27 @@ import _thread
 
 from .brokers import Broker
 from .configs import Main
-from .default import Event, Logger
+from .default import Event
 from .display import Screen
 from .loggers import Logging
 from .package import Mods
 from .persist import Workdir
-from .threads import Thread, Threading
-from .typings import Callable
+from .tasking import Task, Worker
 from .utility import Utils
 
 
-Log = Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Boot:
 
     "at startup"
 
-    running: Event = Event()
-    stopped: Event = Event()
+    running = Event()
+    stopped = Event()
 
     @classmethod
-    def configure(cls) -> None:
+    def configure(cls):
         "setup basic variables"
         Workdir.wdr = Main.wdr or Workdir.wdr or Workdir.home(Main.name)
         Workdir.skel()
@@ -44,7 +44,7 @@ class Boot:
         Mods.dir(Main.path, pkgname)
 
     @classmethod
-    def forever(cls) -> None:
+    def forever(cls):
         "run forever until ctrl-c."
         cls.running.set()
         while cls.running.is_set():
@@ -55,14 +55,14 @@ class Boot:
         cls.stopped.set()
 
     @classmethod
-    def init(cls, names: str, wait: bool = False) -> bool:
+    def init(cls, names, wait=False):
         "call init of modules that have an init function."
         thrs = []
         for name in Utils.spl(names):
             mod = Mods.get(name)
             if not mod or "init" not in dir(mod):
                 continue
-            thrs.append(Threading.launch(mod.init))
+            thrs.append(Task.start(mod.init))
         if thrs and wait:
             for thr in thrs:
                 try:
@@ -72,18 +72,18 @@ class Boot:
         return True
 
     @classmethod
-    def shutdown(cls, wait: bool = True) -> None:
+    def shutdown(cls, wait=True):
         "call stop on clients."
-        Log.debug("shutdown")
+        logger.debug("shutdown")
         for client in Broker.objs("wait"):
-            Log.debug("wait %s", client)
+            logger.debug("wait %s", client)
             try:
                 client.wait()
             except (KeyboardInterrupt, EOFError):
                 pass
         time.sleep(0.01)
         for client in Broker.objs("stop"):
-            Log.debug("stop %s", client)
+            logger.debug("stop %s", client)
             try:
                 client.stop()
             except (KeyboardInterrupt, EOFError):
@@ -97,16 +97,16 @@ class Boot:
         cls.stopped.set()
 
     @classmethod
-    def wrapped(cls, func: Callable, *args) -> None:
+    def wrapped(cls, func, *args):
         "wrap function in a try/except, silence ctrl-c/ctrl-d."
         try:
             func(*args)
         except (KeyboardInterrupt, EOFError):
             Screen.block.set()
-            Thread.block.set()
+            Worker.block.set()
             _thread.interrupt_main()
         except Exception as ex:
-            Log.exception(ex)
+            logger.exception(ex)
             _thread.interrupt_main()
 
 

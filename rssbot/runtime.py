@@ -9,14 +9,12 @@ import sys
 import time
 
 
-from .default import SUPPRESS, ArgumentParser, RawFormat
+from argparse import SUPPRESS, ArgumentParser, RawTextHelpFormatter
+
+
 from .defines import Boot, Commands, Main, MD5, Message, Method, Mods, Screen
 from .defines import Workdir
 from .require import Cmd
-from .typings import Any, Callable, TextIO, Union
-
-
-Final = Union[Callable, None]
 
 
 class Arguments:
@@ -24,7 +22,7 @@ class Arguments:
     "comamnd line arguments"
 
     @classmethod
-    def getargs(cls) -> None:
+    def getargs(cls):
         "parse commandline arguments."
         Main.name = Main.name or Method.pkgname(Main)
         theparser = cls.getparser()
@@ -53,13 +51,13 @@ class Arguments:
         Main.otxt = " ".join(arguments)
 
     @classmethod
-    def getparser(cls) -> ArgumentParser:
+    def getparser(cls):
         "create parser."
         return ArgumentParser(
             prog=Main.name,
             description=f'{Main.name.upper()}',
             epilog='use "%(prog)s cmd" for a list of commands.',
-            formatter_class=RawFormat,
+            formatter_class=RawTextHelpFormatter,
             usage="%(prog)s [options] [cmd] [key=val] [key==val] [key-=val] [arguments]"
         )
 
@@ -69,7 +67,7 @@ class Booting(Boot):
     "at first"
 
     @classmethod
-    def banner(cls, force: bool = False) -> None:
+    def banner(cls, force=False):
         "hello."
         if not force and not Main.verbose:
             return
@@ -78,7 +76,7 @@ class Booting(Boot):
         sys.stdout.flush()
 
     @classmethod
-    def boot(cls) -> None:
+    def boot(cls):
         "configure runtime."
         cls.configure()
         Mods.dir("mods", Workdir.moddir())
@@ -95,13 +93,13 @@ class Booting(Boot):
             Commands.scanner()
 
     @classmethod
-    def wrap(cls, func: Callable, *args: Any, dofinal: Final = None) -> None:
+    def wrap(cls, func, *args, dofinal=None):
         "restore console."
         import termios
         try:
             old = termios.tcgetattr(sys.stdin.fileno())
         except termios.error:
-            old = [False,]
+            old = None
         try:
             cls.wrapped(func, *args)
         except (KeyboardInterrupt, EOFError):
@@ -120,11 +118,11 @@ class CLI(Screen):
         Screen.__init__(self)
         self.register("command", Commands.command)
 
-    def after(self, msg: Message) -> None:
+    def after(self, msg):
         "wait for msg to finish"
         msg.wait()
 
-    def raw(self, text: str) -> None:
+    def raw(self, text):
         "write to console."
         print(text.encode('utf-8', 'replace').decode("utf-8"))
         sys.stdout.flush()
@@ -138,7 +136,7 @@ class Console(CLI):
         CLI.__init__(self)
         self.silent = True
 
-    def poll(self) -> Message:
+    def poll(self):
         "return msg."
         msg: Message = Message()
         msg.orig = repr(self)
@@ -153,7 +151,7 @@ class Daemon:
     "detach from console"
 
     @classmethod
-    def daemon(cls) -> None:
+    def daemon(cls):
         "run in the background."
         pid = os.fork()
         if pid != 0:
@@ -171,18 +169,18 @@ class Daemon:
         os.nice(10)
 
     @classmethod
-    def null(cls, iostream: TextIO) -> None:
+    def null(cls, iostream):
         "route to /dev/null."
         with open('/dev/null', 'r', encoding="utf-8") as sis:
             os.dup2(sis.fileno(), iostream.fileno())
 
     @classmethod
-    def pid(cls) -> Union[str, None]:
+    def pid(cls):
         "return pid path."
         return Workdir.pid(Main.name)
 
     @classmethod
-    def privileges(cls) -> None:
+    def privileges(cls):
         "drop privileges."
         import getpass
         import pwd
@@ -201,7 +199,7 @@ class Scripts:
     "actual runtime"
 
     @staticmethod
-    def background() -> None:
+    def background():
         "background script."
         Kernel.boot()
         Kernel.daemon()
@@ -212,7 +210,7 @@ class Scripts:
         Kernel.forever()
 
     @staticmethod
-    def console() -> None:
+    def console():
         "console script."
         import readline
         readline.redisplay()
@@ -224,7 +222,7 @@ class Scripts:
         Kernel.forever()
 
     @staticmethod
-    def control() -> None:
+    def control():
         "cli script."
         Kernel.boot()
         Commands.add(Cmd.cmd)
@@ -239,7 +237,7 @@ class Scripts:
         msg.wait()
 
     @staticmethod
-    def service() -> None:
+    def service():
         "service script."
         Kernel.boot()
         Kernel.privileges()
@@ -258,7 +256,7 @@ def control() -> None:
     Kernel.wrap(Scripts.control)
 
 
-def main() -> None:
+def main():
     "dispatch to runtime."
     Arguments.getargs()
     if Main.console:

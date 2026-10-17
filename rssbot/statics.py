@@ -4,49 +4,44 @@
 "tables"
 
 
-from typing import Dict
-
-
-Hash = Dict[str, str]
-
-
-CORE: Hash = {
-    "booting": "946a1b52fa8203d72137ec15fb68aea7",
-    "brokers": "be3138aaf29cd7bbe2469ae71269647f",
-    "buffers": "f0c0ff3060a620257f9df22fc9787fb7",
-    "command": "aa2382b6a438f64de987b4e80b8dcbf9",
-    "configs": "915a02e10b32cc61a5365e6401876008",
-    "default": "c37c72017779a1ad15d3b94e1257c0b7",
-    "defines": "039ef962a862febc0153a663e18201d9",
-    "display": "d9ca926a5cf3173d0bc758bc254003c5",
-    "encoder": "0c98563c401e13346c1ec43515f4bc64",
-    "fetcher": "e780e5a4edba5b5ef03b697a7206b33c",
-    "handler": "a569b4df084e1a35798cb135555ae3d6",
-    "loggers": "dd73bcbf4004f5a33d15156742b235e8",
-    "looping": "6f8666579aec275d965035864833f797",
-    "message": "7cc5255ed84908310753a8d305831f61",
-    "methods": "4a5d87f4d70f5335f58f8ef60720635a",
+CORE = {
+    "booting": "9b7783d4b9e68c49a990b579b654a69f",
+    "brokers": "ee24b5b03c15d60fae1eacd242c9f3c0",
+    "buffers": "7423334eb74179f9a96c9daa4f5c8347",
+    "command": "3e8b711841e15eb1fc2f9b00369a7caa",
+    "configs": "cd3a6bfd128bcee5a8a34a7dca7a94c6",
+    "default": "f12cd3e1a616b5cbc66aabccdaf6ec15",
+    "defines": "b8e15ccad79099579b802d1bd7108540",
+    "display": "db1bf9473b36ecefb2dd291c064f2827",
+    "encoder": "92abad042c1efdf77a6cedb20c482f53",
+    "fetcher": "290a52be646aa2c652a2a66dc362a1ae",
+    "handler": "6123e63a1b1e2319c37c1eebd174b293",
+    "loggers": "6824c8ec438b97fc4bc7eeb02cf827b8",
+    "looping": "ca59722b4b2a188bda75cbcc10abae78",
+    "message": "e51bc665378eac6ea9ffd21dd66334f6",
+    "methods": "5563fb8e308909d3efd27d2a07f1f432",
     "objects": "e7d8664b921306546ac5df9bf30c9b65",
-    "package": "855a1716ed970848ef4cd035d26dac74",
-    "parsers": "1b032844c15e7f61d8ea4bc5d8864d8d",
-    "persist": "6deceebeb0702f57bfbd9d0eaf1cd775",
-    "pooling": "f4323daad55e86892317acb7abcbda7d",
-    "repeats": "4c3627f380217e44f000c4498991521a",
-    "require": "64863daa33090e4956eef461fd06280c",
-    "runners": "1d72b7273cf1b3a7a698c3328389c8e4",
-    "runtime": "61c293d71ca3e95a37c38de53c1dcfd3",
-    "sources": "d1c088f00a70866a762f660bd29b01de",
+    "package": "dbdd0fe9a6d3a3c568ea1802adf31328",
+    "parsers": "216a520cc83a6f9d63b22590c03c4c0a",
+    "persist": "4a94edc3d83e29e909278bf2104285a8",
+    "pooling": "53f455d661633bff6d7d0e1fc01303cd",
+    "repeats": "31c1498ba4eb490a9dedcab4b0aec52c",
+    "require": "09e77b964a7512cfafe4e3e4de969cd7",
+    "runners": "a80976f6ded21f69a99eefcf5d831993",
+    "runtime": "642bf14889300bc41933b40d851c7afe",
+    "sources": "f83a08fb6cfa9df0ba517baa6f0a704e",
+    "tasking": "aa2f130a501cdc1c79293f843de98ec4",
     "threads": "812bc64a6536552137ccfa2177faf8db",
-    "typings": "2832b71930637c312853548880fb763c",
-    "utility": "2d4291520524811c0c64c91f0c6f9623",
-    "watcher": "f3934ed62a06b75338e0454d7219fd39"
+    "typings": "77251d50b6ecc33356ce5cbdde603abd",
+    "utility": "61f75841876ac8554b7dc11f6b09d0df",
+    "watcher": "585dcad0f6d88c4b7db32e10dcbc9c9d"
 }
 
 
-MODULES: Hash = {}
+MODULES = {}
 
 
-NAMES: Hash = {}
+NAMES = {}
 
 
 def __dir__():

@@ -26,50 +26,50 @@ from .pooling import Pool
 from .repeats import Repeater
 from .runners import Runner
 from .sources import MD5
-from .threads import Thread, Threading
+from .tasking import Task, Worker
 from .utility import Time, Utils
 from .watcher import Watcher
 
 
-def __dir__():
-    return (
-       'Boot',
-       'Broker',
-       'Buffer',
-       'Cfg',
-       'Clients',
-       'Commands',
-       'Config',
-       'Data',
-       'Disk',
-       'Display',
-       'Fetcher',
-       'Format',
-       'Handler',
-       'JSON',
-       'JSONL',
-       'Locater',
-       'Logging',
-       'Loop',
-       'Main',
-       'MD5',
-       'Message',
-       'Method',
-       'Mods',
-       'Object',
-       'Output',
-       'Parser',
-       'Pool',
-       'Repeater',
-       'Runner',
-       'Screen',
-       'Thread',
-       'Threading',
-       'Time',
-       'Utils',
-       'Watcher',
-       'Workdir'
+__all__ = (
+    'JSON',
+    'JSONL',
+    'MD5',
+    'Boot',
+    'Broker',
+    'Buffer',
+    'Cfg',
+    'Clients',
+    'Commands',
+    'Config',
+    'Data',
+    'Disk',
+    'Display',
+    'Fetcher',
+    'Format',
+    'Handler',
+    'Locater',
+    'Logging',
+    'Loop',
+    'Main',
+    'Message',
+    'Method',
+    'Mods',
+    'Object',
+    'Output',
+    'Parser',
+    'Pool',
+    'Repeater',
+    'Runner',
+    'Screen',
+    'Task',
+    'Time',
+    'Utils',
+    'Watcher',
+    'Workdir',
+    'Worker'
     )
 
 
-__all__ =  __dir__()
+def __dir__():
+    return __all__
