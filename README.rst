@@ -77,31 +77,6 @@
 
     use "rssbot cmd" for a list of commands.
 
-::
-
-    use rssbot to control the program, default it does nothing
-
-    $ rssbot
-    $
-
-    see list of commands
-
-    $ rssbot cmd
-    cfg,cmd,dne,dpl,err,exp,imp,log,mod,mre,nme,
-    pwd,rem,req,res,rss,srv,syn,tdo,thr,upt
-
-
-    start daemon
-
-    $ rssbotd --daemon
-    $
-
-
-    start service
-
-    $ rssbotd --service
-    <runs until ctrl-c>
-
 
 **COMMANDS**
 
