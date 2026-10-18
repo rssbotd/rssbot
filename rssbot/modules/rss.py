@@ -15,7 +15,7 @@ import urllib.parse
 
 from rssbot.default import RLock
 from rssbot.defines import Cfg, Clients, Data, Disk, Fetcher, Format, JSON, JSONL
-from rssbot.defines import Locater, Logging, Main, MD5, Message, Method, Object
+from rssbot.defines import Locater, Logging, Main, MD5, Method, Object
 from rssbot.defines import Pool, Repeater, Runner, Utils, Watcher, Workdir
 
 
@@ -132,11 +132,11 @@ class Run:
         return counter
 
     @classmethod
-    def display(cls, obj, name):
+    def display(cls, obj, name=None):
         "display feed."
         displaylist = ""
-        if name in obj:
-            result = f"[{obj.name}] "
+        if name or name in obj:
+            result = f"[{name or obj.name}] "
         else:
             result = ""
         try:
@@ -322,8 +322,8 @@ class OPML:
     @classmethod
     def getattrs(cls, line, token):
         "get attributes from line."
-        index: int = 0
-        result: List[str] = []
+        index = 0
+        result = []
         stop: bool = False
         while not stop:
             index1 = line.find(f"<{token} ", index)

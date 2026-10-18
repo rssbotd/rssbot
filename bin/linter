@@ -31,7 +31,8 @@ def popen(txt):
         sys.stdout.flush()
 
 
-popen(f"ruff check {NAME} bin/tinder testing")
-popen(f"pylint {NAME} bin/tinder testing")
-popen(f"mypy -p {NAME} -p testing --check-untyped-defs")
+popen(f"ruff check {NAME} bin/tinder")
+popen(f"pylint {NAME} bin/tinder")
+popen(f"mypy -p {NAME}")
+popen(f"ty check {NAME} bin/tinder")
 popen("bin/tinder")

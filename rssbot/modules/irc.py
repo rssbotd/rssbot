@@ -143,7 +143,7 @@ class IRC(Buffer):
         self.noflood = True
         self.queue = Queue()
         self.silent = False
-        self.sock: Any = None
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.state = State()
         self.register("903", cb_h903)
         self.register("904", cb_h903)
@@ -174,8 +174,7 @@ class IRC(Buffer):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
             ctx.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock = ctx.wrap_socket(sock)
+            self.sock = ctx.wrap_socket(self.sock)
             self.sock.connect((server, port))
             self.direct("CAP LS 302")
         else:

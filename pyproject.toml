@@ -28,7 +28,7 @@ classifiers = [
 
 
 [project.urls]
-'home'   = 'https://pypi.org/project/rssbot'
+'home'   = 'https://github.com/rssbotd/rssbot'
 'bugs'   = 'https://github.com/rssbotd/rssbot/issues'
 'source' = 'https://github.com/rssbotd/rssbot'
 
@@ -37,8 +37,8 @@ classifiers = [
 packages=[
     'rssbot',
     'rssbot.minimal',
-    'rssbot.mirrors',
     'rssbot.modules',
+    'rssbot.names',
     'rssbot.neurons',
     'rssbot.numbers'
 ]
@@ -47,12 +47,14 @@ packages=[
 [tool.pylint."messages control"]
 disable = [
     'R',
+    'attribute-defined-outside-init',
     'invalid-name',
     'line-too-long',
     'import-outside-toplevel',
     'broad-exception-caught',
     'relative-beyond-top-level'
 ]
+
 
 [tool.ruff.lint]
 preview = true
@@ -63,6 +65,14 @@ ignore = [
     'invalid-all-format',
     'mutable-class-default',
     'non-pep585-annotation',
+    'non-pep604-annotation-union',
     'unsorted-imports',
     'verbose-log-message'
+]
+
+
+[tool.mypy]
+disable_error_code = [
+    'annotation-unchecked',
+    'var-annotated'
 ]
