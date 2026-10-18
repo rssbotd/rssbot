@@ -38,7 +38,7 @@ packages=[
     'rssbot',
     'rssbot.minimal',
     'rssbot.modules',
-    'rssbot.names',
+    'rssbot.namings',
     'rssbot.neurons',
     'rssbot.numbers'
 ]

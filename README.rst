@@ -9,10 +9,8 @@
 
 ::
 
-    rssbot [-h] [-l level] [-m m1,m2] [-n NAME] [-p path] [-v] [--admin] [--docs DOCS] [--scanner] [--wdr WDR]
-    rssbotd
-
-    rssbot <cmd> [key=val] [key==val]
+    rssbot [options] [cmd] [key=val] [key==val] [key-=val] [arguments]
+    rssbot -h
 
 
 **DESCRIPTION**
@@ -55,23 +53,27 @@
 
     the -h option will show you possible options
 
-    usage: rssbot [-h] [-l level] [-m m1,m2] [-n NAME] [-p path] [-v] [--admin] [--docs DOCS] [--scanner] [--wdr WDR]
+    usage: rssbot [options] [cmd] [key=val] [key==val] [key-=val] [arguments]
 
     RSSBOT
 
     options:
-        -h, --help         show this help message and exit
+      -h, --help         show this help message and exit
+      -c, --console      start a console.
+      -d, --daemon       run as background daemon.
+      -s, --service      run as service.
 
-        -l, --level level  set loglevel.
-        -m, --mods m1,m2   modules to load.
-        -n, --name NAME    name of the program.
-        -p, --path path    path to modules directory.
-        -v, --verbose      enable verbose.
+      -a, --all          load all modules.
+      -v, --verbose      enable verbose.
+      -w, --wait         wait for services to start.
 
-        --admin            enable admin mode.
-        --docs DOCS        set docs directory.
-        --scanner          do full modules scan on boot.
-        --wdr WDR          set modules directory.
+      -l, --level level  set loglevel.
+      -m, --mods m1,m2   modules to load.
+      -p, --path path    path to modules directory.
+
+      --admin            enable admin mode.
+      --scanner          do full modules scan on boot.
+      --wdr WDR          set modules directory.
 
     use "rssbot cmd" for a list of commands.
 
@@ -167,7 +169,7 @@
 
 ::
 
-    Bart Thate`` <``rssbotd@gmail.com``>
+    Bart Thate <rssbotd@gmail.com>
 
 
 **COPYRIGHT**
