@@ -22,8 +22,8 @@ CORE = {
     "persist": "ddc9e0d46ec7fef070d629d9a8ce13aa",
     "pooling": "76c57d81410b074f47593430e566a4b8",
     "repeats": "31c1498ba4eb490a9dedcab4b0aec52c",
-    "require": "169511e608fdb20d2dd9b77ebc0f25cf",
-    "runtime": "5b114c86a6db697ef6d07489d4c9f303",
+    "require": "243607f8eaf604e539cf462f3a22f676",
+    "runtime": "da4ce21d4602b662922ad27d4092fcb7",
     "tasking": "bebdedd62e611d13458cdaf917201988",
     "typings": "27741c2543077c3835f7f460a3538ceb",
     "utility": "5b97aa86664d52c6fd70d24d36ec2e00",
@@ -31,10 +31,34 @@ CORE = {
 }
 
 
-MODULES = {}
+MODULES = {
+    "cfg": "6903a606e51260c49c8a4cdb29ac46ed",
+    "fnd": "c835df36570cc03b0f30c0d822c5c26b",
+    "irc": "9a184f472bc5d353106554ea78a10029",
+    "rss": "2b95ab4258973327e2230947a087dece",
+    "srv": "cdc425340befc48dcc42cc877772045a",
+    "upt": "582b5feccfc18b982e91b9626b5885ac",
+    "ver": "d5ffb6fd77410a926fdfb133cc0533c3"
+}
 
 
-NAMES = {}
+NAMES = {
+    "atr": "rss",
+    "cfg": "cfg",
+    "dpl": "rss",
+    "exp": "rss",
+    "fnd": "fnd",
+    "imp": "rss",
+    "nme": "rss",
+    "pwd": "irc",
+    "rem": "rss",
+    "res": "rss",
+    "rss": "rss",
+    "srv": "srv",
+    "syn": "rss",
+    "upt": "upt",
+    "ver": "ver"
+}
 
 
 def __dir__():
