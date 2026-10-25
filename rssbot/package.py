@@ -4,16 +4,15 @@
 "module management"
 
 
-import logging
 import os
 
 
+from .default import Log
 from .methods import Method
-from .sources import MD5
-from .utility import Utils
+from .utility import MD5, Utils
 
 
-logger = logging.getLogger(__name__)
+logger = Log(__name__)
 
 
 class Mods:
@@ -74,24 +73,21 @@ class Mods:
         return cls.mods[name]
 
     @classmethod
-    def list(cls):
+    def list(cls, skip=""):
         "comma seperated list of available modules."
         mods = []
-        for path in cls.dirs.values():
+        for name, path in cls.dirs.items():
+            if name in skip:
+                continue
             if not os.path.exists(path):
                 continue
             mods.extend(Utils.listdir(path))
         return sorted(set(mods))
 
     @classmethod
-    def minimal(cls):
-        "return package minimal path."
-        return os.path.join(Method.where(Mods), "minimal")
-
-    @classmethod
-    def moddir(cls):
+    def moddir(cls, name="modules"):
         "return package modules path."
-        return os.path.join(Method.where(Mods), "modules")
+        return os.path.join(Method.where(Mods), name)
 
     @classmethod
     def statics(cls):

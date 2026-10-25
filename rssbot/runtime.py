@@ -4,7 +4,6 @@
 "runtime"
 
 
-import os
 import sys
 import time
 
@@ -12,9 +11,8 @@ import time
 from argparse import SUPPRESS, ArgumentParser, RawTextHelpFormatter
 
 
-from .defines import Boot, Commands, Main, MD5, Message, Method, Mods, Screen
-from .defines import Workdir
-from .require import Cmd
+from .defines import MD5, Booting, Cmd, Commands, Errors, Main, Message
+from .defines import Method, Mods, Screen, Workdir
 
 
 class Arguments:
@@ -32,17 +30,15 @@ class Arguments:
         group.add_argument("-s", "--service", action="store_true", help="run as service.")
         parser = theparser.add_argument_group()
         parser.add_argument("-a", "--all", action="store_true", help="load all modules.")
+        parser.add_argument("-l", "--level", default="info", help='set loglevel.', metavar="level")
         parser.add_argument("-v", "--verbose", action='store_true', help='enable verbose.')
         parser.add_argument("-w", "--wait", action='store_true', help='wait for services to start.')
         optionparser = theparser.add_argument_group()
-        optionparser.add_argument("-l", "--level", default="info", help='set loglevel.', metavar="level")
         optionparser.add_argument("-m", "--mods", default="", help='modules to load.', metavar="m1,m2")
         optionparser.add_argument("-p", "--path", default='', help='path to modules directory.', metavar="path")
         optparser = theparser.add_argument_group()
         optparser.add_argument("--admin", action="store_true", help="enable admin mode.")
         optparser.add_argument("--channel", default="", help=SUPPRESS)
-        optparser.add_argument("--default", default="irc,mdl,rss,wsd", help=SUPPRESS)
-        optparser.add_argument("--local", action="store_true", help=SUPPRESS)
         optparser.add_argument("--nochdir", action="store_true", help=SUPPRESS)
         optparser.add_argument("--scanner", action="store_true", help="do full modules scan on boot.")
         optparser.add_argument("--wdr", default="", help="set modules directory.")
@@ -62,7 +58,7 @@ class Arguments:
         )
 
 
-class Booting(Boot):
+class Kernel(Booting):
 
     "at first"
 
@@ -79,10 +75,9 @@ class Booting(Boot):
     def boot(cls):
         "configure runtime."
         cls.configure()
-        Mods.dir("mods", Workdir.moddir())
+        Mods.dir("modules", Workdir.moddir())
+        Mods.dir(f"{Main.name}.minimal", Mods.moddir("minimal"))
         Mods.dir(f"{Main.name}.modules", Mods.moddir())
-        if Main.local:
-            Mods.dir("mods", "mods")
         if Main.all:
             Main.mods = ",".join(Mods.list())
         if Main.verbose:
@@ -93,21 +88,12 @@ class Booting(Boot):
             Commands.scanner()
 
     @classmethod
-    def wrap(cls, func, *args, dofinal=None):
-        "restore console."
-        import termios
-        try:
-            old = termios.tcgetattr(sys.stdin.fileno())
-        except termios.error:
-            old = None
-        try:
-            cls.wrapped(func, *args)
-        except (KeyboardInterrupt, EOFError):
-            pass
-        if old and old[0]:
-            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
-        if dofinal:
-            dofinal()
+    def errors(cls):
+        "print errors."
+        for error in Errors.errors:
+            print("\n")
+            for line in Errors.format(error):
+                print(line.rstrip())
 
 
 class CLI(Screen):
@@ -138,60 +124,12 @@ class Console(CLI):
 
     def poll(self):
         "return msg."
-        msg: Message = Message()
+        msg = Message()
         msg.orig = repr(self)
         msg.text = input("> ")
         msg.kind = "command"
         self.put(msg)
         return msg
-
-
-class Daemon:
-
-    "detach from console"
-
-    @classmethod
-    def daemon(cls):
-        "run in the background."
-        pid = os.fork()
-        if pid != 0:
-            os._exit(0)
-        os.setsid()
-        pid2 = os.fork()
-        if pid2 != 0:
-            os._exit(0)
-        if not Main.verbose:
-            cls.null(sys.stdin)
-            cls.null(sys.stdout)
-            cls.null(sys.stderr)
-        os.umask(0o077)
-        os.chdir("/")
-        os.nice(10)
-
-    @classmethod
-    def null(cls, iostream):
-        "route to /dev/null."
-        with open('/dev/null', 'r', encoding="utf-8") as sis:
-            os.dup2(sis.fileno(), iostream.fileno())
-
-    @classmethod
-    def pid(cls):
-        "return pid path."
-        return Workdir.pid(Main.name)
-
-    @classmethod
-    def privileges(cls):
-        "drop privileges."
-        import getpass
-        import pwd
-        pwnam2 = pwd.getpwnam(getpass.getuser())
-        os.setgid(pwnam2.pw_gid)
-        os.setuid(pwnam2.pw_uid)
-
-
-class Kernel(Booting, Daemon):
-
-    "center of believing"
 
 
 class Scripts:
@@ -242,18 +180,11 @@ class Scripts:
         Kernel.boot()
         Kernel.privileges()
         Kernel.pid()
-        Commands.add(Cmd.cmd)
         if not Main.verbose:
             Kernel.banner(True)
         Main.mods = ",".join(Mods.list())
         Kernel.init(Main.mods)
         Kernel.forever()
-
-
-def control() -> None:
-    "only console."
-    Arguments.getargs()
-    Kernel.wrap(Scripts.control)
 
 
 def main():
@@ -269,13 +200,5 @@ def main():
         Kernel.wrap(Scripts.control)
 
 
-def __dir__():
-    return (
-        'Arguments',
-        'CLI',
-        'Daemon',
-        'Kernel',
-        'Scripts',
-        'control',
-        'main'
-    )
+# if __name__ == "__main__":
+#    main()

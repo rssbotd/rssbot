@@ -4,25 +4,23 @@
 "in the beginning"
 
 
-import logging
 import os
 import threading
 import time
 import _thread
 
 
-from .brokers import Broker
+from .clients import Broker, Screen
 from .configs import Main
-from .default import Event
-from .display import Screen
-from .loggers import Logging
+from .default import Event, Log
+from .excepts import Errors
 from .package import Mods
 from .persist import Workdir
 from .tasking import Task, Worker
-from .utility import Utils
+from .utility import Logging, Utils
 
 
-logger = logging.getLogger(__name__)
+logger = Log(__name__)
 
 
 class Boot:
@@ -41,7 +39,7 @@ class Boot:
         Logging.level(Main.level or "info")
         Main.path = os.path.normpath(Main.path)
         pkgname = Main.path.rsplit(os.sep, maxsplit=1)[-1]
-        Mods.dir(Main.path, pkgname)
+        Mods.dir(pkgname, Main.path)
 
     @classmethod
     def forever(cls):
@@ -67,8 +65,8 @@ class Boot:
             for thr in thrs:
                 try:
                     thr.join()
-                except (KeyboardInterrupt, EOFError):
-                    _thread.interrupt_main()
+                except Exception as ex:
+                    Errors.throw(ex)
         return True
 
     @classmethod
@@ -106,11 +104,83 @@ class Boot:
             Worker.block.set()
             _thread.interrupt_main()
         except Exception as ex:
-            logger.exception(ex)
-            _thread.interrupt_main()
+            Errors.throw(ex)
+
+    @classmethod
+    def wrap(cls, func, *args, dofinal=None):
+        "restore console."
+        import termios
+        import sys
+        try:
+            old = termios.tcgetattr(sys.stdin.fileno())
+        except termios.error:
+            old = None
+        try:
+            cls.wrapped(func, *args)
+        except (KeyboardInterrupt, EOFError):
+            pass
+        if old and old[0]:
+            termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, old)
+        if dofinal:
+            dofinal()
+
+
+class Daemon:
+
+    "detach from console"
+
+    @classmethod
+    def daemon(cls):
+        "run in the background."
+        import sys
+        pid = os.fork()
+        if pid != 0:
+            os._exit(0)
+        os.setsid()
+        pid2 = os.fork()
+        if pid2 != 0:
+            os._exit(0)
+        if not Main.verbose:
+            cls.null(sys.stdin)
+            cls.null(sys.stdout)
+            cls.null(sys.stderr)
+        os.umask(0o077)
+        os.chdir("/")
+        os.nice(10)
+
+    @classmethod
+    def null(cls, iostream):
+        "route to /dev/null."
+        with open('/dev/null', 'r', encoding="utf-8") as sis:
+            os.dup2(sis.fileno(), iostream.fileno())
+
+    @classmethod
+    def pid(cls):
+        "return pid path."
+        return Workdir.pid(Main.name)
+
+    @classmethod
+    def privileges(cls):
+        "drop privileges."
+        import getpass
+        import pwd
+        pwnam2 = pwd.getpwnam(getpass.getuser())
+        os.setgid(pwnam2.pw_gid)
+        os.setuid(pwnam2.pw_uid)
+
+
+class Booting(Boot, Daemon):
+
+    "at start"
+
+    @classmethod
+    def boot(cls):
+        "starting"
 
 
 def __dir__():
     return (
         'Boot',
+        'Booting',
+        'Daemon'
     )

@@ -1,15 +1,19 @@
 # This file is placed in the Public Domain.
 
 
-"required commands"
+"essential commands"
 
 
 import inspect
 import os
 
 
-from .defines import Commands, JSON, Main, MD5, Mods, Utils
+from .command import Commands
+from .configs import Main
+from .encoder import JSON
+from .package import Mods
 from .tasking import Worker
+from .utility import MD5, Utils
 
 
 class Cmd:

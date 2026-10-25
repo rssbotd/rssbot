@@ -1,7 +1,7 @@
 # This file is placed in the Public Domain.
 
 
-"only the msg"
+"only the message"
 
 
 from .default import Event
@@ -10,7 +10,7 @@ from .objects import Data
 
 class Message(Data):
 
-    "msg as an msg"
+    "message as an event"
 
     def __init__(self):
         super().__init__()
@@ -26,7 +26,7 @@ class Message(Data):
         self.text = ""
 
     def __iter__(self):
-        return iter([x for x in self.__dict__ if not x.startswith("_")])
+        return iter(self.__dict__)
 
     def iface(self, text):
         "show interface."

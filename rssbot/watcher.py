@@ -10,30 +10,26 @@ import time
 
 from .default import Event
 from .tasking import Task
-from .typings import Callable, Callables, ClassVar, Dict, Union
-
-
-Floats = Dict[str, float]
 
 
 class Watcher:
 
     "watch files"
 
-    cbs: ClassVar[Callables] = {}
-    sleep: float = 1.0
-    stopped: Event = Event()
-    times: ClassVar[Floats] = {}
+    cbs = {}
+    sleep  = 1.0
+    stopped = Event()
+    times = {}
 
     @classmethod
-    def add(cls, path: str, callback: Callable):
+    def add(cls, path, callback):
         "add callback"
         if not os.path.exists(path):
             return
         cls.cbs[path] = callback
 
     @classmethod
-    def init(cls, times: Union[Floats, None] = None):
+    def init(cls, times=None):
         "read timestamps."
         if times is None:
             times= {}
@@ -56,7 +52,7 @@ class Watcher:
             time.sleep(cls.sleep)
 
     @classmethod
-    def start(cls, daemon: bool = True):
+    def start(cls, daemon=True):
         "start callback loop."
         if not cls.stopped.is_set():
             return
