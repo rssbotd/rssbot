@@ -4,22 +4,20 @@
 "internet relay chat"
 
 
-import logging
 import os
 import socket
 import ssl
 import textwrap
-import threading
 import time
 import _thread
 
 
-from rssbot.default import Event, Queue
+from rssbot.default import Event, Log, RLock, Queue
 from rssbot.defines import Broker, Buffer, Cfg, Commands, Disk, Main
 from rssbot.defines import Message, Mods, Method, Object, Task
 
 
-logger = logging.getLogger(__name__)
+logger = Log(__name__)
 
 
 def init():
@@ -43,7 +41,7 @@ class Config(Cfg):
 
     name = Main.name or Method.pkgname(Mods)
     channel = Main.channel or f"#{name}"
-    commands = False
+    commands = True
     control = "!"
     ignore = ["PING", "PONG", "PRIVMSG"]
     nick = name
@@ -84,11 +82,11 @@ class Events(Object):
 
     def __init__(self):
         super().__init__()
-        self.authed = Event()
-        self.connected= Event()
-        self.joined = Event()
-        self.logon = Event()
-        self.ready = Event()
+        self.authed: Event = Event()
+        self.connected: Event = Event()
+        self.joined: Event = Event()
+        self.logon: Event = Event()
+        self.ready: Event = Event()
 
 
 class State(Object):
@@ -139,11 +137,11 @@ class IRC(Buffer):
         self.cfg = Config()
         self.channels = []
         self.msgs = Events()
-        self.lock = threading.RLock()
+        self.lock = RLock()
         self.noflood = True
         self.queue = Queue()
         self.silent = False
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = None
         self.state = State()
         self.register("903", cb_h903)
         self.register("904", cb_h903)
@@ -155,7 +153,7 @@ class IRC(Buffer):
         self.register("PRIVMSG", cb_privmsg)
         self.register("QUIT", cb_quit)
         self.register("366", cb_ready)
-        self.zelf: str = ""
+        self.zelf = ""
 
     def announce(self, text):
         "announce test on all joined channels."
@@ -174,7 +172,8 @@ class IRC(Buffer):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
             ctx.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-            self.sock = ctx.wrap_socket(self.sock)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock = ctx.wrap_socket(sock)
             self.sock.connect((server, port))
             self.direct("CAP LS 302")
         else:
@@ -206,7 +205,8 @@ class IRC(Buffer):
     def disconnect(self):
         "disconnect from server."
         try:
-            self.sock.shutdown(2)
+            if self.sock:
+                self.sock.shutdown(2)
         except (ssl.SSLError, OSError, BrokenPipeError):
             pass
 

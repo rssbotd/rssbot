@@ -5,7 +5,7 @@
 
 
 import gc
-import logging
+import html
 import logging.handlers
 import os
 import pathlib
@@ -13,16 +13,17 @@ import re
 import urllib.parse
 
 
-from rssbot.default import RLock
-from rssbot.defines import Cfg, Clients, Data, Disk, Fetcher, Format, JSON, JSONL
-from rssbot.defines import Locater, Logging, Main, MD5, Method, Object
-from rssbot.defines import Pool, Repeater, Runner, Utils, Watcher, Workdir
+from urllib.parse   import unquote, urlparse, urlunparse
+from urllib.request import Request, urlopen
 
 
-logger = logging.getLogger(__name__)
+from rssbot.default import Log, RLock
+from rssbot.defines import Cfg, Clients, Data, Disk, Format, JSON, JSONL, Locater
+from rssbot.defines import Logging, Main, MD5, Method, Object, Pool, Repeater
+from rssbot.defines import Runner, Utils, Watcher, Workdir
 
 
-j = os.path.join
+logger = Log(__name__)
 
 
 def init():
@@ -54,19 +55,31 @@ class Feed(Data):
     "feed data"
 
 
+class Response(Data):
+
+    "response object"
+
+    def __init__(self):
+        Data.__init__(self)
+        self.data = b""
+        self.reason = ""
+        self.status = None
+        self.url = ""
+
+
 class Rss(Data):
 
     "feed meta data"
 
     def __init__(self):
         super().__init__()
-        self.__deleted__: bool = False
+        self.__deleted__ = False
         self.display_list = "title,link,author"
         self.error = ""
         self.feed = ""
         self.insertid = ""
         self.name = ""
-        self.rss = ""
+        self.rss  = ""
         self.seen = []
         self.size = 0
         self.skip = False
@@ -135,8 +148,8 @@ class Run:
     def display(cls, obj, name=None):
         "display feed."
         displaylist = ""
-        if name or name in obj:
-            result = f"[{name or obj.name}] "
+        if name in obj:
+            result = f"[{obj.name}] "
         else:
             result = ""
         try:
@@ -177,7 +190,7 @@ class Run:
         return False
 
     @classmethod
-    def log(cls, text: str) -> None:
+    def log(cls, text):
         "log to file."
         logger.debug(text)
 
@@ -199,7 +212,7 @@ class Run:
     def start(cls, once=False):
         "initialise module."
         if Config.save:
-            cls.path = j(Workdir.logdir("rss"), 'rss.log')
+            cls.path = os.path.join(Workdir.logdir("rss"), 'rss.log')
             Utils.cdir(cls.path)
             pathlib.Path(cls.path).touch()
             with open(cls.path, "a+", encoding="utf-8") as file:
@@ -295,6 +308,83 @@ class Fetching(Runner):
         return counter
 
 
+class Fetcher:
+
+    "fetch urls"
+
+    modified = {}
+
+    @classmethod
+    def cdata(cls, line):
+        "scrape CDATA block."
+        if "CDATA" in line:
+            lne = line.replace("![CDATA[", "")
+            lne = lne.replace("]]", "")
+            lne = lne[1:-1]
+            return lne
+        return line
+
+    @classmethod
+    def geturl(cls, url):
+        "fetch an url."
+        url = urlunparse(urlparse(url))
+        req = Request(str(url))
+        req.add_header("User-Agent", cls.useragent(f"{Main.name.upper()} {MD5.core()}"))
+        since = cls.modified.get(url, "")
+        if since:
+            req.add_header('If-Modified-Since', since)
+        response = Response()
+        response.url = url
+        response.reason = ""
+        try:
+            Method.update(response, cls.request(req))
+        except Exception as ex:
+            # pylint: disable=E1101
+            response.data = b""
+            if "reason" in dir(ex):
+                response.reason = ex.reason # type: ignore
+            else:
+                response.reason = str(ex)
+            if "status" in dir(ex):
+                response.status = ex.status # type: ignore
+            else:
+                response.status = None
+        return response
+
+    @classmethod
+    def request(cls, req):
+        "handle  a request."
+        with urlopen(req, timeout=4) as response:  # nosec
+            modi = response.headers.get('Last-Modified', "")
+            if modi:
+                cls.modified[req.get_full_url()] = modi
+            response.data = response.read()
+            response.error = ""
+            return response
+
+    @classmethod
+    def striphtml(cls, text):
+        "strip html."
+        clean = re.compile("<.*?>")
+        return re.sub(clean, "", text)
+
+    @classmethod
+    def unescape(cls, text):
+        "unescape html."
+        txt = re.sub(r"\s+", " ", text)
+        return html.unescape(txt)
+
+    @classmethod
+    def unquote(cls, url):
+        "unquote an url."
+        return unquote(url, errors='ignore')
+
+    @classmethod
+    def useragent(cls, text):
+        "produce useragent string."
+        return "Mozilla/5.0 (X11; Linux x86_64) " + text
+
+
 class OPML:
 
     "opml parser"
@@ -324,7 +414,7 @@ class OPML:
         "get attributes from line."
         index = 0
         result = []
-        stop: bool = False
+        stop = False
         while not stop:
             index1 = line.find(f"<{token} ", index)
             if index1 == -1:
@@ -371,7 +461,7 @@ class RSS:
         return Fetcher.cdata(line[index1:index2]).strip()
 
     @classmethod
-    def getitems(cls, text, token, nrs = 0):
+    def getitems(cls, text, token, nrs=0):
         "get items from text."
         index = 0
         end = len(text)
