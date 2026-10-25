@@ -39,22 +39,21 @@ packages=[
     'rssbot.minimal',
     'rssbot.modules',
     'rssbot.namings',
-    'rssbot.neurons',
-    'rssbot.numbers'
+    'rssbot.network'
 ]
 
 
 [tool.pylint."messages control"]
 disable = [
     'R',
-    'W0613',
-    'E0401',
     'attribute-defined-outside-init',
-    'invalid-name',
-    'line-too-long',
-    'import-outside-toplevel',
     'broad-exception-caught',
-    'relative-beyond-top-level'
+    'invalid-name',
+    'import-outside-toplevel',
+    'line-too-long',
+    'protected-access',
+    'relative-beyond-top-level',
+    'unused-argument'
 ]
 
 

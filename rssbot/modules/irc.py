@@ -41,7 +41,7 @@ class Config(Cfg):
 
     name = Main.name or Method.pkgname(Mods)
     channel = Main.channel or f"#{name}"
-    commands = True
+    commands = False
     control = "!"
     ignore = ["PING", "PONG", "PRIVMSG"]
     nick = name
